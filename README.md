@@ -42,7 +42,7 @@ Since this function uses ppmod.fire internally, the entity can be specified with
 
 ### ppmod.addscript
 
-Similar to ppmod.addoutput, but used only as a cleaner way to attach VScript code to entity outputs.
+Similar to ppmod.addoutput, used as a cleaner and more powerful way of attaching VScript code to entity outputs.
 
 ```
   ppmod.addscript (entity, output, script, delay = 0, max = -1)
