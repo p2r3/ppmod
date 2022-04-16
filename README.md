@@ -255,12 +255,14 @@ Creates a brush entity that acts as a trigger of the specified type, returns a h
 
 The arguments are nearly identical to those of `ppmod.brush`, with the only exception being type. This argument is automatically prefaced with "trigger_" and specifies the type of brush entity to create. If the type is set to "once" (default), the trigger is automatically given an output to destroy itself when touched.
 
-To add outputs to this trigger, you can store the handle returned by the function to then use `ppmod.addoutput` or `ppmod.addscript` on it. Here is an example of using `ppmod.trigger` to create a field that paints cubes red:
+To add outputs to this trigger, you can store the handle returned by the function to then use `ppmod.addoutput` or `ppmod.addscript` on it. Here is an example of using `ppmod.trigger` to create a field that makes you say "Hello World!" in chat:
 
 ```
   local trigger = ppmod.trigger(Vector(0, 0, 0), Vector(128, 128, 128), "multiple");
   
-  ppmod.addoutput(trigger, "OnStartTouch", "!activator", "Color", "255 0 0");
+  ppmod.addscript(trigger, "OnStartTouch", function() {
+    SendToConsole("say Hello World!");
+  });
 ```
 
 ### ppmod.texture
@@ -273,7 +275,7 @@ Creates an `env_projectedtexture` entity for projecting textures on to existing 
 
 The first argument is the path to the texture to apply. The second argument is the position of the `env_projectedtexture` entity. If using the simple projection mode, it is recommended to set this to be a few units away from the brush you're applying the texture to. The third argument is the angle to project the texture towards, facing straight down by default. The fourth argument is a boolean value for whether to use the simple projection mode. Simple projections only project textures on the world, aligning themselves with the shape and orientation of the brush. Keep in mind that this often causes graphical glitches like flickering, especially with high shader detail. If a projection is not simple, it will work similar to a flashlight, projecting and distorting the texture as if it were from a light source. The last argument is the FarZ keyvalue of the entity. This sets the furthest point that the projection can reach.
 
-Every argument is optional. This is in case you need to create an `env_projectedtexture` for later use.
+Every argument is optional. This is in case you need to create an `env_projectedtexture` for later use. Keep in mind that while Portal 2 claims to only support one projected texture at a time, a workaround exists. Since the game only checks for existing projected textures when one recieves a `TurnOn` or `TurnOff` input, multiple can be active as long as they never recieve such an input. One way to do this is by creating a new entity every timez` you wish to turn on the texture, then deleting it to turn it off.
 
 Here is an example of using `ppmod.texture` to project a laser grid on the floor at the end of `sp_a1_intro3` using the simple projection mode:
 
@@ -289,4 +291,4 @@ Creates an `infodecal` entity for applying decals and textures on to the world, 
   ppmod.decal (texture, position, angles = Vector(90))
 ```
 
-The arguments are similar to those of `ppmod.texture`, except that texture and position are no longer optional. The benefits of using decals instead of simple projected textures are that they're
+The arguments are similar to those of `ppmod.texture`, except that texture and position are no longer optional. The benefits of using decals instead of simple projected textures are that decals cause fewer graphical glitches and stutters (as long as cvar `gpu_level` is under 2) and you can control the position of decals better. The main drawbacks are that decals cannot be moved, removed, or resized.
