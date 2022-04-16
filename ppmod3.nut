@@ -1,6 +1,6 @@
 if(!("ppmod" in this)) {
   ::ppmod <- {};
-	ppmod.scrq <- {};
+  ppmod.scrq <- {};
   ::min <- function(a, b) {if(a > b) return b; return a}
   ::max <- function(a, b) {if(a < b) return b; return a}
   ::round <- function(a) return floor(a + 0.5);
@@ -37,7 +37,7 @@ ppmod.keyval <- function(ent, key, val) {
   } else switch (typeof val) {
     case "integer":
     case "bool":
-      ent.__KeyValueFromInt(key, val);
+      ent.__KeyValueFromInt(key, val.tointeger());
       break;
     case "float":
       ent.__KeyValueFromFloat(key, val);
@@ -56,13 +56,15 @@ ppmod.keyval <- function(ent, key, val) {
 
 ppmod.wait <- function(scr, sec) {
   local relay = Entities.CreateByClassname("logic_relay");
-	ppmod.addscript(relay, "OnTrigger", scr);
+  ppmod.addscript(relay, "OnTrigger", scr);
   ppmod.fire(relay, "Trigger", "", sec);
   ppmod.keyval(relay, "SpawnFlags", 1);
   return relay;
 }
 
-ppmod.interval <- function(scr, sec = 0, name = "") {
+ppmod.interval <- function(scr, sec = 0, name = null) {
+  if(!name) name = scr.tostring();
+  if(Entities.FindByName(null, name)) return;
   local timer = Entities.CreateByClassname("logic_timer");
   ppmod.keyval(timer, "Targetname", name);
   ppmod.fire(timer, "RefireTime", sec);
@@ -76,7 +78,7 @@ ppmod.once <- function(scr, name = null) {
   if(Entities.FindByName(null, name)) return;
   local relay = Entities.CreateByClassname("logic_relay");
   ppmod.keyval(relay, "Targetname", name);
-	ppmod.addscript(relay, "OnTrigger", scr);
+  ppmod.addscript(relay, "OnTrigger", scr);
   ppmod.fire(relay, "Trigger");
   return relay;
 }
@@ -129,7 +131,7 @@ ppmod.player <- {
     ppmod.fire(eyes, "SetMeasureTarget", "!player");
     ppmod.fire(eyes, "Enable");
     eyes_vec <- function() {
-      local ang = (eyes.GetAngles()) * (PI / 180);
+      local ang = eyes.GetAngles() * (PI / 180);
       return Vector(cos(ang.y) * cos(ang.x), sin(ang.y) * cos(ang.x), -sin(ang.x));
     }
     landrl <- Entities.CreateByClassname("logic_relay");
@@ -169,7 +171,7 @@ ppmod.texture <- function(tex = "", pos = Vector(), ang = Vector(90), simple = 1
   return texture;
 }
 
-ppmod.decal <- function(tex = "", pos = Vector(), ang = Vector(90)) {
+ppmod.decal <- function(tex, pos, ang = Vector(90)) {
   local decal = Entities.CreateByClassname("infodecal");
   decal.SetOrigin(pos);
   decal.SetAngles(ang.x, ang.y, ang.z);
@@ -184,7 +186,7 @@ ppmod.create <- function(cmd, func, key = null) {
     case "ent_create_portal": key = "cube"; break;
     case "ent_create_paint_": key = "prop_paint_bomb"; break;
     default:
-      if(cmd.find(" ")) key = cmd.slice(cmd.find(" ")+1);
+      if(cmd.find(" ")) key = cmd.slice(cmd.find(" ")+1;
       else if(cmd.slice(-4) == ".mdl") key = cmd, cmd = "prop_dynamic_create " + cmd;
       else key = cmd, cmd = "ent_create " + cmd;
   }
