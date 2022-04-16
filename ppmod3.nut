@@ -186,7 +186,7 @@ ppmod.create <- function(cmd, func, key = null) {
     case "ent_create_portal": key = "cube"; break;
     case "ent_create_paint_": key = "prop_paint_bomb"; break;
     default:
-      if(cmd.find(" ")) key = cmd.slice(cmd.find(" ")+1;
+      if(cmd.find(" ")) key = cmd.slice(cmd.find(" ")+1);
       else if(cmd.slice(-4) == ".mdl") key = cmd, cmd = "prop_dynamic_create " + cmd;
       else key = cmd, cmd = "ent_create " + cmd;
   }
