@@ -26,8 +26,9 @@ ppmod.scrq_add <- function(scr) {
   return { id = qid, name = "ppmod.scrq[\"" + qid + "\"]" };
 }
 
-ppmod.addscript <- function(ent, output, scr, delay = 0, max = -1) {
+ppmod.addscript <- function(ent, output, scr, delay = 0, max = -1, del = false) {
   if(typeof scr == "function") scr = ppmod.scrq_add(scr).name + "()";
+  if(del) scr = "(delete " + scr.slice(0, -2) + ")()";
   ppmod.addoutput(ent, output, "!self", "RunScriptCode", scr, delay, max);
 }
 
@@ -56,7 +57,7 @@ ppmod.keyval <- function(ent, key, val) {
 
 ppmod.wait <- function(scr, sec) {
   local relay = Entities.CreateByClassname("logic_relay");
-  ppmod.addscript(relay, "OnTrigger", scr);
+  ppmod.addscript(relay, "OnTrigger", scr, 0, -1, true);
   ppmod.fire(relay, "Trigger", "", sec);
   ppmod.keyval(relay, "SpawnFlags", 1);
   return relay;
@@ -78,7 +79,7 @@ ppmod.once <- function(scr, name = null) {
   if(Entities.FindByName(null, name)) return;
   local relay = Entities.CreateByClassname("logic_relay");
   ppmod.keyval(relay, "Targetname", name);
-  ppmod.addscript(relay, "OnTrigger", scr);
+  ppmod.addscript(relay, "OnTrigger", scr, 0, -1, true);
   ppmod.fire(relay, "Trigger");
   return relay;
 }
@@ -194,8 +195,7 @@ ppmod.create <- function(cmd, func, key = null) {
   if(key.slice(-4) == ".mdl") key = "models/" + key;
   local getstr = "ppmod.prev(\"" + key + "\")";
   local qstr = scrq_add(func).name;
-  SendToConsole("script " + qstr + "(" + getstr + ")");
-  SendToConsole("script delete " + qstr);
+  SendToConsole("script (delete " + qstr + ")(" + getstr + ")");
 }
 
 ppmod.text <- function(text, x = -1, y = -1, func = function(e){}) {
