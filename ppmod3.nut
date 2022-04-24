@@ -1,6 +1,6 @@
 if(!("ppmod" in this)) {
   ::ppmod <- {};
-  ppmod.scrq <- {};
+	ppmod.scrq <- {};
   ::min <- function(a, b) {if(a > b) return b; return a}
   ::max <- function(a, b) {if(a < b) return b; return a}
   ::round <- function(a) return floor(a + 0.5);
@@ -26,9 +26,8 @@ ppmod.scrq_add <- function(scr) {
   return { id = qid, name = "ppmod.scrq[\"" + qid + "\"]" };
 }
 
-ppmod.addscript <- function(ent, output, scr, delay = 0, max = -1, del = false) {
+ppmod.addscript <- function(ent, output, scr, delay = 0, max = -1) {
   if(typeof scr == "function") scr = ppmod.scrq_add(scr).name + "()";
-  if(del) scr = "(delete " + scr.slice(0, -2) + ")()";
   ppmod.addoutput(ent, output, "!self", "RunScriptCode", scr, delay, max);
 }
 
@@ -57,7 +56,7 @@ ppmod.keyval <- function(ent, key, val) {
 
 ppmod.wait <- function(scr, sec) {
   local relay = Entities.CreateByClassname("logic_relay");
-  ppmod.addscript(relay, "OnTrigger", scr, 0, -1, true);
+	ppmod.addscript(relay, "OnTrigger", scr);
   ppmod.fire(relay, "Trigger", "", sec);
   ppmod.keyval(relay, "SpawnFlags", 1);
   return relay;
@@ -79,7 +78,7 @@ ppmod.once <- function(scr, name = null) {
   if(Entities.FindByName(null, name)) return;
   local relay = Entities.CreateByClassname("logic_relay");
   ppmod.keyval(relay, "Targetname", name);
-  ppmod.addscript(relay, "OnTrigger", scr, 0, -1, true);
+	ppmod.addscript(relay, "OnTrigger", scr);
   ppmod.fire(relay, "Trigger");
   return relay;
 }
@@ -195,19 +194,45 @@ ppmod.create <- function(cmd, func, key = null) {
   if(key.slice(-4) == ".mdl") key = "models/" + key;
   local getstr = "ppmod.prev(\"" + key + "\")";
   local qstr = scrq_add(func).name;
-  SendToConsole("script (delete " + qstr + ")(" + getstr + ")");
+  SendToConsole("script " + qstr + "(" + getstr + ")");
+  SendToConsole("script delete " + qstr);
 }
 
-ppmod.text <- function(text, x = -1, y = -1, func = function(e){}) {
-  ppmod.create("game_text", function(ent, text = text, x = x, y = y, func = func) {
-    ppmod.keyval(ent, "Message", text);
-    ppmod.keyval(ent, "X", x);
-    ppmod.keyval(ent, "Y", y);
-    ppmod.keyval(ent, "Effect", 0);
-    ppmod.keyval(ent, "Color", "255 255 255");
-    ppmod.keyval(ent, "HoldTime", FrameTime());
-    ppmod.keyval(ent, "Channel", 5);
-    func(ent);
-    ppmod.fire(ent, "Display");
+
+ppmod.text <- function(func) {
+  ppmod.create("game_text", function(ent, func = func) {
+    func({
+
+      GetEntity = function(ent = ent) { return ent },
+      SetPosition = function(x, y, ent = ent) {
+        ppmod.keyval(ent, "X", x);
+        ppmod.keyval(ent, "Y", y);
+      },
+      SetText = function(text, ent = ent) {
+        ppmod.keyval(ent, "Message", text);
+      },
+      SetColor = function(c1, c2 = null, ent = ent) {
+        ppmod.keyval(ent, "Color", c1);
+        if(c2) ppmod.keyval(ent, "Color2", c2, ent = ent);
+      },
+      SetFade = function(fin, fout, fx, ent = ent) {
+        ppmod.keyval(ent, "FadeIn", fin);
+        ppmod.keyval(ent, "FadeOut", fout);
+        if(fx) ppmod.keyval(ent, "FXTime", fx);
+      },
+      SetEffect = function(fx, ent = ent) {
+        ppmod.keyval(ent, "Effect", fx);
+      },
+      SetChannel = function(ch, ent = ent) {
+        ppmod.keyval(ent, "Channel", ch);
+      },
+      Display = function(hold, player = null, ent = ent) {
+        ppmod.keyval(ent, "HoldTime", hold);
+        if(player) ppmod.keyval(ent, "SpawnFlags", 0);
+        else ppmod.keyval(ent, "SpawnFlags", 1);
+        ppmod.fire(ent, "Display", "", 0, player);
+      }
+
+    });
   });
 }
