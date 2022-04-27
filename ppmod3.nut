@@ -138,10 +138,10 @@ ppmod.player <- {
     landrl <- Entities.CreateByClassname("logic_relay");
     ppmod.player.surface();
   }
-  jump = function(str) { ppmod.addscript(proxy, "OnJump", str) }
-  land = function(str) { ppmod.addscript(landrl, "OnTrigger", str) }
-  duck = function(str) { ppmod.addscript(proxy, "OnDuck", str) }
-  unduck = function(str) { ppmod.addscript(proxy, "OnUnDuck", str) }
+  jump = function(scr) { ppmod.addscript(proxy, "OnJump", scr) }
+  land = function(scr) { ppmod.addscript(landrl, "OnTrigger", scr) }
+  duck = function(scr) { ppmod.addscript(proxy, "OnDuck", scr) }
+  unduck = function(scr) { ppmod.addscript(proxy, "OnUnDuck", scr) }
 }
 
 ppmod.brush <- function(pos, size, type = "func_brush", ang = Vector()) {
@@ -210,20 +210,19 @@ ppmod.text <- function(func) {
       SetText = function(text, ent = ent) {
         ppmod.keyval(ent, "Message", text);
       },
-      SetColor = function(c1, c2 = null, ent = ent) {
-        ppmod.keyval(ent, "Color", c1);
-        if(c2) ppmod.keyval(ent, "Color2", c2, ent = ent);
-      },
-      SetFade = function(fin, fout, fx, ent = ent) {
-        ppmod.keyval(ent, "FadeIn", fin);
-        ppmod.keyval(ent, "FadeOut", fout);
-        if(fx) ppmod.keyval(ent, "FXTime", fx);
-      },
-      SetEffect = function(fx, ent = ent) {
-        ppmod.keyval(ent, "Effect", fx);
-      },
       SetChannel = function(ch, ent = ent) {
         ppmod.keyval(ent, "Channel", ch);
+      },
+      SetColor = function(c1, c2 = null, ent = ent) {
+        ppmod.keyval(ent, "Color", c1);
+        if(c2) ppmod.keyval(ent, "Color2", c2);
+      },
+      SetFade = function(fin, fout, fx = false, ent = ent) {
+        ppmod.keyval(ent, "FadeIn", fin);
+        ppmod.keyval(ent, "FXTime", fin);
+        ppmod.keyval(ent, "FadeOut", fout);
+        if(fx) ppmod.keyval(ent, "Effect", 2);
+        else ppmod.keyval(ent, "Effect", 0);
       },
       Display = function(hold, player = null, ent = ent) {
         ppmod.keyval(ent, "HoldTime", hold);
