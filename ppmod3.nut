@@ -198,6 +198,17 @@ ppmod.create <- function(cmd, func, key = null) {
   SendToConsole("script (delete " + qstr + ")(" + getstr + ")");
 }
 
+ppmod.equip <- function(key, func) {
+  local player = Entities.FindByClassname(null, "player");
+  local equip = Entities.CreateByClassname("game_player_equip");
+  ppmod.keyval(equip, key, 1);
+  ppmod.fire(equip, "Use", "", 0, player);
+  local getstr = ")(ppmod.prev(\"" + key + "\"))";
+  local script = "(delete " + scrq_add(func).name + getstr;
+  ppmod.fire(equip, "RunScriptCode", script);
+  ppmod.fire(equip, "Kill");
+}
+
 ppmod.text <- function(func) {
   ppmod.create("game_text", function(ent, func = func) {
     func({
