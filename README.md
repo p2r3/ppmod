@@ -292,3 +292,36 @@ Creates an `infodecal` entity for applying decals and textures on to the world, 
 ```
 
 The arguments are similar to those of `ppmod.texture`, except that texture and position are no longer optional. The benefits of using decals instead of simple projected textures are that decals cause fewer graphical glitches and stutters (as long as cvar `gpu_level` is under 2) and you can control the position of decals better. The main drawbacks are that decals cannot be moved, removed, or resized.
+
+### ppmod.text
+
+Creates a `game_text` entity for basic on-screen text and UI, provides functions for managing this entity.
+
+```
+  ppmod.text (function)
+```
+
+The first argument is the function to call after this entity has been created. This function is passed a table of functions for managing the entity as the first argument:
+
+- `GetEntity ()` returns a handle to the `game_text` entity.
+- `SetPosition (x, y)` sets the position at which the text should appear. -1 centers the text.
+- `SetText (string)` sets the string of text to display. Supports localized strings and the `\n` newline character.
+- `SetChannel (channel)` sets the text channel. This controls the text size and replaces existing text on the same channel.
+- `SetColor (color1, color2 = null)` sets the foreground and background text colors, respectively.
+- `SetFade (fadein, fadeout, scan = false)` sets the time it takes for the text to appear or disappear in seconds, respectively. If the third argument is `true`, the text will appear letter by letter instead of fading in.
+- `Display (hold, player = null)` displays the text. The first argument is the time it should stay on-screen after fading in, in seconds. The second argument specifies a player to display the text for. Setting this to `null` displays it to everyone.
+
+These functions primarily set keyvalues or fire inputs to the entity. Here is an example of displaying the text "Hello World" centered and with the scan-in effect:
+
+```
+  ppmod.text(function(txt) {
+  
+    txt.SetText("Hello World!");
+    txt.SetPosition(-1, -1);
+    txt.SetChannel(1);
+    txt.SetColor("40 170 215", "255 154 0");
+    txt.SetFade(0.1, 2, true);
+    txt.Display(3);
+  
+  });
+```
