@@ -198,8 +198,8 @@ ppmod.create <- function(cmd, func, key = null) {
   SendToConsole("script (delete " + qstr + ")(" + getstr + ")");
 }
 
-ppmod.equip <- function(key, func) {
-  local player = Entities.FindByClassname(null, "player");
+ppmod.give <- function(key, func, player = null) {
+  if(!player) player = Entities.FindByClassname(null, "player");
   local equip = Entities.CreateByClassname("game_player_equip");
   ppmod.keyval(equip, key, 1);
   ppmod.fire(equip, "Use", "", 0, player);
@@ -210,7 +210,7 @@ ppmod.equip <- function(key, func) {
 }
 
 ppmod.text <- function(func) {
-  ppmod.create("game_text", function(ent, func = func) {
+  ppmod.give("game_text", function(ent, func = func) {
     func({
 
       GetEntity = function(ent = ent) { return ent },
