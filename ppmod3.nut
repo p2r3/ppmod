@@ -27,8 +27,9 @@ ppmod.scrq_add <- function(scr) {
 }
 
 ppmod.addscript <- function(ent, output, scr, delay = 0, max = -1, del = false) {
-  if(typeof scr == "function") scr = ppmod.scrq_add(scr).name + "()";
-  if(del) scr = "(delete " + scr.slice(0, -2) + ")()";
+  if(typeof scr == "function")
+    if(!del) scr = ppmod.scrq_add(scr).name + "()";
+    else scr = "(delete " + ppmod.scrq_add(scr).name + ")()";
   ppmod.addoutput(ent, output, "!self", "RunScriptCode", scr, delay, max);
 }
 
