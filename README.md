@@ -136,6 +136,7 @@ Provides more information about the player, as well as new ways of listening to 
     land     (script)
     duck     (script)
     unduck   (script)
+    input    (string, script)
   }
 ```
 
@@ -196,6 +197,21 @@ Set of functions for adding scripts to player movement actions. Accepts one argu
 - `ppmod.player.land` triggers when the player changes the surface they're standing on. This will trigger when landing from previously being in air, or when walking from, for example, a concrete surface to a metal one.
 - `ppmod.player.duck` triggers when the player begins crouching. This will not fire if the player is unable to crouch, for example, when in the air following a jump.
 - `ppmod.player.unduck` triggers when the player begins to uncrouch. This will fire regardless of how crouched the player was before beginning to stand up.
+
+#### ppmod.player.input
+
+Function for adding scripts to player inputs as returned by the `game_ui` entity. The first argument is the input to listen for as seen in the developer console (e.g. "+forward"). The second argument is the script to attach to this input.
+
+```
+  ppmod.player.enable();
+  
+  ppmod.wait(function() {
+  
+    ppmod.player.input("+attack", "printl(\"Started shooting\")");
+    ppmod.player.input("-attack", "printl(\"Stopped shooting\")");
+    
+  }, FrameTime() * 2);
+```
 
 ### ppmod.create
 
@@ -298,30 +314,26 @@ The arguments are similar to those of `ppmod.texture`, except that texture and p
 Creates a `game_text` entity for basic on-screen text and UI, provides functions for managing this entity.
 
 ```
-  ppmod.text (function)
+  ppmod.text (text = "", x = -1, y = -1)
 ```
 
-The first argument is the function to call after this entity has been created. This function is passed a table of functions for managing the entity as the first argument:
+The first argument is the text to display. The second and third argument set the X and Y position of the text, respectively. Setting these to -1 centers the text. Returns a table of functions for managing the entity:
 
 - `GetEntity ()` returns a handle to the `game_text` entity.
 - `SetPosition (x, y)` sets the position at which the text should appear. -1 centers the text.
 - `SetText (string)` sets the string of text to display. Supports localized strings and the `\n` newline character.
-- `SetChannel (channel)` sets the text channel. This controls the text size and replaces existing text on the same channel.
+- `SetChannel (channel)` sets the text channel. An integer from 0 to 5. This controls the text size and replaces existing text on the same channel.
 - `SetColor (color1, color2 = null)` sets the foreground and background text colors, respectively.
 - `SetFade (fadein, fadeout, scan = false)` sets the time it takes for the text to appear or disappear in seconds, respectively. If the third argument is `true`, the text will appear letter by letter instead of fading in.
-- `Display (hold, player = null)` displays the text. The first argument is the time it should stay on-screen after fading in, in seconds. The second argument specifies a player to display the text for. Setting this to `null` displays it to everyone.
+- `Display (hold = null, player = null)` displays the text. The first argument is the time it should stay on-screen after fading in, in seconds. Setting this to `null` uses the output of `FrameTime()`. The second argument specifies a player to display the text for. Setting this to `null` displays it to everyone.
 
-These functions primarily set keyvalues or fire inputs to the entity. Here is an example of displaying the text "Hello World" centered and with the scan-in effect:
+These functions set keyvalues or fire inputs to the entity. Here is an example of displaying the text "Hello World" centered and with the scan-in effect:
 
 ```
-  ppmod.text(function(txt) {
+  local txt = ppmod.text("Hello World!");
   
-    txt.SetText("Hello World!");
-    txt.SetPosition(-1, -1);
-    txt.SetChannel(1);
-    txt.SetColor("40 170 215", "255 154 0");
-    txt.SetFade(0.1, 2, true);
-    txt.Display(3);
-  
-  });
+  txt.SetColor("40 170 215", "255 154 0");
+  txt.SetFade(0.1, 2, true);
+  txt.Display(3);
+    
 ```
