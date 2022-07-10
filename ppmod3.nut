@@ -13,10 +13,10 @@ ppmod.fire <- function(ent, action = "Use", value = "", delay = 0, activator = n
 
 ppmod.addoutput <- function(ent, output, target, input = "Use", value = "", delay = 0, max = -1) {
   if(typeof target == "instance") {
-    if(!target.GetName().len()) ppmod.keyval(target, "Targetname", UniqueString("noname"));
+    if(!target.GetName().len()) target.__KeyValueFromString("Targetname", UniqueString("noname"));
     target = target.GetName();
   }
-  ppmod.fire(ent, "AddOutput", output+" "+target+":"+input+":"+value+":"+delay+":"+max);
+  ent.__KeyValueFromString(output, target+"\x1B"+input+"\x1B"+value+"\x1B"+delay+"\x1B"+max);
 }
 
 ppmod.scrq_add <- function(scr) {
@@ -155,7 +155,8 @@ ppmod.player <- {
 }
 
 ppmod.brush <- function(pos, size, type = "func_brush", ang = Vector()) {
-  local brush = Entities.CreateByClassname(type);
+  local brush = type;
+  if(typeof type == "string") brush = Entities.CreateByClassname(type);
   brush.SetOrigin(pos);
   brush.SetAngles(ang.x, ang.y, ang.z);
   brush.SetSize(Vector() - size, size);
@@ -164,7 +165,8 @@ ppmod.brush <- function(pos, size, type = "func_brush", ang = Vector()) {
 }
 
 ppmod.trigger <- function(pos, size, type = "once", ang = Vector()) {
-  local trigger = ppmod.brush(pos, size, "trigger_"+type, ang);
+  if(typeof type == "string") type = "trigger_" + type;
+  local trigger = ppmod.brush(pos, size, type, ang);
   ppmod.keyval(trigger, "CollisionGroup", 1);
   ppmod.keyval(trigger, "SpawnFlags", 1);
   if(type == "once") ppmod.addoutput(trigger, "OnStartTouch", "!self", "Kill");
@@ -208,8 +210,18 @@ ppmod.create <- function(cmd, func, key = null) {
   SendToConsole("script (delete " + qstr + ")(" + getstr + ")");
 }
 
-ppmod.give <- function(key, func, player = null) {
-  if(!player) player = Entities.FindByClassname(null, "player");
+ppmod.give <- function(key, func, pos = null) {
+  if(pos) return ppmod.give("npc_maker", function(e, k = key, f = func, p = pos) {
+    e.SetAbsOrigin(p);
+    ppmod.keyval(e, "NPCType", k);
+    k = UniqueString("ppmod_give");
+    ppmod.keyval(e, "NPCTargetname", k);
+    local getstr = ")(ppmod.get(\"" + k + "\"))";
+    local script = "(delete " + ppmod.scrq_add(f).name + getstr;
+    ppmod.addoutput(e, "OnSpawnNPC", k, "RunScriptCode", script);
+    ppmod.addoutput(e, "OnSpawnNPC", "!self", "Kill");
+  });
+  local player = Entities.FindByClassname(null, "player");
   local equip = Entities.CreateByClassname("game_player_equip");
   ppmod.keyval(equip, key, 1);
   ppmod.fire(equip, "Use", "", 0, player);
