@@ -11,12 +11,33 @@ ppmod.fire <- function(ent, action = "Use", value = "", delay = 0, activator = n
   else EntFireByHandle(ent, action, value.tostring(), delay, activator, caller);
 }
 
+ppmod.keyval <- function(ent, key, val) {
+  if(typeof ent == "string") {
+    for(local curr = 1; curr; curr = ppmod.get(ent, curr)) {
+      ppmod.keyval(curr, key, val);
+    }
+  } else switch (typeof val) {
+    case "integer":
+    case "bool":
+      ent.__KeyValueFromInt(key, val.tointeger());
+      break;
+    case "float":
+      ent.__KeyValueFromFloat(key, val);
+      break;
+    case "Vector":
+      ent.__KeyValueFromVector(key, val);
+      break;
+    default:
+      ent.__KeyValueFromString(key, val.tostring());
+  }
+}
+
 ppmod.addoutput <- function(ent, output, target, input = "Use", value = "", delay = 0, max = -1) {
   if(typeof target == "instance") {
     if(!target.GetName().len()) target.__KeyValueFromString("Targetname", UniqueString("noname"));
     target = target.GetName();
   }
-  ent.__KeyValueFromString(output, target+"\x1B"+input+"\x1B"+value+"\x1B"+delay+"\x1B"+max);
+  ppmod.keyval(ent, output, target+"\x1B"+input+"\x1B"+value+"\x1B"+delay+"\x1B"+max);
 }
 
 ppmod.scrq_add <- function(scr) {
@@ -31,26 +52,6 @@ ppmod.addscript <- function(ent, output, scr = "", delay = 0, max = -1, del = fa
     if(!del) scr = ppmod.scrq_add(scr).name + "()";
     else scr = "(delete " + ppmod.scrq_add(scr).name + ")()";
   ppmod.addoutput(ent, output, "!self", "RunScriptCode", scr, delay, max);
-}
-
-ppmod.keyval <- function(ent, key, val) {
-  if(typeof val == "bool") val = val.tointeger();
-  if(typeof ent == "string") {
-    EntFire(ent, "AddOutput", key + " " + val);
-  } else switch (typeof val) {
-    case "integer":
-      ent.__KeyValueFromInt(key, val);
-      break;
-    case "float":
-      ent.__KeyValueFromFloat(key, val);
-      break;
-    case "Vector":
-      ent.__KeyValueFromVector(key, val);
-      break;
-    default:
-      ent.__KeyValueFromString(key, val.tostring());
-      break;
-  }
 }
 
 ppmod.wait <- function(scr, sec, name = null) {
