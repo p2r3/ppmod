@@ -13,7 +13,7 @@ ppmod.fire <- function(ent, action = "Use", value = "", delay = 0, activator = n
 
 ppmod.keyval <- function(ent, key, val) {
   if(typeof ent == "string") {
-    for(local curr = 1; curr; curr = ppmod.get(ent, curr)) {
+    for(local curr = ppmod.get(ent); curr; curr = ppmod.get(ent, curr)) {
       ppmod.keyval(curr, key, val);
     }
   } else switch (typeof val) {
