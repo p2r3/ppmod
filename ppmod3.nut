@@ -270,3 +270,106 @@ ppmod.text <- function(text = "", x = -1, y = -1) {
     }
   };
 }
+
+ppmod.ray <- function(start, end, ent, world = true, ray = null) {
+
+  if(!ent) if(world) return TraceLine(start, end, null);
+  else return 1.0;
+
+  local len, div;
+  if(!ray) {
+    local dir = end - start;
+    len = dir.Norm();
+    div = [1.0 / dir.x, 1.0 / dir.y, 1.0 / dir.z];
+  } else {
+    len = ray[0];
+    div = ray[1];
+  }
+
+  if(typeof ent == "array") {
+    local lowest = 1.0;
+    for(local i = 0; i < ent.len(); i++) {
+      local curr = ppmod.ray(start, end, ent[i], false, [len, div]);
+      if(curr < lowest) lowest = curr;
+    }
+    if(world) return min(lowest, TraceLine(start, end, null));
+    return lowest;
+  } else if(typeof ent == "string") {
+    local lowest = 1.0;
+    for(local i = ppmod.get(ent); i; i = ppmod.get(ent, i)) {
+      local curr = ppmod.ray(start, end, i, false, [len, div]);
+      if(curr < lowest) lowest = curr;
+    }
+    if(world) return min(lowest, TraceLine(start, end, null));
+    return lowest;
+  }
+
+  local pos = ent.GetOrigin();
+  local ang = ent.GetAngles() * (PI / 180);
+
+  local c1 = cos(ang.z);
+  local s1 = sin(ang.z);
+  local c2 = cos(ang.x);
+  local s2 = sin(ang.x);
+  local c3 = cos(ang.y);
+  local s3 = sin(ang.y);
+
+  local matrix = [
+    [c2 * c3, c3 * s1 * s2 - c1 * s3, s1 * s3 + c1 * c3 * s2],
+    [c2 * s3, c1 * c3 + s1 * s2 * s3, c1 * s2 * s3 - c3 * s1],
+    [-s2, c2 * s1, c1 * c2]
+  ];
+
+  local mins = ent.GetBoundingMins();
+  local maxs = ent.GetBoundingMaxs();
+  mins = [mins.x, mins.y, mins.z];
+  maxs = [maxs.x, maxs.y, maxs.z];
+
+  local bmin = [pos.x, pos.y, pos.z];
+  local bmax = [pos.x, pos.y, pos.z];
+  local a, b;
+
+  for(local i = 0; i < 3; i++) {
+    for(local j = 0; j < 3; j++) {
+      a = (matrix[i][j] * mins[j]);
+      b = (matrix[i][j] * maxs[j]);
+      if(a < b) {
+        bmin[i] += a;
+        bmax[i] += b;
+      } else {
+        bmin[i] += b;
+        bmax[i] += a;
+      }
+    }
+  }
+
+  if (
+    start.x > bmin[0] && start.x < bmax[0] &&
+    start.y > bmin[1] && start.y < bmax[1] &&
+    start.z > bmin[2] && start.z < bmax[2]
+  ) return 0;
+
+  start = [start.x, start.y, start.z];
+
+  local tmin = [0.0, 0.0, 0.0];
+  local tmax = [0.0, 0.0, 0.0];
+
+  for(local i = 0; i < 3; i++) {
+    if(div[i] >= 0) {
+      tmin[i] = (bmin[i] - start[i]) * div[i];
+      tmax[i] = (bmax[i] - start[i]) * div[i];
+    } else {
+      tmin[i] = (bmax[i] - start[i]) * div[i];
+      tmax[i] = (bmin[i] - start[i]) * div[i];
+    }
+    if((tmin[0] > tmax[i]) || (tmin[i] > tmax[0])) return 1.0;
+    if(tmin[i] > tmin[0]) tmin[0] = tmin[i];
+    if(tmax[i] < tmax[0]) tmax[0] = tmax[i];
+  }
+
+  if(tmin[0] < 0) tmin[0] = 1.0;
+  else tmin[0] /= len;
+  if(world) return min(tmin[0], TraceLine(start, end, null));
+  return tmin[0];
+
+}
