@@ -129,7 +129,7 @@ Provides more information about the player, as well as new ways of listening to 
 
 ```
   ppmod.player {
-    enable   ()
+    enable   (function)
     eyes
     eyes_vec ()
     jump     (script)
@@ -142,22 +142,19 @@ Provides more information about the player, as well as new ways of listening to 
 
 #### ppmod.player.enable
 
-Calling this function creates the entities required for other `ppmod.player` functions to work. Please note that, in most cases, this is performed asynchronously. It might take an extra tick to enable all functions. Accepts no arguments. Calling this function more than once per map may cause unexpected behavior.
+Calling this function creates the entities required for other `ppmod.player` functions to work. Please note that, in most cases, this is performed asynchronously. Therefore a callback function may be provided as the only argument. Be aware that calling this function more than once per map may cause unexpected behavior.
 
 #### ppmod.player.eyes
 
 Entity handle for a `logic_measure_movement` entity set to track the player's eyes. Using methods like `GetAngles` or `GetOrigin` lets you retrieve the player's eye angles and position.
 
 ```
-  ppmod.player.enable();
-  
-  // Waiting for two ticks to ensure that the entities have been created
-  ppmod.wait(function() {
+  ppmod.player.enable(function() {
   
     printl( ppmod.player.eyes.GetAngles() );
     printl( ppmod.player.eyes.GetOrigin() );
     
-  }, FrameTime() * 2);
+  });
 ```
 
 However, for getting the position, it is suggested to use the native `CBaseEntity` method `EyePosition()` instead, as the position of `ppmod.eyes` might not always be accurate.
@@ -167,27 +164,24 @@ However, for getting the position, it is suggested to use the native `CBaseEntit
 Returns a normalized vector pointing in the direction that the player is looking in. Accepts no arguments.
 
 ```
-  ppmod.player.enable();
-  
-  ppmod.wait("printl( ppmod.player.eyes_vec() )", FrameTime() * 2);
+  ppmod.player.enable(function() {
+    printl( ppmod.player.eyes_vec() );
+  });
 ```
 
-When combined with `TraceLine`, for example, this vector can be used for things like simulating weapon hitscan:
+When combined with `ppmod.ray`, for example, this vector can be used for things like simulating weapon hitscan:
 
 ```
-  ppmod.player.enable();
+  ppmod.player.enable(function() {
 
-  ppmod.wait(function() {
-
-    
     local dist = 2048;
     local start = ppmod.player.eyes.GetOrigin();
     local vec = ppmod.player.eyes_vec() * dist;
 
-    local frac = TraceLine(start, start + vec, GetPlayer());
+    local frac = ppmod.ray(start, start + vec, GetPlayer());
     printl( "Hit point: " + ( start + vec * frac ) );
 
-  }, FrameTime() * 2);
+  });
 ```
 
 #### ppmod.player.[jump, land, duck, unduck]
@@ -203,14 +197,12 @@ Set of functions for adding scripts to player movement actions. Accepts one argu
 Function for adding scripts to player inputs as returned by the `game_ui` entity. The first argument is the input to listen for as seen in the developer console (e.g. "+forward"). The second argument is the script to attach to this input.
 
 ```
-  ppmod.player.enable();
-  
-  ppmod.wait(function() {
+  ppmod.player.enable(function() {
   
     ppmod.player.input("+attack", "printl(\"Started shooting\")");
     ppmod.player.input("-attack", "printl(\"Stopped shooting\")");
     
-  }, FrameTime() * 2);
+  });
 ```
 
 ### ppmod.create
@@ -336,4 +328,37 @@ These functions set keyvalues or fire inputs to the entity. Here is an example o
   txt.SetFade(0.1, 2, true);
   txt.Display(3);
     
+```
+
+### ppmod.ray
+
+Given two points of a ray and one or more entities, returns a fraction along the ray that collides with the axis-aligned bounding boxes of the given entities and, optionally, world brushes and static models.
+
+```
+  ppmod.ray (start, end, entities = null, world = true)
+```
+
+The first two arguments are Vectors containing the start and end points of the ray, respectively. The third argument denotes the entities whose bounding boxes will be checked for collisions. This can be either an entity handle, a string (as used with `ppmod.get`) or an array of either. If an entity is not given, or the value is `null`, collision with entity bounding boxes will not be checked. The fourth argument is a boolean value. If set to true as it is by default, world brushes and static models will also be checked for collisions.
+
+The returned value is a float, representing a fraction of the ray between the starting point and the collision nearest to it. If the ray did not collide with anything, the function will return `1.0`. If the starting point of the ray is inside one the solids, the function will return `0`. Getting the point of intersection can be done by adding the starting point to the multiplication between the total ray length and the returned fraction. In code, this might be `local point = start + (end - start).Length() * ppmod.ray(start, end, ...)`.
+
+Optimization note: The function accepts a fifth argument. This is an array of two elements - the length of the ray and an array representing a vector where each value is 1 divided by the respective coordinate of the normalized ray vector or, in other words, it's direction. These values can be precalculated and used if collision with the same ray is being checked multiple times. This optimization is used internally, and therefore is not necessary if the function is only called once.
+
+Here is an example of using `ppmod.player` and `ppmod.ray` to detect if the player is looking at a cube:
+
+```
+  ppmod.player.enable(function() {
+  
+    local start = ppmod.player.eyes.GetOrigin();
+    local vec = ppmod.player.eyes_vec() * 8196;
+    local end = start + vec;
+    
+    ppmod.interval(function(start = start, end = end) {
+    
+      local frac = ppmod.ray(start, end, "prop_weighted_cube", false);
+      if(frac < 1) printl("Player is looking at a cube!");
+      
+    });
+  
+  });
 ```
