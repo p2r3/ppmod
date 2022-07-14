@@ -271,7 +271,7 @@ ppmod.text <- function(text = "", x = -1, y = -1) {
   };
 }
 
-ppmod.ray <- function(start, end, ent, world = true, ray = null) {
+ppmod.ray <- function(start, end, ent = null, world = true, ray = null) {
 
   if(!ent) if(world) return TraceLine(start, end, null);
   else return 1.0;
