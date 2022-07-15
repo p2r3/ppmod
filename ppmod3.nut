@@ -109,17 +109,6 @@ ppmod.prev <- function(key, ent = null, arg = 1) {
 }
 
 ppmod.player <- {
-  surface = function(e = null) {
-    if(e == null) {
-      EntFire("ppmod_surface", "Kill");
-      ppmod.give("env_player_surface_trigger", ppmod.player.surface);
-    } else {
-      ppmod.fire(ppmod.player.landrl, "Trigger");
-      ppmod.keyval(e, "GameMaterial", 0);
-      ppmod.keyval(e, "Targetname", "ppmod_surface");
-      ppmod.addscript(e, "OnSurfaceChangedFromTarget", "ppmod.player.surface()");
-    }
-  }
   enable = function(func = function(){}) {
     proxy <- Entities.FindByClassname(null, "logic_playerproxy");
     if(!proxy) proxy = Entities.CreateByClassname("logic_playerproxy");
@@ -144,10 +133,21 @@ ppmod.player <- {
     local script = ppmod.scrq_add(func).name;
     ppmod.fire(proxy, "RunScriptCode", "(delete " + script + ")()");
   }
+  surface = function(e = null) {
+    if(e == null) {
+      EntFire("ppmod_surface", "Kill");
+      ppmod.give("env_player_surface_trigger", ppmod.player.surface);
+    } else {
+      ppmod.fire(ppmod.player.landrl, "Trigger");
+      ppmod.keyval(e, "GameMaterial", 0);
+      ppmod.keyval(e, "Targetname", "ppmod_surface");
+      ppmod.addscript(e, "OnSurfaceChangedFromTarget", "ppmod.player.surface()");
+    }
+  }
   holding = function(func) {
     local filter = Entities.CreateByClassname("filter_player_held");
     local relay = Entities.CreateByClassname("logic_relay");
-    local script = ppmod.scrq_add(func).name;
+    local script = "(delete " + ppmod.scrq_add(func).name + ")";
     ppmod.addscript(filter, "OnPass", script + "(true)");
     ppmod.addoutput(filter, "OnPass", "!self", "Kill");
     ppmod.addoutput(relay, "OnUser1", filter, "RunScriptCode", script + "(false)");
