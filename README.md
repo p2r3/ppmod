@@ -38,17 +38,17 @@ More versitile alternative to `ConnectOutput` or `EntFire AddOutput`. Other than
   ppmod.addoutput (entity, output, target, input = "Use", value = "", delay = 0, max = -1)
 ```
 
-Since this function uses ppmod.fire internally, the entity can be specified with a string or handle. Similarly, the target entity can also be a string or handle. However, when provided a handle, it's targetname is used instead. If no targetname is set, one gets randomly generated and applied to the entity. The output is given as a string. The following arguments match their counterparts in `ppmod.fire`, with the exception being max, which sets the total amount of times this output will fire before being exhausted. Setting it to -1 (default) removes this limit.
+Since this function uses ppmod.keyval internally, the entity can be specified with a string or handle. Similarly, the target entity can also be a string or handle. However, when provided a handle, it's targetname is used instead. If no targetname is set, one gets randomly generated and applied to the entity. The output is read as a string. The following arguments match their counterparts in `ppmod.fire`, with the exception being max, which sets the total amount of times this output will fire before being exhausted. Setting it to -1 (default) removes this limit.
 
 ### ppmod.addscript
 
 Similar to `ppmod.addoutput`, used as a cleaner and more powerful way of attaching VScript code to entity outputs.
 
 ```
-  ppmod.addscript (entity, output, script, delay = 0, max = -1)
+  ppmod.addscript (entity, output, script, delay = 0, max = -1, del = false)
 ```
 
-The arguments are almost the same as the ones in `ppmod.addoutput`, except instead of specifying a target entity and input values, a script is required instead. This can be code within either a string or a function. Below is an example of attaching a local function to an entity output:
+The arguments are almost the same as the ones in `ppmod.addoutput`, except instead of specifying a target entity and input values, a script is required instead. This can be code within either a string or a function. An additional boolean argument is supported. If set to true and the script is provided as a function, this will delete the attached function after the output has fired. Below is an example of attaching a local function to an entity output:
 
 ```
   ppmod.addscript("prop_button", "OnPressed", function() {
@@ -58,33 +58,33 @@ The arguments are almost the same as the ones in `ppmod.addoutput`, except inste
 
 ### ppmod.keyval
 
-Shorter, more convenient alternative to `__KeyValueFrom...` functions. Automatically selects the approperiate function for the specified entity and keyvalue type.
+Shorter, more convenient alternative to `__KeyValueFrom...` functions. Automatically selects the approperiate function for the specified entity and keyvalue type. Guaranteed to run synchronously regardless of the input.
 
 ```
   ppmod.keyval (entity, key, value)
 ```
 
-The entity can be provided as a handle or string. However, when provided a string, `EntFire AddOutput` is used for applying the keyvalue. This might cause issues with asynchronous operations, as entity inputs are processed on a different thread. The key is expected to be a string, while the value may be an integer, boolean, float, string or Vector.
+The entity can be provided as a handle or string. The key is expected to be a string, while the value may be an integer, boolean, float, string or Vector.
 
 ### ppmod.wait
 
-Simple way of delaying the execution of a function. Creates a dummy `logic_relay` entity with an attached script. The timing is enforced by a delayed EntFire.
+Simple way of delaying the execution of a function. Creates a dummy `logic_relay` entity with an attached script. The timing is achieved by using a delayed EntFire.
 
 ```
-  ppmod.wait (script, delay)
+  ppmod.wait (script, delay, name = null)
 ```
 
-The first argument is the script to run, either as a string or function. The second argument is the delay in seconds. Returns a handle to the `logic_relay` entity, in case the timer needs to be aborted by destroying this entity. After the script is executed, the `logic_relay` is automatically destroyed.
+The first argument is the script to run, either as a string or function. The second argument is the delay in seconds. The third argument sets the targetname for the `logic_relay` entity. Returns a handle to the `logic_relay` entity, in case the timer needs to be aborted by destroying this entity. After the script is executed, the `logic_relay` is automatically destroyed.
 
 ### ppmod.interval
 
 Runs the specified script in regular intervals. Creates a `logic_timer` entity and configures it to run the script at an interval.
 
 ```
-  ppmod.interval (script, delay = 0, name = "")
+  ppmod.interval (script, delay = 0, name = null)
 ```
 
-The first argument is the script to run, either as a string or function. The second argument is the interval of the loop, in seconds. When set to 0 (default), the function is called once every tick. The third argument sets the targetname for the `logic_timer` entity. This is provided mostly for backwards compatibility and for an alternative way of accessing the timer. Returns a handle to the `logic_timer` entity, which can then be used to stop or modify the loop.
+The first argument is the script to run, either as a string or function. The second argument is the interval of the loop, in seconds. When set to 0 (default), the function is called once every tick. The third argument sets the targetname for the `logic_timer` entity. Returns a handle to the `logic_timer` entity, which can then be used to stop or modify the loop.
 
 ### ppmod.once
 
@@ -132,6 +132,7 @@ Provides more information about the player, as well as new ways of listening to 
     enable   (function)
     eyes
     eyes_vec ()
+    holding  (function)
     jump     (script)
     land     (script)
     duck     (script)
@@ -142,7 +143,7 @@ Provides more information about the player, as well as new ways of listening to 
 
 #### ppmod.player.enable
 
-Calling this function creates the entities required for other `ppmod.player` functions to work. Please note that, in most cases, this is performed asynchronously. Therefore a callback function may be provided as the only argument. Be aware that calling this function more than once per map may cause unexpected behavior.
+Calling this function creates the entities required for most other `ppmod.player` functions to work. Please note that, in most cases, this is performed asynchronously. Therefore a callback function may be provided as the only argument. Be aware that calling this function more than once per map may cause unexpected behavior.
 
 #### ppmod.player.eyes
 
@@ -177,11 +178,27 @@ When combined with `ppmod.ray`, for example, this vector can be used for things 
     local dist = 2048;
     local start = ppmod.player.eyes.GetOrigin();
     local vec = ppmod.player.eyes_vec() * dist;
+    local end = start + vec;
 
-    local frac = ppmod.ray(start, start + vec, GetPlayer());
-    printl( "Hit point: " + ( start + vec * frac ) );
+    local pfrac = ppmod.ray(start, end, "player", false);
+    if (pfrac == 1.0) return;
+    local wfrac = ppmod.ray(start, end);
+    if (pfrac > wfrac) {
+      printl( "Hit player at: " + (start + vec * frac) );
+    }
 
   });
+```
+
+#### ppmod.player.holding
+
+Calls the provided callback function with a boolean argument indicating whether or not the player is holding a prop. Does not require running `ppmod.player.enable`.
+
+```
+  ppmod.player.holding(function(state){
+    if (state) printl( "Player is holding a prop!" );
+    else printl( "Player is not holding a prop!" );
+  }
 ```
 
 #### ppmod.player.[jump, land, duck, unduck]
