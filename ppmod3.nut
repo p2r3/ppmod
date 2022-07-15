@@ -1,10 +1,8 @@
-if(!("ppmod" in this)) {
-  ::ppmod <- {};
-  ppmod.scrq <- {};
-  ::min <- function(a, b) { if(a > b) return b; return a }
-  ::max <- function(a, b) { if(a < b) return b; return a }
-  ::round <- function(a, b = 0) return floor(a * (b = pow(10, b)) + 0.5) / b;
-}
+if("ppmod" in this) return;
+::ppmod <- {};
+::min <- function(a, b) { if(a > b) return b; return a }
+::max <- function(a, b) { if(a < b) return b; return a }
+::round <- function(a, b = 0) return floor(a * (b = pow(10, b)) + 0.5) / b;
 
 ppmod.fire <- function(ent, action = "Use", value = "", delay = 0, activator = null, caller = null) {
   if(typeof ent == "string") EntFire(ent, action, value, delay, activator);
@@ -40,6 +38,7 @@ ppmod.addoutput <- function(ent, output, target, input = "Use", value = "", dela
   ppmod.keyval(ent, output, target+"\x1B"+input+"\x1B"+value+"\x1B"+delay+"\x1B"+max);
 }
 
+ppmod.scrq <- {};
 ppmod.scrq_add <- function(scr) {
   local qid = UniqueString();
   if(typeof scr == "string") scr = compilestring(scr);
@@ -65,7 +64,6 @@ ppmod.wait <- function(scr, sec, name = null) {
 
 ppmod.interval <- function(scr, sec = 0, name = null) {
   if(!name) name = scr.tostring();
-  if(Entities.FindByName(null, name)) return;
   local timer = Entities.CreateByClassname("logic_timer");
   ppmod.keyval(timer, "Targetname", name);
   ppmod.fire(timer, "RefireTime", sec);
@@ -122,7 +120,7 @@ ppmod.player <- {
       ppmod.addscript(e, "OnSurfaceChangedFromTarget", "ppmod.player.surface()");
     }
   }
-  enable = function() {
+  enable = function(func = function(){}) {
     proxy <- Entities.FindByClassname(null, "logic_playerproxy");
     if(!proxy) proxy = Entities.CreateByClassname("logic_playerproxy");
     eyes <- Entities.CreateByClassname("logic_measure_movement");
@@ -143,6 +141,23 @@ ppmod.player <- {
     ppmod.keyval(gameui, "Targetname", "ppmod_gameui");
     ppmod.keyval(gameui, "FieldOfView", -1);
     ppmod.fire(gameui, "Activate", "", 0, GetPlayer());
+    local script = ppmod.scrq_add(func).name;
+    ppmod.fire(proxy, "RunScriptCode", "(delete " + script + ")()");
+  }
+  holding = function(func) {
+    local filter = Entities.CreateByClassname("filter_player_held");
+    local relay = Entities.CreateByClassname("logic_relay");
+    local script = ppmod.scrq_add(func).name;
+    ppmod.addscript(filter, "OnPass", script + "(true)");
+    ppmod.addoutput(filter, "OnPass", "!self", "Kill");
+    ppmod.addoutput(relay, "OnUser1", filter, "RunScriptCode", script + "(false)");
+    ppmod.addoutput(relay, "OnUser1", "!self", "OnUser2");
+    ppmod.addoutput(relay, "OnUser2", filter, "Kill");
+    for(local ent = Entities.First(); ent; ent = Entities.Next(ent)) {
+      ppmod.fire(filter, "TestActivator", "", 0, ent);
+    }
+    ppmod.fire(relay, "FireUser1");
+    ppmod.fire(relay, "Kill");
   }
   jump = function(scr) { ppmod.addscript(proxy, "OnJump", scr) }
   land = function(scr) { ppmod.addscript(landrl, "OnTrigger", scr) }
@@ -158,7 +173,7 @@ ppmod.player <- {
 ppmod.brush <- function(pos, size, type = "func_brush", ang = Vector()) {
   local brush = type;
   if(typeof type == "string") brush = Entities.CreateByClassname(type);
-  brush.SetOrigin(pos);
+  brush.SetAbsOrigin(pos);
   brush.SetAngles(ang.x, ang.y, ang.z);
   brush.SetSize(Vector() - size, size);
   ppmod.keyval(brush, "Solid", 3);
@@ -177,7 +192,7 @@ ppmod.trigger <- function(pos, size, type = "once", ang = Vector()) {
 
 ppmod.texture <- function(tex = "", pos = Vector(), ang = Vector(90), simple = 1, far = 16) {
   local texture = Entities.CreateByClassname("env_projectedtexture");
-  texture.SetOrigin(pos);
+  texture.SetAbsOrigin(pos);
   texture.SetAngles(ang.x, ang.y, ang.z);
   ppmod.keyval(texture, "FarZ", far);
   ppmod.keyval(texture, "SimpleProjection", simple.tointeger());
@@ -187,7 +202,7 @@ ppmod.texture <- function(tex = "", pos = Vector(), ang = Vector(90), simple = 1
 
 ppmod.decal <- function(tex, pos, ang = Vector(90)) {
   local decal = Entities.CreateByClassname("infodecal");
-  decal.SetOrigin(pos);
+  decal.SetAbsOrigin(pos);
   decal.SetAngles(ang.x, ang.y, ang.z);
   ppmod.keyval(decal, "Texture", tex);
   ppmod.keyval(decal, "LowPriority", 0);
@@ -362,7 +377,7 @@ ppmod.ray <- function(start, end, ent = null, world = true, ray = null) {
       tmin[i] = (bmax[i] - start[i]) * div[i];
       tmax[i] = (bmin[i] - start[i]) * div[i];
     }
-    if((tmin[0] > tmax[i]) || (tmin[i] > tmax[0])) return 1.0;
+    if(tmin[0] > tmax[i] || tmin[i] > tmax[0]) return 1.0;
     if(tmin[i] > tmin[0]) tmin[0] = tmin[i];
     if(tmax[i] < tmax[0]) tmax[0] = tmax[i];
   }
