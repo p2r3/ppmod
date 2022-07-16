@@ -50,25 +50,25 @@ ppmod.addscript <- function(ent, output, scr = "", delay = 0, max = -1, del = fa
   if(typeof scr == "function")
     if(!del) scr = ppmod.scrq_add(scr).name + "()";
     else scr = "(delete " + ppmod.scrq_add(scr).name + ")()";
-  ppmod.addoutput(ent, output, "!self", "RunScriptCode", scr, delay, max);
+  ppmod.keyval(ent, output, "!self\x001BRunScriptCode\x1B"+scr+"\x1B"+delay+"\x1B"+max);
 }
 
 ppmod.wait <- function(scr, sec, name = null) {
   local relay = Entities.CreateByClassname("logic_relay");
-  if(name) ppmod.keyval(relay, "Targetname", name);
+  if(name) relay.__KeyValueFromString("Targetname", name);
   ppmod.addscript(relay, "OnTrigger", scr, 0, -1, true);
-  ppmod.fire(relay, "Trigger", "", sec);
-  ppmod.keyval(relay, "SpawnFlags", 1);
+  EntFireByHandle(relay, "Trigger", "", sec, null, null);
+  relay.__KeyValueFromInt("SpawnFlags", 1);
   return relay;
 }
 
 ppmod.interval <- function(scr, sec = 0, name = null) {
   if(!name) name = scr.tostring();
   local timer = Entities.CreateByClassname("logic_timer");
-  ppmod.keyval(timer, "Targetname", name);
-  ppmod.fire(timer, "RefireTime", sec);
+  timer.__KeyValueFromString("Targetname", name);
   ppmod.addscript(timer, "OnTimer", scr);
-  ppmod.fire(timer, "Enable");
+  EntFireByHandle(timer, "RefireTime", sec.tostring(), 0, null, null);
+  EntFireByHandle(timer, "Enable", "", 0, null, null);
   return timer;
 }
 
@@ -76,9 +76,9 @@ ppmod.once <- function(scr, name = null) {
   if(!name) name = scr.tostring();
   if(Entities.FindByName(null, name)) return;
   local relay = Entities.CreateByClassname("logic_relay");
-  ppmod.keyval(relay, "Targetname", name);
+  relay.__KeyValueFromString("Targetname", name);
   ppmod.addscript(relay, "OnTrigger", scr, 0, -1, true);
-  ppmod.fire(relay, "Trigger");
+  EntFireByHandle(relay, "Trigger", "", 0, null, null);
   return relay;
 }
 
@@ -113,13 +113,13 @@ ppmod.player <- {
     proxy <- Entities.FindByClassname(null, "logic_playerproxy");
     if(!proxy) proxy = Entities.CreateByClassname("logic_playerproxy");
     eyes <- Entities.CreateByClassname("logic_measure_movement");
-    ppmod.keyval(eyes, "MeasureType", 1);
-    ppmod.keyval(eyes, "Targetname", "ppmod_eyes");
-    ppmod.keyval(eyes, "TargetReference", "ppmod_eyes");
-    ppmod.keyval(eyes, "Target", "ppmod_eyes");
-    ppmod.fire(eyes, "SetMeasureReference", "ppmod_eyes");
-    ppmod.fire(eyes, "SetMeasureTarget", "!player");
-    ppmod.fire(eyes, "Enable");
+    eyes.__KeyValueFromInt("MeasureType", 1);
+    eyes.__KeyValueFromString("Targetname", "ppmod_eyes");
+    eyes.__KeyValueFromString("TargetReference", "ppmod_eyes");
+    eyes.__KeyValueFromString("Target", "ppmod_eyes");
+    EntFireByHandle(eyes, "SetMeasureReference", "ppmod_eyes", 0, null, null);
+    EntFireByHandle(eyes, "SetMeasureTarget", "!player", 0, null, null);
+    EntFireByHandle(eyes, "Enable", "", 0, null, null);
     eyes_vec <- function() {
       local ang = eyes.GetAngles() * (PI / 180);
       return Vector(cos(ang.y) * cos(ang.x), sin(ang.y) * cos(ang.x), -sin(ang.x));
@@ -127,37 +127,39 @@ ppmod.player <- {
     landrl <- Entities.CreateByClassname("logic_relay");
     ppmod.player.surface();
     gameui <- Entities.CreateByClassname("game_ui");
-    ppmod.keyval(gameui, "Targetname", "ppmod_gameui");
-    ppmod.keyval(gameui, "FieldOfView", -1);
-    ppmod.fire(gameui, "Activate", "", 0, GetPlayer());
+    gameui.__KeyValueFromString("Targetname", "ppmod_gameui");
+    gameui.__KeyValueFromInt("FieldOfView", -1);
+    EntFireByHandle(gameui, "Activate", "", 0, GetPlayer(), null);
     local script = ppmod.scrq_add(func).name;
-    ppmod.fire(proxy, "RunScriptCode", "(delete " + script + ")()");
+    EntFireByHandle(proxy, "RunScriptCode", "(delete " + script + ")()", 0, null, null);
   }
-  surface = function(e = null) {
-    if(e == null) {
+  surface = function(ent = null) {
+    if(ent == null) {
       EntFire("ppmod_surface", "Kill");
       ppmod.give("env_player_surface_trigger", ppmod.player.surface);
     } else {
-      ppmod.fire(ppmod.player.landrl, "Trigger");
-      ppmod.keyval(e, "GameMaterial", 0);
-      ppmod.keyval(e, "Targetname", "ppmod_surface");
-      ppmod.addscript(e, "OnSurfaceChangedFromTarget", "ppmod.player.surface()");
+      EntFireByHandle(ppmod.player.landrl, "Trigger", "", 0, null, null);
+      ent.__KeyValueFromInt("GameMaterial", 0);
+      ent.__KeyValueFromString("Targetname", "ppmod_surface");
+      ent.__KeyValueFromString("OnSurfaceChangedFromTarget", "!self\x001BRunScriptCode\x001Bppmod.player.surface()\x001B0\x001B-1");
     }
   }
   holding = function(func) {
     local filter = Entities.CreateByClassname("filter_player_held");
     local relay = Entities.CreateByClassname("logic_relay");
-    local script = "(delete " + ppmod.scrq_add(func).name + ")";
-    ppmod.addscript(filter, "OnPass", script + "(true)");
-    ppmod.addoutput(filter, "OnPass", "!self", "Kill");
-    ppmod.addoutput(relay, "OnUser1", filter, "RunScriptCode", script + "(false)");
-    ppmod.addoutput(relay, "OnUser1", "!self", "OnUser2");
-    ppmod.addoutput(relay, "OnUser2", filter, "Kill");
+    local script = ppmod.scrq_add(func).name;
+    local name = UniqueString("ppmod_holding");
+    filter.__KeyValueFromString("Targetname", name);
+    filter.__KeyValueFromString("OnPass", "!self\x001BRunScriptCode\x001B(delete " + script + ")(true)\x001B0\x001B1");
+    filter.__KeyValueFromString("OnPass", "!self\x001BKill\x1B\x001B0\x001B1");
+    relay.__KeyValueFromString("OnUser1", name + "\x001BRunScriptCode\x001B(delete " + script + ")(false)\x001B0\x001B1");
+    relay.__KeyValueFromString("OnUser1", "!self\x001BOnUser2\x1B\x001B0\x001B1");
+    relay.__KeyValueFromString("OnUser2", "!self\x001BKill\x1B\x001B0\x001B1");
     for(local ent = Entities.First(); ent; ent = Entities.Next(ent)) {
-      ppmod.fire(filter, "TestActivator", "", 0, ent);
+      EntFireByHandle(filter, "TestActivator", "", 0, ent, null);
     }
-    ppmod.fire(relay, "FireUser1");
-    ppmod.fire(relay, "Kill");
+    EntFireByHandle(relay, "FireUser1", "", 0, null, null);
+    EntFireByHandle(relay, "Kill", "", 0, null, null);
   }
   jump = function(scr) { ppmod.addscript(proxy, "OnJump", scr) }
   land = function(scr) { ppmod.addscript(landrl, "OnTrigger", scr) }
@@ -176,17 +178,17 @@ ppmod.brush <- function(pos, size, type = "func_brush", ang = Vector()) {
   brush.SetAbsOrigin(pos);
   brush.SetAngles(ang.x, ang.y, ang.z);
   brush.SetSize(Vector() - size, size);
-  ppmod.keyval(brush, "Solid", 3);
+  brush.__KeyValueFromInt("Solid", 3);
   return brush;
 }
 
 ppmod.trigger <- function(pos, size, type = "once", ang = Vector()) {
   if(typeof type == "string") type = "trigger_" + type;
   local trigger = ppmod.brush(pos, size, type, ang);
-  ppmod.keyval(trigger, "CollisionGroup", 1);
-  ppmod.keyval(trigger, "SpawnFlags", 1);
-  if(type == "once") ppmod.addoutput(trigger, "OnStartTouch", "!self", "Kill");
-  ppmod.fire(trigger, "Enable");
+  trigger.__KeyValueFromInt("CollisionGroup", 1);
+  trigger.__KeyValueFromInt("SpawnFlags", 1);
+  if(type == "once") trigger.__KeyValueFromString("OnStartTouch", "!self\x001BKill\x1B\x001B0\x001B1");
+  EntFireByHandle(trigger, "Enable", "", 0, null, null);
   return trigger;
 }
 
@@ -194,9 +196,9 @@ ppmod.texture <- function(tex = "", pos = Vector(), ang = Vector(90), simple = 1
   local texture = Entities.CreateByClassname("env_projectedtexture");
   texture.SetAbsOrigin(pos);
   texture.SetAngles(ang.x, ang.y, ang.z);
-  ppmod.keyval(texture, "FarZ", far);
-  ppmod.keyval(texture, "SimpleProjection", simple.tointeger());
-  ppmod.keyval(texture, "TextureName", tex);
+  texture.__KeyValueFromInt("FarZ", far);
+  texture.__KeyValueFromInt("SimpleProjection", simple.tointeger());
+  texture.__KeyValueFromString("TextureName", tex);
   return texture;
 }
 
@@ -204,9 +206,8 @@ ppmod.decal <- function(tex, pos, ang = Vector(90)) {
   local decal = Entities.CreateByClassname("infodecal");
   decal.SetAbsOrigin(pos);
   decal.SetAngles(ang.x, ang.y, ang.z);
-  ppmod.keyval(decal, "Texture", tex);
-  ppmod.keyval(decal, "LowPriority", 0);
-  ppmod.fire(decal, "Activate");
+  decal.__KeyValueFromString("TextureName", tex);
+  EntFireByHandle(decal, "Activate", "", 0, null, null);
   return decal;
 }
 
@@ -229,59 +230,59 @@ ppmod.create <- function(cmd, func, key = null) {
 ppmod.give <- function(key, func, pos = null) {
   if(pos) return ppmod.give("npc_maker", function(e, k = key, f = func, p = pos) {
     e.SetAbsOrigin(p);
-    ppmod.keyval(e, "NPCType", k);
+    e.__KeyValueFromString("NPCType", k);
     k = UniqueString("ppmod_give");
-    ppmod.keyval(e, "NPCTargetname", k);
-    local getstr = ")(ppmod.get(\"" + k + "\"))";
-    local script = "(delete " + ppmod.scrq_add(f).name + getstr;
-    ppmod.addoutput(e, "OnSpawnNPC", k, "RunScriptCode", script);
-    ppmod.addoutput(e, "OnSpawnNPC", "!self", "Kill");
+    e.__KeyValueFromString("NPCTargetname", k);
+    local getstr = ")(Entities.FindByName(null, \"" + k + "\"))";
+    local script = ppmod.scrq_add(f).name + getstr;
+    e.__KeyValueFromString("OnSpawnNPC", k + "\x001BRunScriptCode\x001B(delete " + script + "\x001B0\x001B1");
+    e.__KeyValueFromString("OnSpawnNPC", "!self\x001BKill\x1B\x001B0\x001B1");
   });
   local player = Entities.FindByClassname(null, "player");
   local equip = Entities.CreateByClassname("game_player_equip");
-  ppmod.keyval(equip, key, 1);
-  ppmod.fire(equip, "Use", "", 0, player);
+  equip.__KeyValueFromInt(key, 1);
+  EntFireByHandle(equip, "Use", "", 0, player, null);
   local getstr = ")(ppmod.prev(\"" + key + "\"))";
   local script = "(delete " + scrq_add(func).name + getstr;
-  ppmod.fire(equip, "RunScriptCode", script);
-  ppmod.fire(equip, "Kill");
+  EntFireByHandle(equip, "RunScriptCode", script, 0, null, null);
+  EntFireByHandle(equip, "Kill", "", 0, null, null);
 }
 
 ppmod.text <- function(text = "", x = -1, y = -1) {
   local ent = Entities.CreateByClassname("game_text");
-  ppmod.keyval(ent, "Message", text);
-  ppmod.keyval(ent, "X", x);
-  ppmod.keyval(ent, "Y", y);
-  ppmod.keyval(ent, "Color", "255 255 255");
+  ent.__KeyValueFromString("Message", text);
+  ent.__KeyValueFromString("Color", "255 255 255");
+  ent.__KeyValueFromInt("X", x);
+  ent.__KeyValueFromInt("Y", y);
   return {
     GetEntity = function(ent = ent) { return ent },
     SetPosition = function(x, y, ent = ent) {
-      ppmod.keyval(ent, "X", x);
-      ppmod.keyval(ent, "Y", y);
+      ent.__KeyValueFromInt("X", x);
+      ent.__KeyValueFromInt("Y", y);
     },
     SetText = function(text, ent = ent) {
-      ppmod.keyval(ent, "Message", text);
+      ent.__KeyValueFromString("Message", text);
     },
     SetChannel = function(ch, ent = ent) {
-      ppmod.keyval(ent, "Channel", ch);
+      ent.__KeyValueFromInt("Channel", ch);
     },
     SetColor = function(c1, c2 = null, ent = ent) {
-      ppmod.keyval(ent, "Color", c1);
-      if(c2) ppmod.keyval(ent, "Color2", c2);
+      ent.__KeyValueFromString("Color", c1);
+      if(c2) ent.__KeyValueFromString("Color2", c2);
     },
     SetFade = function(fin, fout, fx = false, ent = ent) {
-      ppmod.keyval(ent, "FadeIn", fin);
-      ppmod.keyval(ent, "FXTime", fin);
-      ppmod.keyval(ent, "FadeOut", fout);
-      if(fx) ppmod.keyval(ent, "Effect", 2);
-      else ppmod.keyval(ent, "Effect", 0);
+      ent.__KeyValueFromInt("FadeIn", fin);
+      ent.__KeyValueFromInt("FXTime", fin);
+      ent.__KeyValueFromInt("FadeOut", fout);
+      if(fx) ent.__KeyValueFromInt("Effect", 2);
+      else ent.__KeyValueFromInt("Effect", 0);
     },
     Display = function(hold = null, player = null, ent = ent) {
       if(!hold) hold = FrameTime();
-      ppmod.keyval(ent, "HoldTime", hold);
-      if(player) ppmod.keyval(ent, "SpawnFlags", 0);
-      else ppmod.keyval(ent, "SpawnFlags", 1);
-      ppmod.fire(ent, "Display", "", 0, player);
+      ent.__KeyValueFromInt("HoldTime", hold);
+      if(player) ent.__KeyValueFromInt("SpawnFlags", 0);
+      else ent.__KeyValueFromInt("SpawnFlags", 1);
+      EntFireByHandle(ent, "Display", "", 0, player, null);
     }
   };
 }
