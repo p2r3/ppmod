@@ -170,6 +170,74 @@ ppmod.player <- {
     else str = "unpressed" + str.slice(1);
     ppmod.addscript(gameui, str, scr);
   }
+  movesim = function(move, ftime = null, accel = 10, fric = 0, ground = Vector(0, 0, -1), grav = Vector(0, 0, -600), eyes = null) {
+    if(ftime == null) ftime = FrameTime();
+    if(eyes == null) eyes = ppmod.player.eyes;
+    local vel = GetPlayer().GetVelocity();
+    local mask = Vector(fabs(ground.x), fabs(ground.y), fabs(ground.z));
+
+    if(fric > 0) {
+      local veldir = Vector(vel.x, vel.y, vel.z);
+      local absvel = veldir.Norm();
+      if(absvel >= 100) {
+        vel *= 1 - ftime * fric;
+      } else if(fric / 0.6 < absvel) {
+        vel -= veldir * (ftime * 400);
+      } else if(absvel > 0) {
+        vel = Vector(vel.x * mask.x, vel.x * mask.y, vel.x * mask.z);
+      }
+    }
+
+    local forward = eyes.GetForwardVector();
+    local left = eyes.GetLeftVector();
+    forward -= Vector(forward.x * mask.x, forward.y * mask.y, forward.z * mask.z);
+    left -= Vector(left.x * mask.x, left.y * mask.y, left.z * mask.z);
+
+    forward.Norm();
+    left.Norm();
+
+    local wishvel = Vector();
+    wishvel.x = forward.x * move.x + left.x * move.y;
+    wishvel.y = forward.y * move.x + left.y * move.y;
+    wishvel.z = forward.z * move.x + left.z * move.y;
+    wishvel -= Vector(wishvel.x * mask.x, wishvel.y * mask.y, wishvel.z * mask.z);
+    local wishspeed = wishvel.Norm();
+
+    local vertvel = Vector(vel.x * mask.x, vel.y * mask.y, vel.z * mask.z);
+    vel -= vertvel;
+    local currspeed = vel.Dot(wishvel);
+
+    local addspeed = wishspeed - currspeed;
+    local accelspeed = accel * ftime * wishspeed;
+    if(accelspeed > addspeed) accelspeed = addspeed;
+
+    local finalvel = vel + wishvel * accelspeed + vertvel + grav * ftime;
+
+    local relay = Entities.FindByName(null, "ppmod_movesim_relay");
+    if(relay) {
+      GetPlayer().SetVelocity(finalvel);
+      EntFireByHandle(relay, "CancelPending", "", 0, null, null);
+      EntFireByHandle(relay, "Trigger", "", ftime, null, null);
+      local gravtrig = Entities.FindByName(null, "ppmod_movesim_gravtrig");
+      gravtrig.SetAbsOrigin(GetPlayer().GetCenter());
+    } else {
+      ppmod.give("trigger_gravity", function(gravtrig, vel = finalvel, time = ftime + FrameTime()) {
+        GetPlayer().SetVelocity(vel);
+        ppmod.trigger(GetPlayer().GetCenter() + Vector(256), Vector(64, 64, 64), gravtrig);
+        gravtrig.__KeyValueFromString("Targetname", "ppmod_movesim_gravtrig");
+        gravtrig.__KeyValueFromFloat("Gravity", 0.000001);
+        local relay = Entities.CreateByClassname("logic_relay");
+        relay.__KeyValueFromInt("SpawnFlags", 2);
+        relay.__KeyValueFromString("Targetname", "ppmod_movesim_relay");
+        relay.__KeyValueFromString("OnTrigger", "!self\x001BKill\x1B\x001B"+time+"\x001B-1");
+        ppmod.addscript(relay, "OnTrigger", function(gravtrig = gravtrig) {
+          gravtrig.SetAbsOrigin(GetPlayer().GetOrigin() + Vector(256));
+          EntFire("ppmod_movesim_gravtrig", "Kill", "", FrameTime());
+        }, time);
+        EntFireByHandle(relay, "Trigger", "", 0, null, null);
+      });
+    }
+  }
 }
 
 ppmod.brush <- function(pos, size, type = "func_brush", ang = Vector()) {
