@@ -237,11 +237,17 @@ The first argument is a two-dimensional Vector, where the X and Y components are
 ##### Usage
 
 This function is intended to be used for every frame that player movement is to be simulated in. To achieve constant simulation, `ppmod.interval` can be used. The function's `frametime` argument is the interval at which the function is repeated. For best results, repeating the function every `FrameTime()` seconds is reccommended.
+
 In Portal 2, the length of the movement Vector `move` is a constant 175 units by default, which is the default value of `cl_forwardspeed` and `cl_sidespeed`. A positive X component will move the player forward, and a positive Y component will move the player to the right. Negative components will move the player in the opposite direction.
+
 The `acceleration` variable is the total amount of movement acceleration for any simulated frame where the player is moving. While on ground, the default value of `sv_accelerate` can be used, which is 10. However, while in air, Portal 2 applies a surface friction coefficient of 0.25 by default, which leads to less acceleration while in air. To mimic this behavior, use an `acceleration` value of 2.5 while the player is above ground.
+
 Similarly to acceleration, the `friction` variable is the total amount of friction applied to the player during any one simulated frame, not accounting for relative vertical velocity or collision with the floor. This is left at 0 by default due to currently not being able to override the existing friction.
+
 The `ground` Vector determines the plane along which player movement will be simulated. By default, this is a unit vector pointing towards negative Z. Changing the direction of this vector can allow for simulating walking on walls or the ceiling, for example. Changing the length of this vector could lead to the vertical velocity or player pitch angle being improperly filtered out.
+
 The purpose of the `gravity` Vector is similar to that of `sv_gravity`, with the key difference being that the direction can be changed. By default, this vector is pointing towards negative Z at a length of 600, which means that the player velocity will increase by `600 / frametime` towards negative Z for every simulated frame.
+
 The `eyes` argument is used for getting the forward and left Vector that the player's movement is relative to. This can be any variable with a `GetForwardVector` and `GetLeftVector` method. However, `ppmod.player.eyes` can be used to replicate default behavior.
 
 ##### Example
