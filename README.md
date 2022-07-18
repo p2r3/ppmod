@@ -162,7 +162,7 @@ However, for getting the position, it is suggested to use the native `CBaseEntit
 
 #### ppmod.player.eyes_vec
 
-Returns a normalized vector pointing in the direction that the player is looking in. Accepts no arguments.
+Returns a unit vector pointing in the direction that the player is looking in. Accepts no arguments.
 
 ```
   ppmod.player.enable(function() {
@@ -222,9 +222,43 @@ Function for adding scripts to player inputs as returned by the `game_ui` entity
   });
 ```
 
+#### ppmod.player.movesim
+
+Function for simulating player movement and physics, allowing for more control over gravity, friction, movement direction and speed.
+
+```
+  ppmod.player.movesim (move, frametime = null, acceleration = 10, friction = 0, ground = Vector(0, 0, -1), gravity = Vector(0, 0, -600), eyes = null)
+```
+
+##### Arguments
+
+The first argument is a two-dimensional Vector, where the X and Y components are the [forward and sideways movement speeds](https://www.jwchong.com/hl/player.html#fsu), respectively. The second argument is the frame time (or tick rate) that the function will assume for calculations. Leaving this at `null` will use the output of `FrameTime()`. The third argument is the simulated value of `sv_accelerate`, 10 by default. The fourth argument is the simulated value of `sv_friction`, 0 by default. The fifth argument is a unit Vector pointing to the floor. This determines the plane that player movement will be relative to. The sixth argument is the gravity Vector, which controls the direction and intensity of the player's gravity. The seventh argument is a handle for the entity whose angles will be used to determine where the player is looking. Leaving this at `null` will use `ppmod.player.eyes`.
+
+##### Usage
+
+This function is intended to be used for every frame that player movement is to be simulated in. To achieve constant simulation, `ppmod.interval` can be used. The function's `frametime` argument is the interval at which the function is repeated. For best results, repeating the function every `FrameTime()` seconds is reccommended.
+In Portal 2, the length of the movement Vector `move` is a constant 175 units by default, which is the default value of `cl_forwardspeed` and `cl_sidespeed`. A positive X component will move the player forward, and a positive Y component will move the player to the right. Negative components will move the player in the opposite direction.
+The `acceleration` variable is the total amount of movement acceleration for any simulated frame where the player is moving. While on ground, the default value of `sv_accelerate` can be used, which is 10. However, while in air, Portal 2 applies a surface friction coefficient of 0.25 by default, which leads to less acceleration while in air. To mimic this behavior, use an `acceleration` value of 2.5 while the player is above ground.
+Similarly to acceleration, the `friction` variable is the total amount of friction applied to the player during any one simulated frame, not accounting for relative vertical velocity or collision with the floor. This is left at 0 by default due to currently not being able to override the existing friction.
+The `ground` Vector determines the plane along which player movement will be simulated. By default, this is a unit vector pointing towards negative Z. Changing the direction of this vector can allow for simulating walking on walls or the ceiling, for example. Changing the length of this vector could lead to the vertical velocity or player pitch angle being improperly filtered out.
+The purpose of the `gravity` Vector is similar to that of `sv_gravity`, with the key difference being that the direction can be changed. By default, this vector is pointing towards negative Z at a length of 600, which means that the player velocity will increase by `600 / frametime` towards negative Z for every simulated frame.
+The `eyes` argument is used for getting the forward and left Vector that the player's movement is relative to. This can be any variable with a `GetForwardVector` and `GetLeftVector` method. However, `ppmod.player.eyes` can be used to replicate default behavior.
+
+##### Example
+
+Here is an example of using `ppmod.player.movesim` to simulate the player moving forward indefinitely:
+
+```
+  ppmod.player.enable(function() {
+    ppmod.interval(function(){
+      ppmod.player.movesim(Vector(175, 0));
+    });
+  });
+```
+
 ### ppmod.create
 
-Creates an entity using console commands and retrieves it's handle. Some entities cannot be fully created with `CEntities` methods alone, as this often leaves some crucial entity code unloaded. This function can also be used for preloading models through the `prop_dynamic_create` console command.
+Creates an entity using console commands and retrieves it's handle. Some entities cannot be fully created with `Entities.CreateByClassname` alone, as this often leaves some crucial entity code unloaded. This function can also be used for preloading models through the `prop_dynamic_create` console command.
 
 ```
   ppmod.create (command, function, key = null)
