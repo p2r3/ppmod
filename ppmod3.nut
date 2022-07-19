@@ -320,13 +320,13 @@ ppmod.text <- function(text = "", x = -1, y = -1) {
   local ent = Entities.CreateByClassname("game_text");
   ent.__KeyValueFromString("Message", text);
   ent.__KeyValueFromString("Color", "255 255 255");
-  ent.__KeyValueFromInt("X", x);
-  ent.__KeyValueFromInt("Y", y);
+  ent.__KeyValueFromFloat("X", x);
+  ent.__KeyValueFromFloat("Y", y);
   return {
     GetEntity = function(ent = ent) { return ent },
     SetPosition = function(x, y, ent = ent) {
-      ent.__KeyValueFromInt("X", x);
-      ent.__KeyValueFromInt("Y", y);
+      ent.__KeyValueFromFloat("X", x);
+      ent.__KeyValueFromFloat("Y", y);
     },
     SetText = function(text, ent = ent) {
       ent.__KeyValueFromString("Message", text);
@@ -339,15 +339,15 @@ ppmod.text <- function(text = "", x = -1, y = -1) {
       if(c2) ent.__KeyValueFromString("Color2", c2);
     },
     SetFade = function(fin, fout, fx = false, ent = ent) {
-      ent.__KeyValueFromInt("FadeIn", fin);
-      ent.__KeyValueFromInt("FXTime", fin);
-      ent.__KeyValueFromInt("FadeOut", fout);
+      ent.__KeyValueFromFloat("FadeIn", fin);
+      ent.__KeyValueFromFloat("FXTime", fin);
+      ent.__KeyValueFromFloat("FadeOut", fout);
       if(fx) ent.__KeyValueFromInt("Effect", 2);
       else ent.__KeyValueFromInt("Effect", 0);
     },
     Display = function(hold = null, player = null, ent = ent) {
       if(!hold) hold = FrameTime();
-      ent.__KeyValueFromInt("HoldTime", hold);
+      ent.__KeyValueFromFloat("HoldTime", hold);
       if(player) ent.__KeyValueFromInt("SpawnFlags", 0);
       else ent.__KeyValueFromInt("SpawnFlags", 1);
       EntFireByHandle(ent, "Display", "", 0, player, null);
