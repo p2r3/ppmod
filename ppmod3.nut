@@ -255,7 +255,7 @@ ppmod.trigger <- function(pos, size, type = "once", ang = Vector()) {
   local trigger = ppmod.brush(pos, size, type, ang);
   trigger.__KeyValueFromInt("CollisionGroup", 1);
   trigger.__KeyValueFromInt("SpawnFlags", 1);
-  if(type == "once") trigger.__KeyValueFromString("OnStartTouch", "!self\x001BKill\x1B\x001B0\x001B1");
+  if(type == "trigger_once") trigger.__KeyValueFromString("OnStartTouch", "!self\x001BKill\x1B\x001B0\x001B1");
   EntFireByHandle(trigger, "Enable", "", 0, null, null);
   return trigger;
 }
