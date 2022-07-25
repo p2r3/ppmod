@@ -397,7 +397,14 @@ Given two points of a ray and one or more entities, returns a fraction along the
 
 The first two arguments are Vectors containing the start and end points of the ray, respectively. The third argument denotes the entities whose bounding boxes will be checked for collisions. This can be either an entity handle, a string (as used with `ppmod.get`) or an array of either. If an entity is not given, or the value is `null`, collision with entity bounding boxes will not be checked. The fourth argument is a boolean value. If set to true as it is by default, world brushes and static models will also be checked for collisions.
 
-The returned value is a float, representing a fraction of the ray between the starting point and the collision nearest to it. If the ray did not collide with anything, the function will return `1.0`. If the starting point of the ray is inside one the solids, the function will return `0`. Getting the point of intersection can be done by adding the starting point to the multiplication between the total ray length and the returned fraction. In code, this might be `local point = start + (end - start).Length() * ppmod.ray(start, end, ...)`.
+The returned value is a float, representing a fraction of the ray between the starting point and the collision nearest to it. If the ray did not collide with anything, the function will return `1.0`. If the starting point of the ray is inside one the solids, the function will return `0`. Getting the point of intersection can be done by adding the starting point to the multiplication between the unit vector of the ray's direction, the total ray length and the returned fraction. In code, this might be:
+
+```
+  local frac = ppmod.ray(start, end, ...);
+  local dir = end - start;
+  local len = dir.Norm();
+  local point = start + dir * len * frac;
+```
 
 Optimization note: The function accepts a fifth argument. This is an array of two elements - the length of the ray and an array representing a vector where each value is 1 divided by the respective coordinate of the normalized ray vector or, in other words, it's direction. These values can be precalculated and used if collision with the same ray is being checked multiple times. This optimization is used internally, and therefore is not necessary if the function is only called once.
 
