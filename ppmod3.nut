@@ -457,3 +457,22 @@ ppmod.ray <- function(start, end, ent = null, world = true, ray = null) {
   return tmin[0];
 
 }
+
+ppmod.fwrite <- function(path, str) {
+
+  local stall = "";
+  for (local i = 195; i > path.len(); i --) stall += "/";
+
+  if (path[0] == "/") path = stall + path;
+  else path = "." + stall.slice(1) + path;
+
+  for (local i = 0; i < str.len(); i ++) {
+    if (str[i] == '\\') str = str.slice(0, i) + "\\\\" + str.slice(++i);
+    if (str[i] == '"') str = str.slice(0, i) + "\\\x22" + str.slice(++i);
+  }
+
+  SendToConsole("con_logfile \"" + path + ".log\"");
+  SendToConsole("script print(\"" + str + "\")");
+  SendToConsole("con_logfile \"\"");
+
+}
