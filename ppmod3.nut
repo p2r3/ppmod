@@ -1,7 +1,7 @@
 if("ppmod" in this) return;
 ::ppmod <- {};
-::min <- function(a, b) { if(a > b) return b; return a }
-::max <- function(a, b) { if(a < b) return b; return a }
+::min <- function(a, b) return a > b ? b : a;
+::max <- function(a, b) return a < b ? b : a;
 ::round <- function(a, b = 0) return floor(a * (b = pow(10, b)) + 0.5) / b;
 
 ppmod.fire <- function(ent, action = "Use", value = "", delay = 0, activator = null, caller = null) {
