@@ -4,6 +4,26 @@ if("ppmod" in this) return;
 ::max <- function(a, b) return a < b ? b : a;
 ::round <- function(a, b = 0) return floor(a * (b = pow(10, b)) + 0.5) / b;
 
+function Vector::_mul (other) {
+  if (typeof other == "Vector") {
+    return Vector(this.x * other.x, this.y * other.y, this.z * other.z);
+  } else {
+    return Vector(this.x * other, this.y * other, this.z * other);
+  }
+}
+
+function Vector::_div (other) {
+  if (typeof other == "Vector") {
+    return Vector(this.x / other.x, this.y / other.y, this.z / other.z);
+  } else {
+    return Vector(this.x / other, this.y / other, this.z / other);
+  }
+}
+
+function Vector::_tostring () {
+  return "Vector(" + this.x + ", " + this.y + ", " + this.z + ")";
+}
+
 ppmod.fire <- function(ent, action = "Use", value = "", delay = 0, activator = null, caller = null) {
   if(typeof ent == "string") EntFire(ent, action, value, delay, activator);
   else EntFireByHandle(ent, action, value.tostring(), delay, activator, caller);
