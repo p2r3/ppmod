@@ -9,7 +9,7 @@ To use ppmod in your project, include the script file before calling any ppmod f
 ```
   IncludeScript("ppmod3.nut");
 ```
-Make sure to do this in an environment that has access to `CEntities`, otherwise most game-related functions will not work.
+Make sure to do this in an environment that has access to `CEntities`; otherwise, most game-related functions will not work.
 You can do this by checking if the instance `Entities` exists within `this`:
 ```
   if("Entities" in this) {
@@ -28,17 +28,17 @@ More convenient alternative to `EntFire`, `DoEntFire` or `EntFireByHandle`. Most
   ppmod.fire (entity, action = "Use", value = "", delay = 0, activator = null, caller = null)
 ```
 
-The first argument is the entity to send an input to. This can be either an entity handle or a string. Next is the action, "Use" by default. Then the value, empty by default, the delay in seconds, 0 by default, and finally entity handles for the activator and caller, both null by default. Please note that the caller is only set if the entity is provided as a handle.
+The first argument is the entity to send an input to. This can be either an entity handle or a string. Next is the action, "Use" by default. Then the value, empty by default, the delay in seconds, 0 by default, and finally, entity handles for the activator and caller, both null by default. Please note that the caller is only set if the entity is provided as a handle.
 
 ### ppmod.addoutput
 
-More versitile alternative to `ConnectOutput` or `EntFire AddOutput`. Other than the entity, it's output and the target entity, every other argument is optional, with a common default placeholder value.
+More versatile alternative to `ConnectOutput` or `EntFire AddOutput`. Other than the entity, its output and the target entity, every other argument is optional, with a common default placeholder value.
 
 ```
   ppmod.addoutput (entity, output, target, input = "Use", value = "", delay = 0, max = -1)
 ```
 
-Since this function uses ppmod.keyval internally, the entity can be specified with a string or handle. Similarly, the target entity can also be a string or handle. However, when provided a handle, it's targetname is used instead. If no targetname is set, one gets randomly generated and applied to the entity. The output is read as a string. The following arguments match their counterparts in `ppmod.fire`, with the exception being max, which sets the total amount of times this output will fire before being exhausted. Setting it to -1 (default) removes this limit.
+Since this function uses ppmod.keyval internally, the entity can be specified with a string or handle. Similarly, the target entity can also be a string or handle. However, when provided a handle, its targetname is used instead. If no targetname is set, one gets randomly generated and applied to the entity. The output is read as a string. The following arguments match their counterparts in `ppmod.fire`, with the exception being max, which sets the total amount of times this output will fire before being exhausted. Setting it to -1 (default) removes this limit.
 
 ### ppmod.addscript
 
@@ -58,7 +58,7 @@ The arguments are almost the same as the ones in `ppmod.addoutput`, except inste
 
 ### ppmod.keyval
 
-Shorter, more convenient alternative to `__KeyValueFrom...` functions. Automatically selects the approperiate function for the specified entity and keyvalue type. Guaranteed to run synchronously regardless of the input.
+Shorter, more convenient alternative to `__KeyValueFrom...` functions. Automatically selects the appropriate function for the specified entity and keyvalue type. Guaranteed to run synchronously regardless of the input.
 
 ```
   ppmod.keyval (entity, key, value)
@@ -74,21 +74,21 @@ Simple way of delaying the execution of a function. Creates a dummy `logic_relay
   ppmod.wait (script, delay, name = null)
 ```
 
-The first argument is the script to run, either as a string or function. The second argument is the delay in seconds. The third argument sets the targetname for the `logic_relay` entity. Returns a handle to the `logic_relay` entity, in case the timer needs to be aborted by destroying this entity. After the script is executed, the `logic_relay` is automatically destroyed.
+The first argument is the script to run, either as a string or function. The second argument is the delay in seconds. The third argument sets the targetname for the `logic_relay` entity. Returns a handle to the `logic_relay` entity in case the timer needs to be aborted by destroying this entity. After the script is executed, the `logic_relay` is automatically destroyed.
 
 ### ppmod.interval
 
-Runs the specified script in regular intervals. Creates a `logic_timer` entity and configures it to run the script at an interval.
+Runs the specified script at regular intervals. Creates a `logic_timer` entity and configures it to run the script at an interval.
 
 ```
   ppmod.interval (script, delay = 0, name = null)
 ```
 
-The first argument is the script to run, either as a string or function. The second argument is the interval of the loop, in seconds. When set to 0 (default), the function is called once every tick. The third argument sets the targetname for the `logic_timer` entity. Returns a handle to the `logic_timer` entity, which can then be used to stop or modify the loop.
+The first argument is the script to run, either as a string or function. The second argument is the interval of the loop in seconds. When set to 0 (default), the function is called once every tick. The third argument sets the targetname for the `logic_timer` entity. Returns a handle to the `logic_timer` entity, which can then be used to stop or modify the loop.
 
 ### ppmod.once
 
-Ensures that the specified script is run only once, even if this function is called multiple times. Creates a dummy `logic_relay` entity and uses it's targetname as a reference for duplicates. Or, if no name is provided, uses the script itself as a name.
+Ensures that the specified script is run only once, even if this function is called multiple times. Creates a dummy `logic_relay` entity and uses its targetname as a reference for duplicates. Or, if no name is provided, uses the script itself as a name.
 
 ```
   ppmod.once (script, name = null)
@@ -204,14 +204,14 @@ Calls the provided callback function with a boolean argument indicating whether 
 #### ppmod.player.[jump, land, duck, unduck]
 
 Set of functions for adding scripts to player movement actions. Accepts one argument - the script to attach, either a string or function.
-- `ppmod.player.jump` triggers when the player performs the jump input. This is true even for when the player is already in the air or crouching.
-- `ppmod.player.land` triggers when the player changes the surface they're standing on. This will trigger when landing from previously being in air, or when walking from, for example, a concrete surface to a metal one.
+- `ppmod.player.jump` triggers when the player performs the jump input. This is true even when the player is already in the air or crouching.
+- `ppmod.player.land` triggers when the player changes the surface they're standing on. This will trigger when landing from previously being in the air, or when walking from, for example, a concrete surface to a metal one.
 - `ppmod.player.duck` triggers when the player begins crouching. This will not fire if the player is unable to crouch, for example, when in the air following a jump.
 - `ppmod.player.unduck` triggers when the player begins to uncrouch. This will fire regardless of how crouched the player was before beginning to stand up.
 
 #### ppmod.player.input
 
-Function for adding scripts to player inputs as returned by the `game_ui` entity. The first argument is the input to listen for as seen in the developer console (e.g. "+forward"). The second argument is the script to attach to this input.
+Function for adding scripts to player inputs as returned by the `game_ui` entity. The first argument is the input to listen for, as seen in the developer console (e.g., "+forward"). The second argument is the script to attach to this input.
 
 ```
   ppmod.player.enable(function() {
@@ -236,11 +236,11 @@ The first argument is a two-dimensional Vector, where the X and Y components are
 
 ##### Usage
 
-This function is intended to be used for every frame that player movement is to be simulated in. To achieve constant simulation, `ppmod.interval` can be used. The function's `frametime` argument is the interval at which the function is repeated. For best results, repeating the function every `FrameTime()` seconds is reccommended.
+This function is intended to be used for every frame in which player movement is to be simulated. To achieve constant simulation, `ppmod.interval` can be used. The function's `frametime` argument is the interval at which the function is repeated. For best results, repeating the function every `FrameTime()` seconds is recommended.
 
 In Portal 2, the length of the movement Vector `move` is a constant 175 units by default, which is the default value of `cl_forwardspeed` and `cl_sidespeed`. A positive X component will move the player forward, and a positive Y component will move the player to the right. Negative components will move the player in the opposite direction.
 
-The `acceleration` variable is the total amount of movement acceleration for any simulated frame where the player is moving. While on ground, the default value of `sv_accelerate` can be used, which is 10. However, while in air, Portal 2 applies a surface friction coefficient of 0.25 by default, which leads to less acceleration while in air. To mimic this behavior, use an `acceleration` value of 2.5 while the player is above ground.
+The `acceleration` variable is the total amount of movement acceleration for any simulated frame where the player is moving. While on the ground, the default value of `sv_accelerate` can be used, which is 10. However, while in the air, Portal 2 applies a surface friction coefficient of 0.25 by default, leading to less air acceleration. To mimic this behavior, use an `acceleration` value of 2.5 while the player is above ground.
 
 Similarly to acceleration, the `friction` variable is the total amount of friction applied to the player during any one simulated frame, not accounting for relative vertical velocity or collision with the floor. This is left at 0 by default due to currently not being able to override the existing friction.
 
@@ -264,7 +264,7 @@ Here is an example of using `ppmod.player.movesim` to simulate the player moving
 
 ### ppmod.create
 
-Creates an entity using console commands and retrieves it's handle. Some entities cannot be fully created with `Entities.CreateByClassname` alone, as this often leaves some crucial entity code unloaded. This function can also be used for preloading models through the `prop_dynamic_create` console command.
+Creates an entity using console commands and retrieves its handle. Some entities cannot be fully created with `Entities.CreateByClassname` alone, as this often leaves some crucial entity code unloaded. This function can also be used for preloading models through the `prop_dynamic_create` console command.
 
 ```
   ppmod.create (command, function, key = null)
@@ -272,9 +272,9 @@ Creates an entity using console commands and retrieves it's handle. Some entitie
 
 The first argument is the command to run for creating the entity. This argument also accepts a model assuming the `models/` directory, in which case it is automatically prefaced by `prop_dynamic_create`. If an entity classname is provided, it is prefaced by `ent_create`. Portal-specific commands like `ent_create_portal_weighted_cube` are also supported.
 
-The second argument is the function to run after the entity has been created and found. This function is provided with one argument - the handle of the created entity. The function can be provided as a string or as a local or global function. Keep in mind that, instead of being referenced directly, this function is cloned and stored in a table so that it can be called by a console command.
+The second argument is the function to run after the entity has been created and found. This function is provided with one argument - the handle of the created entity. The function can be provided as a string or as a local or global function. Keep in mind that instead of being referenced directly, this function is cloned and stored in a table so that it can be called by a console command.
 
-The third argument is the key by which the entity is searched. In most cases, this can be left unchanged, as the key will be generated automatically based on the command. Internally, this uses the `ppmod.prev` function to search for the last (therefore newest) entity with a matching key. Because of this, it is suggested to use as descriptive of a key as possible in order to avoid accidentally finding a different entity that was created at the same time on a different thread. For example, instead of using `prop_weighted_cube` as the command, use `ent_create_portal_weighted_cube` instead, as this gives the entity a distinct "cube" targetname.
+The third argument is the key by which the entity is searched. This can be left unchanged in most cases, as the key will be generated automatically based on the command. Internally, this uses the `ppmod.prev` function to search for the last (therefore newest) entity with a matching key. Because of this, it is suggested to use as descriptive of a key as possible in order to avoid accidentally finding a different entity that was created at the same time on a different thread. For example, instead of using `prop_weighted_cube` as the command, use `ent_create_portal_weighted_cube` instead, as this gives the entity a distinct "cube" targetname.
 
 Here is an example of using `ppmod.create` to spawn a red cube at the player's feet:
 
@@ -291,7 +291,7 @@ Here is an example of using `ppmod.create` to spawn a red cube at the player's f
 
 ### ppmod.brush
 
-Creates a brush entity of the specified type, returns a handle to it.
+Creates a brush entity of the specified type and returns a handle to it.
 
 ```
   ppmod.brush (position, size, type = "func_brush", angles = Vector())
@@ -312,7 +312,7 @@ The first argument is a vector to the center of the brush entity. The second arg
 
 ### ppmod.trigger
 
-Creates a brush entity that acts as a trigger of the specified type, returns a handle to it.
+Creates a brush entity that acts as a trigger of the specified type and returns a handle to it.
 
 ```
   ppmod.trigger (position, size, type = "once", angles = Vector())
@@ -332,15 +332,15 @@ To add outputs to this trigger, you can store the handle returned by the functio
 
 ### ppmod.texture
 
-Creates an `env_projectedtexture` entity for projecting textures on to existing brushes and entities. Returns this entity.
+Creates an `env_projectedtexture` entity for projecting textures onto existing brushes and entities. Returns this entity.
 
 ```
   ppmod.texture (texture = "", position = Vector(), angles = Vector(90), simple = true, farz = 16)
 ```
 
-The first argument is the path to the texture to apply. The second argument is the position of the `env_projectedtexture` entity. If using the simple projection mode, it is recommended to set this to be a few units away from the brush you're applying the texture to. The third argument is the angle to project the texture towards, facing straight down by default. The fourth argument is a boolean value for whether to use the simple projection mode. Simple projections only project textures on the world, aligning themselves with the shape and orientation of the brush. Keep in mind that this often causes graphical glitches like flickering, especially with high shader detail. If a projection is not simple, it will work similar to a flashlight, projecting and distorting the texture as if it were from a light source. The last argument is the FarZ keyvalue of the entity. This sets the furthest point that the projection can reach.
+The first argument is the path to the texture to apply. The second argument is the position of the `env_projectedtexture` entity. If using the simple projection mode, it is recommended to set this to be a few units away from the brush you're applying the texture to. The third argument is the angle to project the texture towards, facing straight down by default. The fourth argument is a boolean value for whether to use the simple projection mode. Simple projections only project textures on the world, aligning themselves with the shape and orientation of the brush. Keep in mind that this often causes graphical glitches like flickering, especially with high shader detail. If a projection is not simple, it will work similarly to a flashlight, projecting and distorting the texture as if it were from a light source. The last argument is the FarZ keyvalue of the entity. This sets the furthest point that the projection can reach.
 
-Every argument is optional. This is in case you need to create an `env_projectedtexture` for later use. Keep in mind that while Portal 2 claims to only support one projected texture at a time, a workaround exists. Since the game only checks for existing projected textures when one recieves a `TurnOn` or `TurnOff` input, multiple can be active as long as they never recieve such an input. One way to do this is by creating a new entity every timez` you wish to turn on the texture, then deleting it to turn it off.
+Every argument is optional. This is in case you need to create an `env_projectedtexture` for later use. Keep in mind that while Portal 2 claims to only support one projected texture at a time, a workaround exists. Since the game only checks for existing projected textures when one receives a `TurnOn` or `TurnOff` input, multiple can be active as long as they never receive such an input. One way to do this is by creating a new entity every time you wish to turn on the texture, then deleting it to turn it off.
 
 Here is an example of using `ppmod.texture` to project a laser grid on the floor at the end of `sp_a1_intro3` using the simple projection mode:
 
@@ -350,23 +350,23 @@ Here is an example of using `ppmod.texture` to project a laser grid on the floor
 
 ### ppmod.decal
 
-Creates an `infodecal` entity for applying decals and textures on to the world, similar to the simple projection mode of `ppmod.texture`. Returns the decal entity.
+Creates an `infodecal` entity for applying decals and textures onto the world, similar to the simple projection mode of `ppmod.texture`. Returns the decal entity.
 
 ```
   ppmod.decal (texture, position, angles = Vector(90))
 ```
 
-The arguments are similar to those of `ppmod.texture`, except that texture and position are no longer optional. The benefits of using decals instead of simple projected textures are that decals cause fewer graphical glitches and stutters (as long as cvar `gpu_level` is under 2) and you can control the position of decals better. The main drawbacks are that decals cannot be moved, removed, or resized.
+The arguments are similar to those of `ppmod.texture`, except that texture and position are no longer optional. The benefits of using decals instead of simple projected textures are that decals cause fewer graphical glitches and stutters (as long as cvar `gpu_level` is under 2), and you can control the position of decals better. The main drawbacks are that decals cannot be moved, removed, or resized.
 
 ### ppmod.text
 
-Creates a `game_text` entity for basic on-screen text and UI, provides functions for managing this entity.
+Creates a `game_text` entity for basic on-screen text and UI and provides functions for managing this entity.
 
 ```
   ppmod.text (text = "", x = -1, y = -1)
 ```
 
-The first argument is the text to display. The second and third argument set the X and Y position of the text, respectively. Setting these to -1 centers the text. Returns a table of functions for managing the entity:
+The first argument is the text to display. The second and third arguments set the X and Y position of the text, respectively. Setting these to -1 centers the text. Returns a table of functions for managing the entity:
 
 - `GetEntity ()` returns a handle to the `game_text` entity.
 - `SetPosition (x, y)` sets the position at which the text should appear. -1 centers the text.
@@ -397,7 +397,7 @@ Given two points of a ray and one or more entities, returns a fraction along the
 
 The first two arguments are Vectors containing the start and end points of the ray, respectively. The third argument denotes the entities whose bounding boxes will be checked for collisions. This can be either an entity handle, a string (as used with `ppmod.get`) or an array of either. If an entity is not given, or the value is `null`, collision with entity bounding boxes will not be checked. The fourth argument is a boolean value. If set to true as it is by default, world brushes and static models will also be checked for collisions.
 
-The returned value is a float, representing a fraction of the ray between the starting point and the collision nearest to it. If the ray did not collide with anything, the function will return `1.0`. If the starting point of the ray is inside one the solids, the function will return `0`. Getting the point of intersection can be done by adding the starting point to the multiplication between the unit vector of the ray's direction, the total ray length and the returned fraction. In code, this might be:
+The returned value is a float, representing a fraction of the ray between the starting point and the collision nearest to it. If the ray does not collide with anything, the function will return `1.0`. If the starting point of the ray is inside one of the solids, the function will return `0`. Getting the point of intersection can be done by adding the starting point to the multiplication between the unit vector of the ray's direction, the total ray length and the returned fraction. In code, this might be:
 
 ```
   local frac = ppmod.ray(start, end, ...);
@@ -406,7 +406,7 @@ The returned value is a float, representing a fraction of the ray between the st
   local point = start + dir * len * frac;
 ```
 
-Optimization note: The function accepts a fifth argument. This is an array of two elements - the length of the ray and an array representing a vector where each value is 1 divided by the respective coordinate of the normalized ray vector or, in other words, it's direction. These values can be precalculated and used if collision with the same ray is being checked multiple times. This optimization is used internally, and therefore is not necessary if the function is only called once.
+Optimization note: The function accepts a fifth argument. This is an array of two elements - the length of the ray and an array representing a vector where each value is 1 divided by the respective coordinate of the normalized ray vector or, in other words, its direction. These values can be precalculated and used if a collision with the same ray is being checked multiple times. This optimization is used internally and therefore is not necessary if the function is only called once.
 
 Here is an example of using `ppmod.player` and `ppmod.ray` to detect if the player is looking at a cube:
 
