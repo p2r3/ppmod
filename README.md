@@ -9,7 +9,7 @@ To use ppmod in your project, include the script file before calling any ppmod f
 ```
   IncludeScript("ppmod3.nut");
 ```
-Make sure to do this in an environment that has access to `CEntities`, otherwise, most game-related functions will not work.
+Make sure to do this in an environment that has access to `CEntities`; otherwise, most game-related functions will not work.
 You can do this by checking if the instance `Entities` exists within `this`:
 ```
   if("Entities" in this) {
@@ -211,7 +211,7 @@ Set of functions for adding scripts to player movement actions. Accepts one argu
 
 #### ppmod.player.input
 
-Function for adding scripts to player inputs as returned by the `game_ui` entity. The first argument is the input to listen for, as seen in the developer console (e.g. "+forward"). The second argument is the script to attach to this input.
+Function for adding scripts to player inputs as returned by the `game_ui` entity. The first argument is the input to listen for, as seen in the developer console (e.g., "+forward"). The second argument is the script to attach to this input.
 
 ```
   ppmod.player.enable(function() {
@@ -291,7 +291,7 @@ Here is an example of using `ppmod.create` to spawn a red cube at the player's f
 
 ### ppmod.brush
 
-Creates a brush entity of the specified type, and returns a handle to it.
+Creates a brush entity of the specified type and returns a handle to it.
 
 ```
   ppmod.brush (position, size, type = "func_brush", angles = Vector())
@@ -312,7 +312,7 @@ The first argument is a vector to the center of the brush entity. The second arg
 
 ### ppmod.trigger
 
-Creates a brush entity that acts as a trigger of the specified type, and returns a handle to it.
+Creates a brush entity that acts as a trigger of the specified type and returns a handle to it.
 
 ```
   ppmod.trigger (position, size, type = "once", angles = Vector())
@@ -350,23 +350,23 @@ Here is an example of using `ppmod.texture` to project a laser grid on the floor
 
 ### ppmod.decal
 
-Creates an `infodecal` entity for applying decals and textures on to the world, similar to the simple projection mode of `ppmod.texture`. Returns the decal entity.
+Creates an `infodecal` entity for applying decals and textures onto the world, similar to the simple projection mode of `ppmod.texture`. Returns the decal entity.
 
 ```
   ppmod.decal (texture, position, angles = Vector(90))
 ```
 
-The arguments are similar to those of `ppmod.texture`, except that texture and position are no longer optional. The benefits of using decals instead of simple projected textures are that decals cause fewer graphical glitches and stutters (as long as cvar `gpu_level` is under 2) and you can control the position of decals better. The main drawbacks are that decals cannot be moved, removed, or resized.
+The arguments are similar to those of `ppmod.texture`, except that texture and position are no longer optional. The benefits of using decals instead of simple projected textures are that decals cause fewer graphical glitches and stutters (as long as cvar `gpu_level` is under 2), and you can control the position of decals better. The main drawbacks are that decals cannot be moved, removed, or resized.
 
 ### ppmod.text
 
-Creates a `game_text` entity for basic on-screen text and UI, provides functions for managing this entity.
+Creates a `game_text` entity for basic on-screen text and UI and provides functions for managing this entity.
 
 ```
   ppmod.text (text = "", x = -1, y = -1)
 ```
 
-The first argument is the text to display. The second and third argument set the X and Y position of the text, respectively. Setting these to -1 centers the text. Returns a table of functions for managing the entity:
+The first argument is the text to display. The second and third arguments set the X and Y position of the text, respectively. Setting these to -1 centers the text. Returns a table of functions for managing the entity:
 
 - `GetEntity ()` returns a handle to the `game_text` entity.
 - `SetPosition (x, y)` sets the position at which the text should appear. -1 centers the text.
@@ -397,7 +397,7 @@ Given two points of a ray and one or more entities, returns a fraction along the
 
 The first two arguments are Vectors containing the start and end points of the ray, respectively. The third argument denotes the entities whose bounding boxes will be checked for collisions. This can be either an entity handle, a string (as used with `ppmod.get`) or an array of either. If an entity is not given, or the value is `null`, collision with entity bounding boxes will not be checked. The fourth argument is a boolean value. If set to true as it is by default, world brushes and static models will also be checked for collisions.
 
-The returned value is a float, representing a fraction of the ray between the starting point and the collision nearest to it. If the ray did not collide with anything, the function will return `1.0`. If the starting point of the ray is inside one the solids, the function will return `0`. Getting the point of intersection can be done by adding the starting point to the multiplication between the unit vector of the ray's direction, the total ray length and the returned fraction. In code, this might be:
+The returned value is a float, representing a fraction of the ray between the starting point and the collision nearest to it. If the ray does not collide with anything, the function will return `1.0`. If the starting point of the ray is inside one of the solids, the function will return `0`. Getting the point of intersection can be done by adding the starting point to the multiplication between the unit vector of the ray's direction, the total ray length and the returned fraction. In code, this might be:
 
 ```
   local frac = ppmod.ray(start, end, ...);
@@ -406,7 +406,7 @@ The returned value is a float, representing a fraction of the ray between the st
   local point = start + dir * len * frac;
 ```
 
-Optimization note: The function accepts a fifth argument. This is an array of two elements - the length of the ray and an array representing a vector where each value is 1 divided by the respective coordinate of the normalized ray vector or, in other words, it's direction. These values can be precalculated and used if collision with the same ray is being checked multiple times. This optimization is used internally, and therefore is not necessary if the function is only called once.
+Optimization note: The function accepts a fifth argument. This is an array of two elements - the length of the ray and an array representing a vector where each value is 1 divided by the respective coordinate of the normalized ray vector or, in other words, its direction. These values can be precalculated and used if a collision with the same ray is being checked multiple times. This optimization is used internally and therefore is not necessary if the function is only called once.
 
 Here is an example of using `ppmod.player` and `ppmod.ray` to detect if the player is looking at a cube:
 
