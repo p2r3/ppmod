@@ -58,18 +58,28 @@ ppmod.addoutput <- function(ent, output, target, input = "Use", value = "", dela
   ppmod.keyval(ent, output, target+"\x1B"+input+"\x1B"+value+"\x1B"+delay+"\x1B"+max);
 }
 
-ppmod.scrq <- {};
+ppmod.scrq <- [];
 ppmod.scrq_add <- function(scr) {
-  local qid = UniqueString();
   if(typeof scr == "string") scr = compilestring(scr);
-  ppmod.scrq[qid] <- scr;
-  return { id = qid, name = "ppmod.scrq[\"" + qid + "\"]" };
+  for (local i = 0; i < ppmod.scrq.len(); i ++) {
+    if (!ppmod.scrq[i]) {
+      ppmod.scrq[i] = scr;
+      return i;
+    }
+  }
+  ppmod.scrq.push(scr);
+  return ppmod.scrq.len() - 1;
+}
+ppmod.scrq_get <- function(idx) {
+  local scr = ppmod.scrq[idx];
+  ppmod.scrq[idx] = null;
+  return scr;
 }
 
 ppmod.addscript <- function(ent, output, scr = "", delay = 0, max = -1, del = false) {
   if(typeof scr == "function")
-    if(!del) scr = ppmod.scrq_add(scr).name + "()";
-    else scr = "(delete " + ppmod.scrq_add(scr).name + ")()";
+    if(!del) scr = "ppmod.scrq[" + ppmod.scrq_add(scr) + "]()";
+    else scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr) + ")()";
   ppmod.keyval(ent, output, "!self\x001BRunScriptCode\x1B"+scr+"\x1B"+delay+"\x1B"+max);
 }
 
@@ -150,8 +160,7 @@ ppmod.player <- {
     gameui.__KeyValueFromString("Targetname", "ppmod_gameui");
     gameui.__KeyValueFromInt("FieldOfView", -1);
     EntFireByHandle(gameui, "Activate", "", 0, GetPlayer(), null);
-    local script = ppmod.scrq_add(func).name;
-    EntFireByHandle(proxy, "RunScriptCode", "(delete " + script + ")()", 0, null, null);
+    EntFireByHandle(proxy, "RunScriptCode", "ppmod.scrq_get(" + ppmod.scrq_add(func) + ")()", 0, null, null);
   }
   surface = function(ent = null) {
     if(ent == null) {
@@ -167,12 +176,12 @@ ppmod.player <- {
   holding = function(func) {
     local filter = Entities.CreateByClassname("filter_player_held");
     local relay = Entities.CreateByClassname("logic_relay");
-    local script = ppmod.scrq_add(func).name;
+    local script = ppmod.scrq_add(func);
     local name = UniqueString("ppmod_holding");
     filter.__KeyValueFromString("Targetname", name);
-    filter.__KeyValueFromString("OnPass", "!self\x001BRunScriptCode\x001B(delete " + script + ")(true)\x001B0\x001B1");
+    filter.__KeyValueFromString("OnPass", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + script + ")(true)\x001B0\x001B1");
     filter.__KeyValueFromString("OnPass", "!self\x001BKill\x1B\x001B0\x001B1");
-    relay.__KeyValueFromString("OnUser1", name + "\x001BRunScriptCode\x001B(delete " + script + ")(false)\x001B0\x001B1");
+    relay.__KeyValueFromString("OnUser1", name + "\x001BRunScriptCode\x001Bppmod.scrq_get(" + script + ")(false)\x001B0\x001B1");
     relay.__KeyValueFromString("OnUser1", "!self\x001BOnUser2\x1B\x001B0\x001B1");
     relay.__KeyValueFromString("OnUser2", "!self\x001BKill\x1B\x001B0\x001B1");
     for(local ent = Entities.First(); ent; ent = Entities.Next(ent)) {
@@ -311,8 +320,8 @@ ppmod.create <- function(cmd, func, key = null) {
   SendToConsole(cmd);
   if(key.slice(-4) == ".mdl") key = "models/" + key;
   local getstr = "ppmod.prev(\"" + key + "\")";
-  local qstr = scrq_add(func).name;
-  SendToConsole("script (delete " + qstr + ")(" + getstr + ")");
+  local qstr = ppmod.scrq_add(func);
+  SendToConsole("script ppmod.scrq_get(" + qstr + ")(" + getstr + ")");
 }
 
 ppmod.give <- function(key, func, pos = null) {
@@ -322,8 +331,8 @@ ppmod.give <- function(key, func, pos = null) {
     k = UniqueString("ppmod_give");
     e.__KeyValueFromString("NPCTargetname", k);
     local getstr = ")(Entities.FindByName(null, \"" + k + "\"))";
-    local script = ppmod.scrq_add(f).name + getstr;
-    e.__KeyValueFromString("OnSpawnNPC", k + "\x001BRunScriptCode\x001B(delete " + script + "\x001B0\x001B1");
+    local script = ppmod.scrq_add(f) + getstr;
+    e.__KeyValueFromString("OnSpawnNPC", k + "\x001BRunScriptCode\x001Bppmod.scrq_get(" + script + "\x001B0\x001B1");
     e.__KeyValueFromString("OnSpawnNPC", "!self\x001BKill\x1B\x001B0\x001B1");
   });
   local player = Entities.FindByClassname(null, "player");
@@ -331,7 +340,7 @@ ppmod.give <- function(key, func, pos = null) {
   equip.__KeyValueFromInt(key, 1);
   EntFireByHandle(equip, "Use", "", 0, player, null);
   local getstr = ")(ppmod.prev(\"" + key + "\"))";
-  local script = "(delete " + scrq_add(func).name + getstr;
+  local script = "ppmod.scrq_get(" + ppmod.scrq_add(func) + getstr;
   EntFireByHandle(equip, "RunScriptCode", script, 0, null, null);
   EntFireByHandle(equip, "Kill", "", 0, null, null);
 }
