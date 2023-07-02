@@ -438,7 +438,7 @@ All arguments must be provided with strings and the function returns a new strin
 Example:
 
 ```squirrel
-  printl(ppmod.replace("hello, world", ", world", ""))
+  printl(ppmod.replace("hello, world", ", world", ""));
   // prints "hello"
 ```
 
@@ -460,7 +460,7 @@ Example:
 
 ```squirrel
   foreach (value in ppmod.split("hello world", " ")) {
-    printl(value)
+    printl(value);
   }
   // prints "hello" and "world" separately
 ```
