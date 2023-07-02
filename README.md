@@ -10,12 +10,11 @@ To use ppmod in your project, include the script file before calling any ppmod f
   IncludeScript("ppmod3.nut");
 ```
 Make sure to do this in an environment that has access to `CEntities`; otherwise, most game-related functions will not work.
-You can do this by checking if the instance `Entities` exists within `this`:
-```
-  if("Entities" in this) {
-    IncludeScript("ppmod3.nut");
-    ...
-  }
+You can do this at the start of your script by checking if the instance `Entities` exists within `this`:
+```squirrel
+  if(!("Entities") in this) return; //halts the script if it can't be found
+  IncludeScript("ppmod3.nut");
+  ...
 ```
 
 ## Functions
@@ -50,7 +49,7 @@ Similar to `ppmod.addoutput`, used as a cleaner and more powerful way of attachi
 
 The arguments are almost the same as the ones in `ppmod.addoutput`, except instead of specifying a target entity and input values, a script is required instead. This can be code within either a string or a function. An additional boolean argument is supported. If set to true and the script is provided as a function, this will delete the attached function after the output has fired. Below is an example of attaching a local function to an entity output:
 
-```
+```squirrel
   ppmod.addscript("prop_button", "OnPressed", function() {
     printl("Button pressed!");
   });
@@ -149,12 +148,12 @@ Calling this function creates the entities required for most other `ppmod.player
 
 Entity handle for a `logic_measure_movement` entity set to track the player's eyes. Using methods like `GetAngles` or `GetOrigin` lets you retrieve the player's eye angles and position.
 
-```
+```squirrel
   ppmod.player.enable(function() {
-  
+
     printl( ppmod.player.eyes.GetAngles() );
     printl( ppmod.player.eyes.GetOrigin() );
-    
+
   });
 ```
 
@@ -164,7 +163,7 @@ However, for getting the position, it is suggested to use the native `CBaseEntit
 
 Returns a unit vector pointing in the direction that the player is looking in. Accepts no arguments.
 
-```
+```squirrel
   ppmod.player.enable(function() {
     printl( ppmod.player.eyes_vec() );
   });
@@ -172,7 +171,7 @@ Returns a unit vector pointing in the direction that the player is looking in. A
 
 When combined with `ppmod.ray`, for example, this vector can be used for things like simulating weapon hitscan:
 
-```
+```squirrel
   ppmod.player.enable(function() {
 
     local dist = 2048;
@@ -194,7 +193,7 @@ When combined with `ppmod.ray`, for example, this vector can be used for things 
 
 Calls the provided callback function with a boolean argument indicating whether or not the player is holding a prop. Does not require running `ppmod.player.enable`.
 
-```
+```squirrel
   ppmod.player.holding(function(state){
     if (state) printl( "Player is holding a prop!" );
     else printl( "Player is not holding a prop!" );
@@ -213,12 +212,12 @@ Set of functions for adding scripts to player movement actions. Accepts one argu
 
 Function for adding scripts to player inputs as returned by the `game_ui` entity. The first argument is the input to listen for, as seen in the developer console (e.g., "+forward"). The second argument is the script to attach to this input.
 
-```
+```squirrel
   ppmod.player.enable(function() {
-  
+
     ppmod.player.input("+attack", "printl(\"Started shooting\")");
     ppmod.player.input("-attack", "printl(\"Stopped shooting\")");
-    
+
   });
 ```
 
@@ -254,7 +253,7 @@ The `eyes` argument is used for getting the forward and left Vector that the pla
 
 Here is an example of using `ppmod.player.movesim` to simulate the player moving forward indefinitely:
 
-```
+```squirrel
   ppmod.player.enable(function() {
     ppmod.interval(function(){
       ppmod.player.movesim(Vector(175, 0));
@@ -278,14 +277,14 @@ The third argument is the key by which the entity is searched. This can be left 
 
 Here is an example of using `ppmod.create` to spawn a red cube at the player's feet:
 
-```
+```squirrel
   ppmod.create("ent_create_portal_weighted_cube", function(cube) {
-    
+
     cube.SetOrigin( GetPlayer().GetOrigin() );
     cube.SetAngles( 0, 0, 0 );
-    
+
     ppmod.fire(cube, "Color", "255 0 0");
-    
+
   });
 ```
 
@@ -299,14 +298,14 @@ Creates a brush entity of the specified type and returns a handle to it.
 
 The first argument is a vector to the center of the brush entity. The second argument is a vector containing the half-width of the brush on each respective axis. The third argument is the classname for the brush entity, "func_brush" by default. The last argument is a vector of the entity's angles - pitch, yaw and roll, respectively. Textures cannot be set, so the brush will remain invisible. Due to the limitations of creating entities with `CEntities` methods, some brush entity types might not function properly. To work around this, you can try using `ppmod.create` for creating the entity, then handling it with a code snippet from the `ppmod.brush` function:
 
-```
+```squirrel
   ppmod.create("func_movelinear", function(brush) {
-  
+
     brush.SetOrigin( Vector(0, 0, 0) );
     brush.SetSize( Vector(-10, -10, -10), Vector(10, 10, 10) );
-    
+
     ppmod.keyval(brush, "Solid", 3);
-    
+
   });
 ```
 
@@ -322,9 +321,9 @@ The arguments are nearly identical to those of `ppmod.brush`, with the only exce
 
 To add outputs to this trigger, you can store the handle returned by the function to then use `ppmod.addoutput` or `ppmod.addscript` on it. Here is an example of using `ppmod.trigger` to create a field that makes you say "Hello World!" in chat:
 
-```
+```squirrel
   local trigger = ppmod.trigger(Vector(0, 0, 0), Vector(128, 128, 128), "multiple");
-  
+
   ppmod.addscript(trigger, "OnStartTouch", function() {
     SendToConsole("say Hello World!");
   });
@@ -378,13 +377,13 @@ The first argument is the text to display. The second and third arguments set th
 
 These functions set keyvalues or fire inputs to the entity. Here is an example of displaying the text "Hello World" centered and with the scan-in effect:
 
-```
+```squirrel
   local txt = ppmod.text("Hello World!");
-  
+
   txt.SetColor("40 170 215", "255 154 0");
   txt.SetFade(0.1, 2, true);
   txt.Display(3);
-    
+
 ```
 
 ### ppmod.ray
@@ -399,7 +398,7 @@ The first two arguments are Vectors containing the start and end points of the r
 
 The returned value is a float, representing a fraction of the ray between the starting point and the collision nearest to it. If the ray does not collide with anything, the function will return `1.0`. If the starting point of the ray is inside one of the solids, the function will return `0`. Getting the point of intersection can be done by adding the starting point to the multiplication between the unit vector of the ray's direction, the total ray length and the returned fraction. In code, this might be:
 
-```
+```squirrel
   local frac = ppmod.ray(start, end, ...);
   local dir = end - start;
   local len = dir.Norm();
@@ -410,19 +409,60 @@ Optimization note: The function accepts a fifth argument. This is an array of tw
 
 Here is an example of using `ppmod.player` and `ppmod.ray` to detect if the player is looking at a cube:
 
-```
+```squirrel
   ppmod.player.enable(function() {
-  
+
     local start = ppmod.player.eyes.GetOrigin();
     local vec = ppmod.player.eyes_vec() * 8196;
     local end = start + vec;
-    
+
     ppmod.interval(function(start = start, end = end) {
-    
+
       local frac = ppmod.ray(start, end, "prop_weighted_cube", false);
       if(frac < 1) printl("Player is looking at a cube!");
-      
+
     });
-  
+
   });
 ```
+
+### ppmod.replace
+
+Replaces all occurences of a sub-string with a new string
+
+```
+  ppmod.replace (string, substring, replacement)
+```
+
+All arguments must be provided with strings and the function returns a new string
+Example:
+
+```squirrel
+  printl(ppmod.replace("hello, world", ", world", ""))
+  // prints "hello"
+```
+
+This function should only be used for strings that you don't know the exact value of, otherwise you should use native string functions like `string.find` and `string.slice`
+
+Squirrel also implements regular expressions which are used for pattern matching and string manipulation. Regular expressions allow you to define search patterns using a combination of characters.
+You can read the documentation for regexp [here.](http://squirrel-lang.org/squirreldoc/stdlib/stdstringlib.html#regexp)
+
+### ppmod.split
+
+Divides a string into an array of substrings based on a specified delimiter
+
+```
+  ppmod.split (string, delimiter)
+```
+
+All arguments must be provided with strings and the function returns an array of strings
+Example:
+
+```squirrel
+  foreach (value in ppmod.split("hello world", " ")) {
+    printl(value)
+  }
+  // prints "hello" and "world" separately
+```
+
+Again, this function should only be used for strings that you don't know the exact value of, otherwise you should use native string functions like `string.find` and `string.slice`
