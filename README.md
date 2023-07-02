@@ -442,7 +442,7 @@ Example:
   // prints "hello"
 ```
 
-This function should only be used for strings that you don't know the exact value of, otherwise you should use native string functions like `string.find` and `string.slice`
+This function should only be used for strings that you don't know the exact value of at runtime, otherwise you should use native string functions like `string.find` and `string.slice`
 
 Squirrel also implements regular expressions which are used for pattern matching and string manipulation. Regular expressions allow you to define search patterns using a combination of characters.
 You can read the documentation for regexp [here.](http://squirrel-lang.org/squirreldoc/stdlib/stdstringlib.html#regexp)
@@ -465,4 +465,4 @@ Example:
   // prints "hello" and "world" separately
 ```
 
-Again, this function should only be used for strings that you don't know the exact value of, otherwise you should use native string functions like `string.find` and `string.slice`
+Again, this function should only be used for strings that you don't know the exact value of at runtime, otherwise you should use native string functions like `string.find` and `string.slice`
