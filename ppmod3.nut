@@ -505,3 +505,33 @@ ppmod.fwrite <- function(path, str) {
   SendToConsole("con_logfile \"\"");
 
 }
+
+ppmod.replace <- function(source, subString, replacement) {
+  if (source == null || subString == null || replacement == null) return;
+  if (subString == "" || replacement == "") return source;
+  local result = ""; local lastIndex = 0; local searchIndex = source.find(subString);
+  while (searchIndex >= 0) {
+      result += source.slice(lastIndex, searchIndex);
+      if (replacement != "") result += replacement;
+      lastIndex = searchIndex + subString.len();
+      searchIndex = source.find(subString, lastIndex);
+  }
+  return result + source.slice(lastIndex);
+}
+
+ppmod.split <- function(string, delimiter) {
+  if (string == null || delimiter == null) return;
+  local result = []; local start_index = 0; local delimiter_index = 0;
+  if (delimiter == "") {
+    for (local i = 0; i < string.len(); i++) {
+      result.append(string.slice(i, i + 1));
+    }
+    return result;
+  }
+  while ((delimiter_index = string.find(delimiter, start_index)) >= 0) {
+    result.append(string.slice(start_index, delimiter_index));
+    start_index = delimiter_index + delimiter.len();
+  }
+  if (start_index < string.len()) result.append(string.slice(start_index));
+  return result;
+}
