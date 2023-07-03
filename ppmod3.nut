@@ -507,8 +507,7 @@ ppmod.fwrite <- function(path, str) {
 }
 
 ppmod.replace <- function(source, subString, replacement) {
-  if (source == null || subString == null || replacement == null) return;
-  if (subString == "" || replacement == "") return source;
+  if (source == null || subString == null || replacement == null || subString == "") return source || null;
   local result = ""; local lastIndex = 0; local searchIndex = source.find(subString);
   while (searchIndex >= 0) {
       result += source.slice(lastIndex, searchIndex);
@@ -520,7 +519,7 @@ ppmod.replace <- function(source, subString, replacement) {
 }
 
 ppmod.split <- function(string, delimiter) {
-  if (string == null || delimiter == null) return;
+  if (string == null || delimiter == null) return string && [string] || null;
   local result = []; local start_index = 0; local delimiter_index = 0;
   if (delimiter == "") {
     for (local i = 0; i < string.len(); i++) {

@@ -428,34 +428,36 @@ Here is an example of using `ppmod.player` and `ppmod.ray` to detect if the play
 
 ### ppmod.replace
 
-Replaces all occurences of a sub-string with a new string
+Replaces all occurences of a sub-string with a new string.
 
 ```
   ppmod.replace (string, substring, replacement)
 ```
 
-All arguments must be provided with strings and the function returns a new string
+The `string` argument must be provided, and the function returns a new string.
 Example:
 
 ```squirrel
-  printl(ppmod.replace("hello, world", ", world", ""));
+  printl(ppmod.replace("hello world", " world", ""));
   // prints "hello"
 ```
 
-This function should only be used for strings that you don't know the exact value of at runtime, otherwise you should use native string functions like `string.find` and `string.slice`
+If no `replacement` or `substring` arguments are provided, the function will return the given `string`
+
+This function should only be used for strings that you don't know the exact value of at runtime, otherwise you should use native string functions like `string.find` and `string.slice`.
 
 Squirrel also implements regular expressions which are used for pattern matching and string manipulation. Regular expressions allow you to define search patterns using a combination of characters.
-You can read the documentation for regexp [here.](http://squirrel-lang.org/squirreldoc/stdlib/stdstringlib.html#regexp)
+The documentation for regexp can be found [here.](http://squirrel-lang.org/squirreldoc/stdlib/stdstringlib.html#regexp)
 
 ### ppmod.split
 
-Divides a string into an array of substrings based on a specified delimiter
+Divides a string into an array of substrings based on a specified delimiter.
 
 ```
   ppmod.split (string, delimiter)
 ```
 
-All arguments must be provided with strings and the function returns an array of strings
+The `string` argument must be provided, and the function returns an array of strings.
 Example:
 
 ```squirrel
@@ -465,4 +467,6 @@ Example:
   // prints "hello" and "world" separately
 ```
 
-Again, this function should only be used for strings that you don't know the exact value of at runtime, otherwise you should use native string functions like `string.find` and `string.slice`
+If no `delimiter` argument is provided, the function will return an array containing the given `string` argument.
+
+Again, this function should only be used for strings that you don't know the exact value of at runtime, otherwise you should use native string functions like `string.find` and `string.slice`.
