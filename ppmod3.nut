@@ -506,16 +506,16 @@ ppmod.fwrite <- function(path, str) {
 
 }
 
-ppmod.replace <- function(source, subString, replacement) {
-  if (source == null || subString == null || replacement == null || subString == "") return source || null;
-  local result = ""; local lastIndex = 0; local searchIndex = source.find(subString);
-  while (searchIndex >= 0) {
-      result += source.slice(lastIndex, searchIndex);
+ppmod.replace <- function(source, substring, replacement) {
+  if (source == null || substring == null || replacement == null || substring == "") return source || null;
+  local result = ""; local last_index = 0; local search_index = source.find(substring);
+  while (search_index >= 0) {
+      result += source.slice(last_index, search_index);
       if (replacement != "") result += replacement;
-      lastIndex = searchIndex + subString.len();
-      searchIndex = source.find(subString, lastIndex);
+      last_index = search_index + substring.len();
+      search_index = source.find(substring, last_index);
   }
-  return result + source.slice(lastIndex);
+  return result + source.slice(last_index);
 }
 
 ppmod.split <- function(string, delimiter) {
