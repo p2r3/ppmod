@@ -182,7 +182,7 @@ When combined with `ppmod.ray`, for example, this vector can be used for things 
     local pfrac = ppmod.ray(start, end, "player", false);
     if (pfrac == 1.0) return;
     local wfrac = ppmod.ray(start, end);
-    if (pfrac > wfrac) {
+    if (pfrac < wfrac) {
       printl( "Hit player at: " + (start + vec * frac) );
     }
 
