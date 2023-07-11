@@ -507,28 +507,28 @@ ppmod.fwrite <- function(path, str) {
 }
 
 ppmod.replace <- function(source, substring, replacement) {
-  local result = ""; local last_index = 0; local search_index = source.find(substring);
-  while (search_index >= 0) {
-      result += source.slice(last_index, search_index);
+  local result = "", lastindex = 0, searchindex = source.find(substring);
+  while (searchindex >= 0) {
+      result += source.slice(lastindex, searchindex);
       if (replacement != "") result += replacement;
-      last_index = search_index + substring.len();
-      search_index = source.find(substring, last_index);
+      lastindex = searchindex + substring.len();
+      searchindex = source.find(substring, lastindex);
   }
-  return result + source.slice(last_index);
+  return result + source.slice(lastindex);
 }
 
 ppmod.split <- function(string, delimiter) {
-  local result = []; local start_index = 0; local delimiter_index = 0;
+  local result = [], startindex = 0, delimiterindex = 0;
   if (delimiter == "") {
     for (local i = 0; i < string.len(); i++) {
       result.append(string.slice(i, i + 1));
     }
     return result;
   }
-  while ((delimiter_index = string.find(delimiter, start_index)) >= 0) {
-    result.append(string.slice(start_index, delimiter_index));
-    start_index = delimiter_index + delimiter.len();
+  while ((delimiterindex = string.find(delimiter, startindex)) >= 0) {
+    result.append(string.slice(startindex, delimiterindex));
+    startindex = delimiterindex + delimiter.len();
   }
-  if (start_index < string.len()) result.append(string.slice(start_index));
+  if (startindex < string.len()) result.append(string.slice(startindex));
   return result;
 }
