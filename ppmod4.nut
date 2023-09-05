@@ -316,6 +316,28 @@ function Vector::_tostring () {
 
 }
 
+::ppmod.ontick <- function (scr, ignorepause = true, timeout = -1) {
+
+  if (typeof scr == "function") {
+    if (timeout == -1) scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr, -1) + ")()";
+    else scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr, 1) + ")()";
+  }
+
+  if (ignorepause == false && FrameTime() == 0.0) {
+    SendToConsole("script ppmod.ontick(\"" + scr + "\", " + ignorepause + ", " + timeout + ")");
+    return;
+  }
+
+  if (timeout == -1) {
+    SendToConsole("script " + scr + ";script ppmod.ontick(\"" + scr + "\", " + ignorepause + ")");
+    return;
+  }
+
+  if (timeout == 0) SendToConsole("script " + scr);
+  else SendToConsole("script ppmod.ontick(\"" + scr + "\", " + ignorepause + ", " + (timeout - 1) + ")");
+
+}
+
 ::ppmod.once <- function (scr, name = null) {
 
   if (!name) name = scr.tostring();
@@ -335,8 +357,9 @@ function Vector::_tostring () {
 
   local auto = Entities.CreateByClassname("logic_auto");
 
-  // In multiplayer games, we delay spawning until both players are ready
-  if (IsMultiplayer()) scr = function ():(scr) {
+  // In online multiplayer games, we delay spawning until both players are ready
+  // The double if statement prevents an exception from IsLocalSplitScreen in SP
+  if (IsMultiplayer()) if (IsLocalSplitScreen()) scr = function ():(scr) {
 
     // Find the lowest significant point of the world's bounding box estimate
     local ent = null, lowest = 0, curr;
@@ -377,18 +400,6 @@ function Vector::_tostring () {
 
       }
     }, 0.0, intervalname);
-
-    // In case the above fails, there's an arbitrary 15 second timeout
-    // TODO: Detect split-screen
-    ppmod.wait(function () {
-
-      if (typeof scr == "string") compilestring(scr)();
-      else scr();
-
-      Entities.FindByName(null, intervalname).Destroy();
-      Entities.FindByName(null, timername).Destroy();
-
-    }, 15.0, timername);
 
   };
 
@@ -891,10 +902,8 @@ function Vector::_tostring () {
     local portal = Entities.FindByClassnameWithin(null, "prop_portal", output.point, 1.0);
     if (!portal) return output;
 
-    // Find the other portal // TODO: support more than 2 portals via ppmod.portals
-    local other = Entities.FindByClassname(portal, "prop_portal");
-    if (!other) other = Entities.FindByClassname(null, "prop_portal");
-    if (!other) return output;
+    // Find the other portal
+    local other = ppmod.portal(portal);
 
     local p_anchor = Entities.FindByName(null, "ppmod_portals_p_anchor");
     local r_anchor = Entities.FindByName(null, "ppmod_portals_r_anchor");
@@ -1276,7 +1285,7 @@ function Vector::_tostring () {
     GetEntity = function ():(ent) {
       return ent;
     },
-    SetPosition = function(x, y):(ent) {
+    SetPosition = function (x, y):(ent) {
       ent.__KeyValueFromFloat("X", x);
       ent.__KeyValueFromFloat("Y", y);
     },
