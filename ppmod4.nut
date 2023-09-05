@@ -903,7 +903,7 @@ function Vector::_tostring () {
     if (!portal) return output;
 
     // Find the other portal
-    local other = ppmod.portal(portal);
+    local other = ppmod.portals(portal);
 
     local p_anchor = Entities.FindByName(null, "ppmod_portals_p_anchor");
     local r_anchor = Entities.FindByName(null, "ppmod_portals_r_anchor");
