@@ -430,7 +430,7 @@ function Vector::_tostring () {
         printl("Caught within ppmod.detach in file " + stack.src + " on line " + stack.line + "\n");
         return;
       }
-      queueScript(scr, idx);
+      ppmod.detach(scr, idx);
     }
 
   });
