@@ -113,14 +113,13 @@ function Vector::_tostring () {
     args = [args];
   }
   args.push(null);
+  args.insert(0, this);
 
   local curr = null;
 
   while (true) {
     
-    if (args.len() == 2) curr = ppmod.get(args[0], args[1]);
-    else if (args.len() == 3) curr = ppmod.get(args[0], args[1], args[2]);
-    else curr = ppmod.get(args[0], args[1], args[2], args[3]);
+    curr = ppmod.get.acall(args);
 
     if (!curr) return;
     callback(curr);
