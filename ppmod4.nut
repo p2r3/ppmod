@@ -316,25 +316,25 @@ function Vector::_tostring () {
 
 }
 
-::ppmod.ontick <- function (scr, ignorepause = true, timeout = -1) {
+::ppmod.ontick <- function (scr, pause = true, timeout = -1) {
 
   if (typeof scr == "function") {
     if (timeout == -1) scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr, -1) + ")()";
     else scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr, 1) + ")()";
   }
 
-  if (ignorepause == false && FrameTime() == 0.0) {
-    SendToConsole("script ppmod.ontick(\"" + scr + "\", " + ignorepause + ", " + timeout + ")");
+  if (pause && FrameTime() == 0.0) {
+    SendToConsole("script ppmod.ontick(\"" + scr + "\", true, " + timeout + ")");
     return;
   }
 
   if (timeout == -1) {
-    SendToConsole("script " + scr + ";script ppmod.ontick(\"" + scr + "\", " + ignorepause + ")");
+    SendToConsole("script " + scr + ";script ppmod.ontick(\"" + scr + "\", " + pause + ")");
     return;
   }
 
   if (timeout == 0) SendToConsole("script " + scr);
-  else SendToConsole("script ppmod.ontick(\"" + scr + "\", " + ignorepause + ", " + (timeout - 1) + ")");
+  else SendToConsole("script ppmod.ontick(\"" + scr + "\", " + pause + ", " + (timeout - 1) + ")");
 
 }
 
@@ -408,6 +408,32 @@ function Vector::_tostring () {
   if (onload) ppmod.addscript(auto, "OnLoadGame", scr);
 
   return auto;
+
+}
+
+::ppmod.detach <- function (scr, args, stack = null) {
+
+  if (stack == null) stack = getstackinfos(2);
+
+  ppmod.runscript("worldspawn", function (idx = args):(scr, stack) {
+
+    if (typeof idx != "integer") {
+      idx = ppmod.scrq_add(idx);
+    }
+
+    try {
+      scr(ppmod.scrq[idx][0]);
+      ppmod.scrq[idx] = null;
+    } catch (e) {
+      if (e != "Script terminated by SQQuerySuspend") {
+        printl("\nAN ERROR HAS OCCURED [" + e + "]");
+        printl("Caught within ppmod.detach in file " + stack.src + " on line " + stack.line + "\n");
+        return;
+      }
+      queueScript(scr, idx);
+    }
+
+  });
 
 }
 
