@@ -55,7 +55,7 @@ class pparray {
   function resize (size, fill = null) return arr.resize(size, fill);
   function sort (func = null) return func ? arr.sort(func) : arr.sort();
   function reverse () return arr.reverse();
-  function slice (start, end = null) return arr.slice(start, end || arr.len());
+  function slice (start, end = null) return pparray(arr.slice(start, end || arr.len()));
   function tostring () return _tostring();
   function clear () return arr.clear();
   function find (match) {
@@ -77,7 +77,7 @@ class pparray {
 class ppstring {
 
   constructor (str = "") {
-    string = str;
+    string = str.tostring();
   }
 
   function _typeof () return "string";
@@ -95,10 +95,10 @@ class ppstring {
   function tointeger () return string.tointeger();
   function tofloat () return string.tofloat();
   function tostring () return string;
-  function slice (start, end = null) return string.slice(start, end || string.len());
+  function slice (start, end = null) return ppstring(string.slice(start, end || string.len()));
   function find (substr, startidx = 0) return string.find(substr, startidx);
-  function tolower () return string.tolower();
-  function toupper () return string.toupper();
+  function tolower () return ppstring(string.tolower());
+  function toupper () return ppstring(string.toupper());
   function split (substr) {
     local arr = [], curr = 0, prev = 0;
     while ((curr = string.find(substr, curr)) != null) {
@@ -109,10 +109,10 @@ class ppstring {
     arr.push(string.slice(prev));
     return arr;
   }
-  function strip () return ::strip(string);
-  function lstrip () return ::lstrip(string);
-  function rstrip () return ::rstrip(string);
-  function replace (substr, rep) return pparray(this.split(substr)).join(rep);
+  function strip () return ppstring(::strip(string));
+  function lstrip () return ppstring(::lstrip(string));
+  function rstrip () return ppstring(::rstrip(string));
+  function replace (substr, rep) return ppstring(pparray(this.split(substr)).join(rep));
 
   string = null;
 
