@@ -14,13 +14,14 @@ if ("ppmod" in this) return;
 ::max <- function (a, b) return a < b ? b : a;
 ::round <- function (a, b = 0) return floor (a * (b = pow(10, b)) + 0.5) / b;
 
-class ppArray {
+class pparray {
 
-  constructor (size, fill = null) {
+  constructor (size = 0, fill = null) {
     if (typeof size == "array") arr = size;
     else arr = array(size, fill);
   }
 
+  function _typeof () return "array";
   function _get (idx) return arr[idx];
   function _set (idx, val) return arr[idx] = val;
   function _tostring () {
@@ -73,20 +74,31 @@ class ppArray {
 
 }
 
-class ppString {
+class ppstring {
 
-  constructor (str) {
+  constructor (str = "") {
     string = str;
   }
 
+  function _typeof () return "string";
   function _tostring () return string;
+  function _add (other) return ppstring(string + other.tostring());
+  function _get (idx) return string[idx];
+  function _set (idx, val) return string = string.slice(0, idx) + val.tochar() + string.slice(idx + 1);
+  function _cmp (other) {
+    if (string == other.tostring()) return 0;
+    if (string > other.tostring()) return 1;
+    return -1;
+  }
+
   function len () return string.len();
   function tointeger () return string.tointeger();
   function tofloat () return string.tofloat();
+  function tostring () return string;
   function slice (start, end = null) return string.slice(start, end || string.len());
   function find (substr, startidx = 0) return string.find(substr, startidx);
   function tolower () return string.tolower();
-  function topupper () return string.toupper();
+  function toupper () return string.toupper();
   function split (substr) {
     local arr = [], curr = 0, prev = 0;
     while ((curr = string.find(substr, curr)) != null) {
@@ -100,9 +112,9 @@ class ppString {
   function strip () return ::strip(string);
   function lstrip () return ::lstrip(string);
   function rstrip () return ::rstrip(string);
-  function replace (substr, rep) return ppArray(this.split(substr)).join(rep);
+  function replace (substr, rep) return pparray(this.split(substr)).join(rep);
 
-  string = "";
+  string = null;
 
 }
 
