@@ -14,11 +14,96 @@ if ("ppmod" in this) return;
 ::max <- function (a, b) return a < b ? b : a;
 ::round <- function (a, b = 0) return floor (a * (b = pow(10, b)) + 0.5) / b;
 
-::arrfind <- function (arr, needle) {
-  for (local i = 0; i < arr.len(); i ++) {
-    if (arr[i] == needle) return i;
+class ppArray {
+
+  constructor (size, fill = null) {
+    if (typeof size == "array") arr = size;
+    else arr = array(size, fill);
   }
-  return -1;
+
+  function _get (idx) return arr[idx];
+  function _set (idx, val) return arr[idx] = val;
+  function _tostring () {
+    local str = "[";
+    for (local i = 0; i < arr.len(); i ++) {
+      if (typeof arr[i] == "string") str += "\"" + arr[i] + "\"";
+      else str += arr[i];
+      if (i != arr.len() - 1) str += ", ";
+    }
+    return str + "]";
+  }
+
+  function join (joinstr = "") {
+    local str = "";
+    for (local i = 0; i < arr.len(); i ++) {
+      str += arr[i];
+      if (i != arr.len() - 1) str += joinstr;
+    }
+    return str;
+  }
+  function len () return arr.len();
+  function append (val) return arr.append(val);
+  function push (val) return arr.push(val);
+  function extend (other) return arr.extend(other);
+  function pop () return arr.pop();
+  function shift () return arr.remove(0);
+  function unshift (val) return arr.insert(0, val);
+  function top () return arr.top();
+  function insert (idx, val) return arr.insert(idx, val);
+  function remove (idx) return arr.remove(idx);
+  function resize (size, fill = null) return arr.resize(size, fill);
+  function sort (func = null) return func ? arr.sort(func) : arr.sort();
+  function reverse () return arr.reverse();
+  function slice (start, end = null) return arr.slice(start, end || arr.len());
+  function tostring () return _tostring();
+  function clear () return arr.clear();
+  function find (match) {
+    if (typeof match == "function") {
+      for (local i = 0; i < arr.len(); i ++) {
+        if (match(arr[i])) return i;
+      }  
+      return -1;
+    }
+    for (local i = 0; i < arr.len(); i ++) {
+      if (arr[i] == match) return i;
+    }
+  }
+
+  arr = null;
+
+}
+
+class ppString {
+
+  constructor (str) {
+    string = str;
+  }
+
+  function _tostring () return string;
+  function len () return string.len();
+  function tointeger () return string.tointeger();
+  function tofloat () return string.tofloat();
+  function slice (start, end = null) return string.slice(start, end || string.len());
+  function find (substr, startidx = 0) return string.find(substr, startidx);
+  function tolower () return string.tolower();
+  function topupper () return string.toupper();
+  function split (substr) {
+    local arr = [], curr = 0, prev = 0;
+    while ((curr = string.find(substr, curr)) != null) {
+      curr = max(curr, prev + 1);
+      arr.push(string.slice(prev, curr));
+      prev = curr += substr.len();
+    }
+    arr.push(string.slice(prev));
+    return arr;
+  }
+  function strip () return ::strip(string);
+  function lstrip () return ::lstrip(string);
+  function rstrip () return ::rstrip(string);
+  function replace (substr, rep) return ppArray(this.split(substr)).join(rep);
+
+  string = "";
+
 }
 
 function Vector::_mul (other) {
