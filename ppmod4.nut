@@ -384,7 +384,17 @@ function Vector::_tostring () {
 
 ::ppmod.hook <- function (ent, input, scr, max = -1) {
 
-  if (!ent.ValidateScriptScope()) throw "ppmod.hook: Could not validate entity script scope";
+  if (!(typeof ent == "instance" && ent instanceof CBaseEntity)) {
+    ppmod.getall(ent, function (curr):(input, scr, max) {
+      ppmod.hook(curr, input, scr, max);
+    });
+    return;
+  }
+
+  if (!ent.ValidateScriptScope()) {
+    throw "ppmod.hook: Could not validate entity script scope";
+  }
+
   if (scr == null) ent.GetScriptScope()["Input"+input] <- function () return true; 
   else ent.GetScriptScope()["Input"+input] <- ppmod.scrq_get(ppmod.scrq_add(scr, max));
 
@@ -829,19 +839,22 @@ function Vector::_tostring () {
 
   if (!partner) return { partner = null };
 
-  if (portal.ValidateScriptScope() && !("trigger" in portal.GetScriptScope())) {
-
-    portal.GetScriptScope()["trigger"] = ppmod.trigger(portal.GetOrigin(), Vector(32, 4, 54), "trigger_multiple");
-    partner.GetScriptScope()["trigger"] = ppmod.trigger(partner.GetOrigin(), Vector(32, 4, 54), "trigger_multiple");
-    
-    portal.GetScriptScope()["trigger"].SetForwardVector(portal.GetForwardVector());
-    partner.GetScriptScope()["trigger"].SetForwardVector(partner.GetForwardVector());
-
+  if (!portal.ValidateScriptScope() || !partner.ValidateScriptScope()) {
+    throw "ppmod.portals: Could not validate entity script scope";
   }
+
+  if (!("trigger" in portal.GetScriptScope())) portal.GetScriptScope()["trigger"] <- ppmod.trigger(portal.GetOrigin() + portal.GetForwardVector() * 4, Vector(2, 32, 54), "trigger_multiple");
+  if (!("trigger" in partner.GetScriptScope())) partner.GetScriptScope()["trigger"] <- ppmod.trigger(partner.GetOrigin() + partner.GetForwardVector() * 4, Vector(2, 32, 54), "trigger_multiple");
+  
+  portal.GetScriptScope()["trigger"].SetForwardVector(portal.GetForwardVector());
+  partner.GetScriptScope()["trigger"].SetForwardVector(partner.GetForwardVector());
+
+  ppmod.setparent(portal.GetScriptScope()["trigger"], portal);
+  ppmod.setparent(partner.GetScriptScope()["trigger"], partner);
 
   return {
     partner = partner,
-    block = function (enable):(partner) {
+    block = function (enable):(portal, partner) {
       if (enable) {
         portal.GetScriptScope()["trigger"].__KeyValueFromInt("CollisionGroup", 0);
         partner.GetScriptScope()["trigger"].__KeyValueFromInt("CollisionGroup", 0);
