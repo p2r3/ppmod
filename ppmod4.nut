@@ -382,6 +382,14 @@ function Vector::_tostring () {
 
 }
 
+::ppmod.hook <- function (ent, input, scr, max = -1) {
+
+  if (!ent.ValidateScriptScope()) throw "ppmod.hook: Could not validate entity script scope";
+  if (scr == null) ent.GetScriptScope()["Input"+input] <- function () return true; 
+  else ent.GetScriptScope()["Input"+input] <- ppmod.scrq_get(ppmod.scrq_add(scr, max));
+
+}
+
 /****************/
 // Control flow //
 /****************/
@@ -677,47 +685,6 @@ function Vector::_tostring () {
 
   };
 
-  // pplayer.holding <- function (callback):(player) {
-
-  //   local mins = Vector(), maxs = Vector(), curr = null;
-    
-  //   while (curr = Entities.Next(curr)) {
-
-  //     local pos = curr.GetOrigin();
-
-  //     if (pos.x < mins.x) mins.x = pos.x;
-  //     if (pos.y < mins.y) mins.y = pos.y;
-  //     if (pos.z < mins.z) mins.z = pos.z;
-
-  //     if (pos.x > maxs.x) maxs.x = pos.x;
-  //     if (pos.y > maxs.y) maxs.y = pos.y;
-  //     if (pos.z > maxs.z) maxs.z = pos.z;
-
-  //   }
-
-  //   ppmod.create("trigger_once", function (trigger):(callback, mins, maxs) {
-
-  //     local filter = Entities.CreateByClassname("filter_player_held");
-
-  //     local name = UniqueString("ppmod_holding");
-  //     trigger.__KeyValueFromString("Targetname", name);
-
-  //     trigger.__KeyValueFromInt("Solid", 3);
-  //     trigger.SetAbsOrigin(mins);
-  //     trigger.SetSize(Vector(), maxs - mins);
-  //     trigger.__KeyValueFromInt("CollisionGroup", 1);
-  //     trigger.__KeyValueFromInt("SpawnFlags", 8);
-  //     trigger.__KeyValueFromString("FilterName", name);
-
-  //     ppmod.addscript(trigger, "OnStartTouch", callback);
-
-  //     EntFireByHandle(trigger, "Enable", "", 0.0, null, null);
-  //     EntFireByHandle(trigger, "Kill", "", FrameTime(), null, null);
-
-  //   });
-
-  // };
-
   pplayer.jump <- function (scr):(player, proxy) {
     local scrqstr = "ppmod.scrq_get(" + ppmod.scrq_add(scr) + ")()";
     ppmod.addoutput(proxy, "OnJump", player, "RunScriptCode", "if (self == activator) " + scrqstr);
@@ -835,7 +802,7 @@ function Vector::_tostring () {
 */
 ::ppmod.portals <- function (portal = null) {
 
-  if (Entities.FindByName(null, "ppmod_portals_p_anchor")) {
+  if (Entities.FindByName(null, "ppmod_portals_p_anchor") == null) {
 
     local p_anchor = Entities.CreateByClassname("info_target");
     local r_anchor = Entities.CreateByClassname("info_target");
@@ -860,7 +827,33 @@ function Vector::_tostring () {
     partner = Entities.FindByClassname(portal, "prop_portal");
   }
 
-  return partner;
+  if (!partner) return { partner = null };
+
+  if (portal.ValidateScriptScope() && !("trigger" in portal.GetScriptScope())) {
+
+    portal.GetScriptScope()["trigger"] = ppmod.trigger(portal.GetOrigin(), Vector(32, 4, 54), "trigger_multiple");
+    partner.GetScriptScope()["trigger"] = ppmod.trigger(partner.GetOrigin(), Vector(32, 4, 54), "trigger_multiple");
+    
+    portal.GetScriptScope()["trigger"].SetForwardVector(portal.GetForwardVector());
+    partner.GetScriptScope()["trigger"].SetForwardVector(partner.GetForwardVector());
+
+  }
+
+  return {
+    partner = partner,
+    block = function (enable):(partner) {
+      if (enable) {
+        portal.GetScriptScope()["trigger"].__KeyValueFromInt("CollisionGroup", 0);
+        partner.GetScriptScope()["trigger"].__KeyValueFromInt("CollisionGroup", 0);
+      } else {
+        portal.GetScriptScope()["trigger"].__KeyValueFromInt("CollisionGroup", 1);
+        partner.GetScriptScope()["trigger"].__KeyValueFromInt("CollisionGroup", 1);
+      }
+    },
+    onteleport = function () {
+
+    }
+  };
 
 }
 
@@ -1025,7 +1018,7 @@ function Vector::_tostring () {
     if (!portal) return output;
 
     // Find the other portal
-    local other = ppmod.portals(portal);
+    local other = ppmod.portals(portal).partner;
 
     local p_anchor = Entities.FindByName(null, "ppmod_portals_p_anchor");
     local r_anchor = Entities.FindByName(null, "ppmod_portals_r_anchor");
