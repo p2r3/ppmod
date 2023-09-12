@@ -1116,7 +1116,7 @@ function Vector::_tostring () {
 
       local lowest = 1.0;
       for (local i = 0; i < ent.len(); i++) {
-        local curr = ppmod.ray(start, end, ent[i], false, portals, [len, div]);
+        local curr = ppmod.ray(start, end, ent[i], false, portals, [len, div]).fraction;
         if (curr < lowest) lowest = curr;
       }
       if (world) return formatreturn( min(lowest, TraceLine(start, end, null)), [len, div] );
@@ -1128,7 +1128,7 @@ function Vector::_tostring () {
 
     local lowest = 1.0, next = null;
     while (next = ppmod.get(ent, next)) {
-      local curr = ppmod.ray(start, end, next, false, portals, [len, div]);
+      local curr = ppmod.ray(start, end, next, false, portals, [len, div]).fraction;
       if (curr < lowest) lowest = curr;
     }
     if (world) return formatreturn( min(lowest, TraceLine(start, end, null)), [len, div] );
