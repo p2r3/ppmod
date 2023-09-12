@@ -143,6 +143,10 @@ function Vector::_tostring () {
   return "Vector(" + this.x + ", " + this.y + ", " + this.z + ")";
 }
 
+function Vector::ToKVString () {
+  return this.x + " " + this.y + " " + this.z;
+}
+
 /*********************/
 // Entity management //
 /*********************/
