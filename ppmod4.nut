@@ -256,7 +256,7 @@ function Vector::ToKVString () {
 ::ppmod.fire <- function (ent, action = "Use", value = "", delay = 0.0, activator = null, caller = null) {
 
   if (typeof ent == "string") {
-    DoEntFire(ent, action, value, delay, activator, caller);
+    DoEntFire(ent, action, value.tostring(), delay, activator, caller);
     return;
   }
 
