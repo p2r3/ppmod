@@ -118,6 +118,66 @@ class ppstring {
 
 }
 
+class ppromise {
+
+  onresolve = [];
+  onfulfill = [];
+  onreject = [];
+
+  state = "pending";
+
+  constructor (func) {
+
+    try {
+      
+      func(function (val = null, p = this) {
+
+        for (local i = 0; i < p.onfulfill.len(); i ++) p.onfulfill[i](val);
+        for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
+        p.state = "fulfilled";
+      
+      }, function (err = null, p = this) {
+      
+        for (local i = 0; i < p.onreject.len(); i ++) p.onreject[i](err);
+        for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
+        p.state = "rejected";
+      
+      });
+      
+    } catch (e) {
+
+      for (local i = 0; i < onreject.len(); i ++) onreject[i](err);
+      state = "rejected";
+
+    }
+
+  
+  }
+
+  static identity = function (x) return x;
+  static thrower = function (x) throw x;
+
+  static then = function (onthen = null, oncatch = null) {
+    
+    if (typeof onthen != "function") onthen = identity;
+    if (typeof oncatch != "function") oncatch = thrower;
+
+    onfulfill.push(onthen);
+    onreject.push(oncatch);
+  
+  }
+
+  static _catch = function (oncatch = null) {
+    if (typeof oncatch != "function") oncatch = thrower;
+    onreject.push(oncatch);
+  }
+
+  static finally = function (onfinally) {
+    onresolve.push(onfinally);
+  }
+
+}
+
 function Vector::_mul (other) {
   if (typeof other == "Vector") {
     return Vector(this.x * other.x, this.y * other.y, this.z * other.z);
