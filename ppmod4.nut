@@ -62,7 +62,7 @@ class pparray {
     if (typeof match == "function") {
       for (local i = 0; i < arr.len(); i ++) {
         if (match(arr[i])) return i;
-      }  
+      }
       return -1;
     }
     for (local i = 0; i < arr.len(); i ++) {
@@ -619,7 +619,7 @@ function Vector::ToKVString () {
 // Player interface //
 /********************/
 
-::ppmod.player <- function (player, callback = null) {
+::ppmod.player <- function (player) {
 
   local pplayer = {};
   pplayer.ent <- player;
@@ -698,7 +698,7 @@ function Vector::ToKVString () {
 
   }
 
-  pplayer.holding <- function (callback, classes = null):(player) {
+  pplayer.holding <- function (classes = null):(player) {
 
     // List of all known holdable entities
     if (classes == null) classes = [
@@ -713,49 +713,53 @@ function Vector::ToKVString () {
       "prop_glass_futbol"
     ];
 
-    local scrqid = ppmod.scrq_add(callback, 1);
-    local name = UniqueString("ppmod_holding");
+    return ppromise(function (resolve, reject):(classess) {
 
-    local filter = Entities.CreateByClassname("filter_player_held");
-    filter.__KeyValueFromString("Targetname", name);
-    filter.__KeyValueFromString("OnPass", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrqid + ")(true)\x001B0\x001B1");
-    filter.__KeyValueFromString("OnPass", "!self\x001BKill\x1B\x001B0\x001B1");
-    
-    local relay = Entities.CreateByClassname("logic_relay");
-    relay.__KeyValueFromString("OnUser1", name + "\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrqid + ")(false)\x001B0\x001B1");
-    relay.__KeyValueFromString("OnUser1", "!self\x001BOnUser2\x1B\x001B0\x001B1");
-    relay.__KeyValueFromString("OnUser2", "!self\x001BKill\x1B\x001B0\x001B1");
+      local scrqid = ppmod.scrq_add(resolve, 1);
+      local name = UniqueString("ppmod_holding");
 
-    // Due to filter_player_held not differentiating between players,
-    // Co-op checks only a 128u radius from the player, assuming VM grab controller
-    if (IsMultiplayer()) {
+      local filter = Entities.CreateByClassname("filter_player_held");
+      filter.__KeyValueFromString("Targetname", name);
+      filter.__KeyValueFromString("OnPass", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrqid + ")(true)\x001B0\x001B1");
+      filter.__KeyValueFromString("OnPass", "!self\x001BKill\x1B\x001B0\x001B1");
+      
+      local relay = Entities.CreateByClassname("logic_relay");
+      relay.__KeyValueFromString("OnUser1", name + "\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrqid + ")(false)\x001B0\x001B1");
+      relay.__KeyValueFromString("OnUser1", "!self\x001BOnUser2\x1B\x001B0\x001B1");
+      relay.__KeyValueFromString("OnUser2", "!self\x001BKill\x1B\x001B0\x001B1");
 
-      local curr = null;
-      while (curr = Entities.FindInSphere(curr, player.GetCenter(), 128.0)) {
+      // Due to filter_player_held not differentiating between players,
+      // Co-op checks only a 128u radius from the player, assuming VM grab controller
+      if (IsMultiplayer()) {
 
-        if (!curr.IsValid()) continue;
-        if (arrfind(classes, curr.GetClassname()) == -1) continue;
+        local curr = null;
+        while (curr = Entities.FindInSphere(curr, player.GetCenter(), 128.0)) {
 
-        EntFireByHandle(filter, "TestActivator", "", 0.0, curr, null);
+          if (!curr.IsValid()) continue;
+          if (arrfind(classes, curr.GetClassname()) == -1) continue;
+
+          EntFireByHandle(filter, "TestActivator", "", 0.0, curr, null);
+
+        }
+
+      } else {
+
+        local curr = null;
+        while (curr = Entities.Next(curr)) {
+
+          if (!curr.IsValid()) continue;
+          if (arrfind(classes, curr.GetClassname()) == -1) continue;
+
+          EntFireByHandle(filter, "TestActivator", "", 0.0, curr, null);
+          
+        }
 
       }
+      
+      EntFireByHandle(relay, "FireUser1", "", 0.0, null, null);
+      EntFireByHandle(relay, "Kill", "", 0.0, null, null);
 
-    } else {
-
-      local curr = null;
-      while (curr = Entities.Next(curr)) {
-
-        if (!curr.IsValid()) continue;
-        if (arrfind(classes, curr.GetClassname()) == -1) continue;
-
-        EntFireByHandle(filter, "TestActivator", "", 0.0, curr, null);
-        
-      }
-
-    }
-    
-    EntFireByHandle(relay, "FireUser1", "", 0.0, null, null);
-    EntFireByHandle(relay, "Kill", "", 0.0, null, null);
+    });
 
   };
 
@@ -848,21 +852,21 @@ function Vector::ToKVString () {
 
   };
 
-  // Run the callback function once pplayer.eyes returns a valid roll angle value and a trigger_gravity has been created
+  // Resolve the ppromise once pplayer.eyes returns a valid roll angle value and a trigger_gravity has been created
   // These are typically the lengthiest operations, hence why we're checking for these in particular
-  if (callback) {
+  return ppromise(function (resolve, reject):(pplayer) {
 
     local intervalname = UniqueString("player_enable");
-    ppmod.interval(function ():(callback, pplayer, intervalname) {
+    ppmod.interval(function ():(resolve, pplayer, intervalname) {
 
-      if (pplayer.eyes.GetAngles().z != 90.0 && "ppmod_player_gravity" in player.GetScriptScope()) {
-        callback(pplayer);
+      if (pplayer.eyes.GetAngles().z != 90.0 && ("ppmod_player_gravity" in pplayer.ent.GetScriptScope())) {
+        resolve(pplayer);
         Entities.FindByName(null, intervalname).Destroy();
       }
     
     }, 0, intervalname);
   
-  }
+  });
 
 }
 
@@ -928,7 +932,7 @@ function Vector::ToKVString () {
       }
     },
     onteleport = function () {
-
+      
     }
   };
 
@@ -938,7 +942,7 @@ function Vector::ToKVString () {
 // World interface //
 /*******************/
 
-::ppmod.create <- function (cmd, callback, key = null) {
+::ppmod.create <- function (cmd, key = null) {
 
   // The key is the string used to look for the entity after spawning
   // If no key is provided, we guess it from the input command
@@ -966,16 +970,18 @@ function Vector::ToKVString () {
 
   SendToConsole(cmd);
 
-  // Find the entity by passing key to ppmod.prev
-  local script = "ppmod.scrq_get(" + ppmod.scrq_add(callback, 1) + ")(ppmod.prev(\"" + key + "\"))"; 
+  return ppromise(function (resolve, reject):(cmd, key) {
 
-  // We send this as a console command to take advantage of how console commands are executed synchronously
-  // This lets us make sure that the entity has spawned and that we're looking for it right away
-  SendToConsole("script " + script);
+    // Find the entity by passing key to ppmod.prev
+    // We send this as a console command to take advantage of how console commands are executed synchronously
+    // This lets us make sure that the entity has spawned and that we're looking for it right away
+    SendToConsole("script ppmod.scrq_get(" + ppmod.scrq_add(resolve, 1) + ")(ppmod.prev(\"" + key + "\"))");
+
+  });
 
 }
 
-::ppmod.give <- function (classname, callback, amount = 1) {
+::ppmod.give <- function (classname, amount = 1) {
 
   local player = Entities.FindByClassname(null, "player");
   local equip = Entities.CreateByClassname("game_player_equip");
@@ -984,16 +990,20 @@ function Vector::ToKVString () {
   equip.__KeyValueFromInt(classname, amount);
   EntFireByHandle(equip, "Use", "", 0.0, player, null);
   
-  local script = "ppmod.scrq_get(" + ppmod.scrq_add(callback, 1) + ")(ppmod.prev(\"" + classname + "\"))";
-  
-  EntFireByHandle(equip, "RunScriptCode", script, 0.0, null, null);
-  EntFireByHandle(equip, "Kill", "", 0.0, null, null);
+  return ppromise(function (resolve, reject) {
+
+    local script = "ppmod.scrq_get(" + ppmod.scrq_add(resolve, 1) + ")(ppmod.prev(\"" + classname + "\"))";
+
+    EntFireByHandle(equip, "RunScriptCode", script, 0.0, null, null);
+    EntFireByHandle(equip, "Kill", "", 0.0, null, null);
+
+  });
   
 }
 
-::ppmod.brush <- function (pos, size, type = "func_brush", ang = Vector(), callback = null) {
+::ppmod.brush <- function (pos, size, type = "func_brush", ang = Vector(), create = false) {
 
-  if (!callback) {
+  if (!create) {
 
     local brush = type;
     if (typeof type == "string") brush = Entities.CreateByClassname(type);
@@ -1007,21 +1017,21 @@ function Vector::ToKVString () {
   
   }
 
-  ppmod.create(type, function (type):(pos, size, ang, callback) {
+  return ppromise(function (resolve, reject):(type) {
 
-    local brush = ppmod.brush(pos, size, type, ang);
+    ppmod.create(type).then(function (ent):(pos, size, ang, resolve) {
 
-    if (typeof callback == "function") {
-      callback(brush);
-    }
+      resolve(ppmod.brush(pos, size, ent, ang));
+
+    });
 
   });
 
 }
 
-::ppmod.trigger <- function (pos, size, type = "trigger_once", ang = Vector(), callback = null) {
+::ppmod.trigger <- function (pos, size, type = "trigger_once", ang = Vector(), create = false) {
 
-  if (!callback) {
+  if (!create) {
 
     local trigger = type;
     if (typeof type == "string") trigger = ppmod.brush(pos, size, type, ang);
@@ -1038,13 +1048,13 @@ function Vector::ToKVString () {
   
   }
 
-  ppmod.brush(pos, size, type, ang, function (type):(pos, size, ang, callback) {
+  return ppromise(function (resolve, reject) {
 
-    local trigger = ppmod.trigger(pos, size, type, ang)
+    ppmod.brush(pos, size, type, ang, true).then(function (ent):(pos, size, ang, resolve) {
 
-    if (typeof callback == "function") {
-      callback(trigger);
-    }
+      resolve(ppmod.trigger(pos, size, ent, ang));
+
+    });
 
   });
 
@@ -1271,10 +1281,10 @@ function Vector::ToKVString () {
 
 }
 
-::ppmod.button <- function (type, pos, ang = Vector(), callback = null) {
+::ppmod.button <- function (type, pos, ang = Vector()) {
 
   // Ensure that sounds are precached by creating a dummy entity
-  ppmod.create(type, function (dummy) {
+  ppmod.create(type).then(function (dummy) {
     dummy.Destroy();
   });
 
@@ -1287,173 +1297,177 @@ function Vector::ToKVString () {
   if (type == "prop_floor_ball_button") model = "props/ball_button.mdl";
   if (type == "prop_under_floor_button") model = "props_underground/underground_floor_button.mdl";
 
-  // First, create a prop_dynamic with the appropriate model
-  ppmod.create(model, function (ent):(type, pos, ang, callback) {
+  return ppromise(function (resolve, reject):(model) {
 
-    ent.SetAbsOrigin(pos);
-    ent.SetAngles(ang.x, ang.y, ang.z);
+    // First, create a prop_dynamic with the appropriate model
+    ppmod.create(model).then(function (ent):(type, pos, ang, resolve) {
 
-    // The floor buttons often come with additional phys_bone_followers
-    while (ent.GetClassname() == "phys_bone_follower") {
-      ent = ppmod.prev(ent.GetModelName(), ent);
       ent.SetAbsOrigin(pos);
       ent.SetAngles(ang.x, ang.y, ang.z);
-    }
 
-    if (type == "prop_button" || type == "prop_under_button") { // Handle pedestal buttons
+      // The floor buttons often come with additional phys_bone_followers
+      while (ent.GetClassname() == "phys_bone_follower") {
+        ent = ppmod.prev(ent.GetModelName(), ent);
+        ent.SetAbsOrigin(pos);
+        ent.SetAngles(ang.x, ang.y, ang.z);
+      }
 
-      // func_button seems to be broken when spawned during runtime, hence the use of func_rot_button
-      ppmod.brush(pos + (ent.GetUpVector() * 40), Vector(8, 8, 8), "func_rot_button", ang, function (button):(type, ent, callback) {
+      if (type == "prop_button" || type == "prop_under_button") { // Handle pedestal buttons
 
-        // Make the button box non-solid and activated with +use
-        button.__KeyValueFromInt("CollisionGroup", 2);
-        button.__KeyValueFromInt("SpawnFlags", 1024);
-        ppmod.setparent(button, ent);
+        // func_button seems to be broken when spawned during runtime, hence the use of func_rot_button
+        ppmod.brush(pos + (ent.GetUpVector() * 40), Vector(8, 8, 8), "func_rot_button", ang, true).then(function (button):(type, ent, resolve) {
 
-        // Properties are stored in the func_rot_button's script scope
-        button.ValidateScriptScope();
-        button.GetScriptScope()["button_delay"] <- 1.0;
-        button.GetScriptScope()["button_timer"] <- false;
-        button.GetScriptScope()["button_permanent"] <- false;
+          // Make the button box non-solid and activated with +use
+          button.__KeyValueFromInt("CollisionGroup", 2);
+          button.__KeyValueFromInt("SpawnFlags", 1024);
+          ppmod.setparent(button, ent);
 
-        ppmod.addscript(button, "OnPressed", function ():(type, ent, button) {
+          // Properties are stored in the func_rot_button's script scope
+          button.ValidateScriptScope();
+          button.GetScriptScope()["button_delay"] <- 1.0;
+          button.GetScriptScope()["button_timer"] <- false;
+          button.GetScriptScope()["button_permanent"] <- false;
 
-          // Underground buttons have different animation names
-          // The additional sound effects for those are baked into the animation
-          if (type == "prop_button") EntFireByHandle(ent, "SetAnimation", "down", 0.0, null, null);
-          else EntFireByHandle(ent, "SetAnimation", "press", 0.0, null, null);
-          button.EmitSound("Portal.button_down");
+          ppmod.addscript(button, "OnPressed", function ():(type, ent, button) {
 
-          // To disable the button while it's down, we clear its "+use activates" flag
-          button.__KeyValueFromInt("SpawnFlags", 0);
+            // Underground buttons have different animation names
+            // The additional sound effects for those are baked into the animation
+            if (type == "prop_button") EntFireByHandle(ent, "SetAnimation", "down", 0.0, null, null);
+            else EntFireByHandle(ent, "SetAnimation", "press", 0.0, null, null);
+            button.EmitSound("Portal.button_down");
 
-          local timer = null; // Simulate the timer ticks
-          if (button.GetScriptScope()["button_timer"]) {
+            // To disable the button while it's down, we clear its "+use activates" flag
+            button.__KeyValueFromInt("SpawnFlags", 0);
 
-            timer = Entities.CreateByClassname("logic_timer");
+            local timer = null; // Simulate the timer ticks
+            if (button.GetScriptScope()["button_timer"]) {
 
-            ppmod.addscript(timer, "OnTimer", function ():(button) {
-              button.EmitSound("Portal.room1_TickTock");
-            });
+              timer = Entities.CreateByClassname("logic_timer");
 
-            // Offset activation by one tick to prevent an extra tick upon release
-            EntFireByHandle(timer, "RefireTime", "1", 0.0, null, null);
-            EntFireByHandle(timer, "Enable", "", FrameTime(), null, null);
+              ppmod.addscript(timer, "OnTimer", function ():(button) {
+                button.EmitSound("Portal.room1_TickTock");
+              });
 
-          }
+              // Offset activation by one tick to prevent an extra tick upon release
+              EntFireByHandle(timer, "RefireTime", "1", 0.0, null, null);
+              EntFireByHandle(timer, "Enable", "", FrameTime(), null, null);
 
-          // If "permanent", skip the release code
-          if (button.GetScriptScope()["button_permanent"]) return;
+            }
 
-          ppmod.wait(function ():(ent, button, type, timer) {
+            // If "permanent", skip the release code
+            if (button.GetScriptScope()["button_permanent"]) return;
 
-            if (type == "prop_button") EntFireByHandle(ent, "SetAnimation", "up", 0.0, null, null);
-            else EntFireByHandle(ent, "SetAnimation", "release", 0.0, null, null);
-            button.EmitSound("Portal.button_up");
+            ppmod.wait(function ():(ent, button, type, timer) {
 
-            button.__KeyValueFromInt("SpawnFlags", 1024);
-            if (timer) timer.Destroy();
+              if (type == "prop_button") EntFireByHandle(ent, "SetAnimation", "up", 0.0, null, null);
+              else EntFireByHandle(ent, "SetAnimation", "release", 0.0, null, null);
+              button.EmitSound("Portal.button_up");
 
-          }, button.GetScriptScope()["button_delay"]);
+              button.__KeyValueFromInt("SpawnFlags", 1024);
+              if (timer) timer.Destroy();
+
+            }, button.GetScriptScope()["button_delay"]);
+
+          });
+
+          resolve({
+
+            GetButton = function ():(button) { return button },
+            GetProp = function ():(ent) { return ent },
+            SetDelay = function (delay):(button) { button.GetScriptScope()["button_delay"] <- delay },
+            SetTimer = function (enabled):(button) { button.GetScriptScope()["button_timer"] <- enabled },
+            SetPermanent = function (enabled):(button) { button.GetScriptScope()["button_permanent"] <- enabled },
+            OnPressed = function (scr):(button) { ppmod.addscript(button, "OnPressed", scr) },
+
+          });
 
         });
 
-        if (callback) callback({
+      } else { // Handle floor buttons
 
-          GetButton = function ():(button) { return button },
+        // This moves the phys_bone_followers into place
+        EntFireByHandle(ent, "SetAnimation", "BindPose", 0.0, null, null);
+
+        local trigger;
+        if (type == "prop_under_floor_button") {
+          trigger = ppmod.trigger(pos + Vector(0, 0, 8.5), Vector(30, 30, 8.5), "trigger_multiple", ang);
+        } else {
+          trigger = ppmod.trigger(pos + Vector(0, 0, 7), Vector(20, 20, 7), "trigger_multiple", ang);
+        }
+
+        // Activated by players and physics props
+        trigger.__KeyValueFromInt("SpawnFlags", 9);
+
+        trigger.ValidateScriptScope();
+        trigger.GetScriptScope()["count"] <- 0;
+
+        // Used for attaching output scripts to press and unpress events
+        local pressrl = Entities.CreateByClassname("logic_relay");
+        pressrl.__KeyValueFromInt("SpawnFlags", 2);
+        local unpressrl = Entities.CreateByClassname("logic_relay");
+        unpressrl.__KeyValueFromInt("SpawnFlags", 2);
+
+        local press = function ():(type, trigger, ent, pressrl, unpressrl) {
+          if (++trigger.GetScriptScope()["count"] == 1) {
+
+            EntFireByHandle(pressrl, "Trigger", "", 0.0, null, null);
+
+            if (type == "prop_under_floor_button") {
+              EntFireByHandle(ent, "SetAnimation", "press", 0.0, null, null);
+              ent.EmitSound("Portal.OGButtonDepress");
+            } else {
+              EntFireByHandle(ent, "SetAnimation", "down", 0.0, null, null);
+              ent.EmitSound("Portal.ButtonDepress");
+            }
+
+          }
+        };
+
+        local unpress = function ():(type, trigger, ent) {
+          if (--trigger.GetScriptScope()["count"] == 0) {
+
+            EntFireByHandle(unpressrl, "Trigger", "", 0.0, null, null);
+
+            if (type == "prop_under_floor_button") {
+              EntFireByHandle(ent, "SetAnimation", "release", 0.0, null, null);
+              ent.EmitSound("Portal.OGButtonRelease");
+            } else {
+              EntFireByHandle(ent, "SetAnimation", "up", 0.0, null, null);
+              ent.EmitSound("Portal.ButtonRelease");
+            }
+
+          }
+        };
+
+        // Checks classnames and model names to filter the entities activating the button
+        local strpress, strunpress;
+        if (type == "prop_floor_button" || type == "prop_under_floor_button") {
+          strpress = "if (self.GetClassname() == \"prop_weighted_cube\" || self.GetClassname() == \"player\") ppmod.scrq_get(" + ppmod.scrq_add(press) + ")()";
+          strunpress = "if (self.GetClassname() == \"prop_weighted_cube\" || self.GetClassname() == \"player\") ppmod.scrq_get(" + ppmod.scrq_add(unpress) + ")()";
+        } else if (type == "prop_floor_ball_button") {
+          strpress = "if (self.GetClassname() == \"prop_weighted_cube\" && self.GetModelName() == \"models/props_gameplay/mp_ball.mdl\") ppmod.scrq_get(" + ppmod.scrq_add(press) + ")()";
+          strunpress = "if (self.GetClassname() == \"prop_weighted_cube\" && self.GetModelName() == \"models/props_gameplay/mp_ball.mdl\") ppmod.scrq_get(" + ppmod.scrq_add(unpress) + ")()";
+        } else {
+          strpress = "if (self.GetClassname() == \"prop_weighted_cube\" && self.GetModelName() != \"models/props_gameplay/mp_ball.mdl\") ppmod.scrq_get(" + ppmod.scrq_add(press) + ")()";
+          strunpress = "if (self.GetClassname() == \"prop_weighted_cube\" && self.GetModelName() != \"models/props_gameplay/mp_ball.mdl\") ppmod.scrq_get(" + ppmod.scrq_add(unpress) + ")()";
+        }
+
+        ppmod.addoutput(trigger, "OnStartTouch", "!activator", "RunScriptCode", strpress);
+        ppmod.addoutput(trigger, "OnEndTouch", "!activator", "RunScriptCode", strunpress);
+
+        resolve({
+
+          GetTrigger = function ():(trigger) { return trigger },
           GetProp = function ():(ent) { return ent },
-          SetDelay = function (delay):(button) { button.GetScriptScope()["button_delay"] <- delay },
-          SetTimer = function (enabled):(button) { button.GetScriptScope()["button_timer"] <- enabled },
-          SetPermanent = function (enabled):(button) { button.GetScriptScope()["button_permanent"] <- enabled },
-          OnPressed = function (scr):(button) { ppmod.addscript(button, "OnPressed", scr) },
+          GetCount = function ():(trigger) { return trigger.GetScriptScope()["count"] },
+          OnPressed = function (scr):(pressrl) { ppmod.addscript(pressrl, "OnTrigger", scr) },
+          OnUnpressed = function (scr):(unpressrl) { ppmod.addscript(unpressrl, "OnTrigger", scr) },
 
         });
 
-      });
-
-    } else { // Handle floor buttons
-
-      // This moves the phys_bone_followers into place
-      EntFireByHandle(ent, "SetAnimation", "BindPose", 0.0, null, null);
-
-      local trigger;
-      if (type == "prop_under_floor_button") {
-        trigger = ppmod.trigger(pos + Vector(0, 0, 8.5), Vector(30, 30, 8.5), "trigger_multiple", ang);
-      } else {
-        trigger = ppmod.trigger(pos + Vector(0, 0, 7), Vector(20, 20, 7), "trigger_multiple", ang);
       }
 
-      // Activated by players and physics props
-      trigger.__KeyValueFromInt("SpawnFlags", 9);
-
-      trigger.ValidateScriptScope();
-      trigger.GetScriptScope()["count"] <- 0;
-
-      // Used for attaching output scripts to press and unpress events
-      local pressrl = Entities.CreateByClassname("logic_relay");
-      pressrl.__KeyValueFromInt("SpawnFlags", 2);
-      local unpressrl = Entities.CreateByClassname("logic_relay");
-      unpressrl.__KeyValueFromInt("SpawnFlags", 2);
-
-      local press = function ():(type, trigger, ent, pressrl, unpressrl) {
-        if (++trigger.GetScriptScope()["count"] == 1) {
-
-          EntFireByHandle(pressrl, "Trigger", "", 0.0, null, null);
-
-          if (type == "prop_under_floor_button") {
-            EntFireByHandle(ent, "SetAnimation", "press", 0.0, null, null);
-            ent.EmitSound("Portal.OGButtonDepress");
-          } else {
-            EntFireByHandle(ent, "SetAnimation", "down", 0.0, null, null);
-            ent.EmitSound("Portal.ButtonDepress");
-          }
-
-        }
-      };
-
-      local unpress = function ():(type, trigger, ent) {
-        if (--trigger.GetScriptScope()["count"] == 0) {
-
-          EntFireByHandle(unpressrl, "Trigger", "", 0.0, null, null);
-
-          if (type == "prop_under_floor_button") {
-            EntFireByHandle(ent, "SetAnimation", "release", 0.0, null, null);
-            ent.EmitSound("Portal.OGButtonRelease");
-          } else {
-            EntFireByHandle(ent, "SetAnimation", "up", 0.0, null, null);
-            ent.EmitSound("Portal.ButtonRelease");
-          }
-
-        }
-      };
-
-      // Checks classnames and model names to filter the entities activating the button
-      local strpress, strunpress;
-      if (type == "prop_floor_button" || type == "prop_under_floor_button") {
-        strpress = "if (self.GetClassname() == \"prop_weighted_cube\" || self.GetClassname() == \"player\") ppmod.scrq_get(" + ppmod.scrq_add(press) + ")()";
-        strunpress = "if (self.GetClassname() == \"prop_weighted_cube\" || self.GetClassname() == \"player\") ppmod.scrq_get(" + ppmod.scrq_add(unpress) + ")()";
-      } else if (type == "prop_floor_ball_button") {
-        strpress = "if (self.GetClassname() == \"prop_weighted_cube\" && self.GetModelName() == \"models/props_gameplay/mp_ball.mdl\") ppmod.scrq_get(" + ppmod.scrq_add(press) + ")()";
-        strunpress = "if (self.GetClassname() == \"prop_weighted_cube\" && self.GetModelName() == \"models/props_gameplay/mp_ball.mdl\") ppmod.scrq_get(" + ppmod.scrq_add(unpress) + ")()";
-      } else {
-        strpress = "if (self.GetClassname() == \"prop_weighted_cube\" && self.GetModelName() != \"models/props_gameplay/mp_ball.mdl\") ppmod.scrq_get(" + ppmod.scrq_add(press) + ")()";
-        strunpress = "if (self.GetClassname() == \"prop_weighted_cube\" && self.GetModelName() != \"models/props_gameplay/mp_ball.mdl\") ppmod.scrq_get(" + ppmod.scrq_add(unpress) + ")()";
-      }
-
-      ppmod.addoutput(trigger, "OnStartTouch", "!activator", "RunScriptCode", strpress);
-      ppmod.addoutput(trigger, "OnEndTouch", "!activator", "RunScriptCode", strunpress);
-
-      if (callback) callback({
-
-        GetTrigger = function ():(trigger) { return trigger },
-        GetProp = function ():(ent) { return ent },
-        GetCount = function ():(trigger) { return trigger.GetScriptScope()["count"] },
-        OnPressed = function (scr):(pressrl) { ppmod.addscript(pressrl, "OnTrigger", scr) },
-        OnUnpressed = function (scr):(unpressrl) { ppmod.addscript(unpressrl, "OnTrigger", scr) },
-
-      });
-
-    }
+    });
 
   });
 
