@@ -125,43 +125,39 @@ class ppromise {
   onreject = [];
 
   state = "pending";
-  val = null
+  val = null;
+
+  function resolve (val = null, p = this) {
+
+    if (p.state != "pending") return;
+
+    for (local i = 0; i < p.onfulfill.len(); i ++) p.onfulfill[i](val);
+    for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
+    
+    p.state = "fulfilled";
+    p.val = val;
+
+  }
+
+  function reject (err = null, p = this) {
+      
+    if (p.state != "pending") return;
+
+    for (local i = 0; i < p.onreject.len(); i ++) p.onreject[i](err);
+    for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
+
+    p.state = "rejected";
+    p.val = err;
+
+  }
 
   constructor (func) {
 
     try {
-      
-      func(function (val = null, p = this) {
-
-        if (p.state != "pending") return;
-
-        for (local i = 0; i < p.onfulfill.len(); i ++) p.onfulfill[i](val);
-        for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
-        
-        p.state = "fulfilled";
-        p.val = val;
-
-      }, function (err = null, p = this) {
-      
-        if (p.state != "pending") return;
-
-        for (local i = 0; i < p.onreject.len(); i ++) p.onreject[i](err);
-        for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
-
-        p.state = "rejected";
-        p.val = err;
-
-      });
-      
+      func(resolve, reject);
     } catch (e) {
-
-      for (local i = 0; i < onreject.len(); i ++) onreject[i](err);
-
-      state = "rejected";
-      val = err;
-
+      reject(e);
     }
-
   
   }
 
@@ -173,12 +169,14 @@ class ppromise {
     if (typeof onthen != "function") onthen = identity;
     if (typeof oncatch != "function") oncatch = thrower;
 
-    if (state == "fulfilled") return onthen(val);
-    if (state == "rejected") return oncatch(val);
+    if (state == "fulfilled") { onthen(val); return this }
+    if (state == "rejected") { oncatch(val); return this }
 
     onfulfill.push(onthen);
     onreject.push(oncatch);
-  
+
+    return this;
+
   }
 
   static _catch = function (oncatch = null) {
@@ -186,16 +184,18 @@ class ppromise {
     if (typeof oncatch != "function") oncatch = thrower;
   
     if (state == "rejected") return oncatch(val);
-
     onreject.push(oncatch);
+
+    return this;
   
   }
 
   static finally = function (onfinally) {
     
     if (state != "pending") return onfinally(val);
-
     onresolve.push(onfinally);
+
+    return this;
 
   }
 
