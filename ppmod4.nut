@@ -125,6 +125,7 @@ class ppromise {
   onreject = [];
 
   state = "pending";
+  val = null
 
   constructor (func) {
 
@@ -132,22 +133,32 @@ class ppromise {
       
       func(function (val = null, p = this) {
 
+        if (p.state != "pending") return;
+
         for (local i = 0; i < p.onfulfill.len(); i ++) p.onfulfill[i](val);
         for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
+        
         p.state = "fulfilled";
-      
+        p.val = val;
+
       }, function (err = null, p = this) {
       
+        if (p.state != "pending") return;
+
         for (local i = 0; i < p.onreject.len(); i ++) p.onreject[i](err);
         for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
+
         p.state = "rejected";
-      
+        p.val = err;
+
       });
       
     } catch (e) {
 
       for (local i = 0; i < onreject.len(); i ++) onreject[i](err);
+
       state = "rejected";
+      val = err;
 
     }
 
@@ -162,18 +173,30 @@ class ppromise {
     if (typeof onthen != "function") onthen = identity;
     if (typeof oncatch != "function") oncatch = thrower;
 
+    if (state == "fulfilled") return onthen(val);
+    if (state == "rejected") return oncatch(val);
+
     onfulfill.push(onthen);
     onreject.push(oncatch);
   
   }
 
   static _catch = function (oncatch = null) {
+
     if (typeof oncatch != "function") oncatch = thrower;
+  
+    if (state == "rejected") return oncatch(val);
+
     onreject.push(oncatch);
+  
   }
 
   static finally = function (onfinally) {
+    
+    if (state != "pending") return onfinally(val);
+
     onresolve.push(onfinally);
+
   }
 
 }
@@ -225,7 +248,7 @@ function Vector::ToKVString () {
 
   if (typeof arg1 == "Vector") {
 
-    if (arg2 == null) arg2 = 32;
+    if (arg2 == null) arg2 = 32.0;
 
     if (typeof arg3 == "string") {
       local filter = arg3;
