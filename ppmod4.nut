@@ -616,25 +616,21 @@ function Vector::ToKVString () {
 
   if (stack == null) stack = getstackinfos(2);
 
-  ppmod.runscript("worldspawn", function (idx = args):(scr, stack) {
+  try {
 
-    if (typeof idx != "integer") {
-      idx = ppmod.scrq_add(idx);
+    scr(args);
+
+  } catch (e) {
+
+    if (e == "Script terminated by SQQuerySuspend") {
+      ppmod.detach(scr, args, stack);
+      return;
     }
 
-    try {
-      scr(ppmod.scrq[idx][0]);
-      ppmod.scrq[idx] = null;
-    } catch (e) {
-      if (e != "Script terminated by SQQuerySuspend") {
-        printl("\nAN ERROR HAS OCCURED [" + e + "]");
-        printl("Caught within ppmod.detach in file " + stack.src + " on line " + stack.line + "\n");
-        return;
-      }
-      ppmod.detach(scr, idx);
-    }
+    printl("\nAN ERROR HAS OCCURED [" + e + "]");
+    printl("Caught within ppmod.detach in file " + stack.src + " on line " + stack.line + "\n");
 
-  });
+  }
 
 }
 
