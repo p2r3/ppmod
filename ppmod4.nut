@@ -1124,7 +1124,7 @@ function Vector::ToKVString () {
 
 }
 
-::ppmod.texture <- function (material, pos, ang = Vector(90, 0, 0), simple = 0, far = 128) {
+::ppmod.project <- function (material, pos, ang = Vector(90, 0, 0), simple = 0, far = 128) {
 
   local texture = Entities.CreateByClassname("env_projectedtexture");
 
