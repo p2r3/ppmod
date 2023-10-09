@@ -215,7 +215,7 @@ class ppromise {
 ::async <- function (func) {
 
   local thread = newthread(func.bindenv(this));
-  async_threads[this.tostring()] <- thread;
+  async_threads[this] <- thread;
 
   return function (...):(thread, await) {
     
@@ -236,8 +236,8 @@ class ppromise {
 
 ::await <- function (promise) {
 
-  if (!(this.tostring() in async_threads)) throw "await is only valid in async functions";
-  local thread = async_threads[this.tostring()];
+  if (!(this in async_threads)) throw "await is only valid in async functions";
+  local thread = async_threads[this];
 
   promise.then(function (val):(promise, thread) {
     thread.wakeup(val);
