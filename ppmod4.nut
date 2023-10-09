@@ -133,28 +133,26 @@ class ppromise {
   constructor (func) {
 
     resolve = function (val = null, p = this) {
-      this = p;
 
-      if (state != "pending") return;
+      if (p.state != "pending") return;
 
-      for (local i = 0; i < onfulfill.len(); i ++) onfulfill[i](val);
-      for (local i = 0; i < onresolve.len(); i ++) onresolve[i]();
+      for (local i = 0; i < p.onfulfill.len(); i ++) p.onfulfill[i](val);
+      for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
       
-      state = "fulfilled";
-      val = val;
+      p.state = "fulfilled";
+      p.val = val;
 
     }
 
     reject = function (err = null, p = this) {
-      this = p;
         
-      if (state != "pending") return;
+      if (p.state != "pending") return;
 
-      for (local i = 0; i < onreject.len(); i ++) onreject[i](err);
-      for (local i = 0; i < onresolve.len(); i ++) onresolve[i]();
+      for (local i = 0; i < p.onreject.len(); i ++) p.onreject[i](err);
+      for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
 
-      state = "rejected";
-      val = err;
+      p.state = "rejected";
+      p.val = err;
 
     }
 
