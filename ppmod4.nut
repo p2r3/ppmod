@@ -120,9 +120,9 @@ class ppstring {
 
 class ppromise {
 
-  onresolve = [];
-  onfulfill = [];
-  onreject = [];
+  onresolve = null;
+  onfulfill = null;
+  onreject = null;
 
   resolve = null;
   reject = null;
@@ -131,6 +131,13 @@ class ppromise {
   val = null;
 
   constructor (func) {
+
+    onresolve = [];
+    onfulfill = [];
+    onreject = [];
+
+    state = "pending";
+    val = null;
 
     resolve = function (val = null, p = this) {
 
@@ -167,7 +174,7 @@ class ppromise {
   static identity = function (x) return x;
   static thrower = function (x) throw x;
 
-  then = function (onthen = null, oncatch = null) {
+  static then = function (onthen = null, oncatch = null) {
     
     if (typeof onthen != "function") onthen = identity;
     if (typeof oncatch != "function") oncatch = thrower;
@@ -182,7 +189,7 @@ class ppromise {
 
   }
 
-  except = function (oncatch = null) {
+  static except = function (oncatch = null) {
 
     if (typeof oncatch != "function") oncatch = thrower;
   
@@ -193,7 +200,7 @@ class ppromise {
   
   }
 
-  finally = function (onfinally) {
+  static finally = function (onfinally) {
     
     if (state != "pending") return onfinally(val);
     onresolve.push(onfinally);
