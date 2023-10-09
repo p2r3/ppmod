@@ -211,6 +211,41 @@ class ppromise {
 
 }
 
+::async_threads <- {};
+::async <- function (func) {
+
+  local thread = newthread(func.bindenv(this));
+  async_threads[this.tostring()] <- thread;
+
+  return function (...):(thread, await) {
+    
+    local threadq = ppmod.scrq_add(thread, 1);
+
+    local str = "ppmod.scrq_get(" + threadq + ").call(";
+    for (local i = 0; i < vargc; i ++) {
+      str += "ppmod.scrq_get(" + ppmod.scrq_add(vargv[i], 1) + ")";
+      if (i != vargc - 1) str += ",";
+    }
+    str += ")";
+
+    compilestring(str)();
+
+  }
+
+}
+
+::await <- function (promise) {
+
+  if (!(this.tostring() in async_threads)) throw "await is only valid in async functions";
+  local thread = async_threads[this.tostring()];
+
+  promise.then(function (val):(promise, thread) {
+    thread.wakeup(val);
+  });
+  return suspend();
+
+}
+
 function Vector::_mul (other) {
   if (typeof other == "Vector") {
     return Vector(this.x * other.x, this.y * other.y, this.z * other.z);
