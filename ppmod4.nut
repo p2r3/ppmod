@@ -124,34 +124,39 @@ class ppromise {
   onfulfill = [];
   onreject = [];
 
+  resolve = null;
+  reject = null;
+
   state = "pending";
   val = null;
 
-  function resolve (val = null, p = this) {
-
-    if (p.state != "pending") return;
-
-    for (local i = 0; i < p.onfulfill.len(); i ++) p.onfulfill[i](val);
-    for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
-    
-    p.state = "fulfilled";
-    p.val = val;
-
-  }
-
-  function reject (err = null, p = this) {
-      
-    if (p.state != "pending") return;
-
-    for (local i = 0; i < p.onreject.len(); i ++) p.onreject[i](err);
-    for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
-
-    p.state = "rejected";
-    p.val = err;
-
-  }
-
   constructor (func) {
+
+    resolve = function (val = null, p = this) {
+      this = p;
+
+      if (state != "pending") return;
+
+      for (local i = 0; i < onfulfill.len(); i ++) onfulfill[i](val);
+      for (local i = 0; i < onresolve.len(); i ++) onresolve[i]();
+      
+      state = "fulfilled";
+      val = val;
+
+    }
+
+    reject = function (err = null, p = this) {
+      this = p;
+        
+      if (state != "pending") return;
+
+      for (local i = 0; i < onreject.len(); i ++) onreject[i](err);
+      for (local i = 0; i < onresolve.len(); i ++) onresolve[i]();
+
+      state = "rejected";
+      val = err;
+
+    }
 
     try {
       func(resolve, reject);
@@ -164,7 +169,7 @@ class ppromise {
   static identity = function (x) return x;
   static thrower = function (x) throw x;
 
-  static then = function (onthen = null, oncatch = null) {
+  then = function (onthen = null, oncatch = null) {
     
     if (typeof onthen != "function") onthen = identity;
     if (typeof oncatch != "function") oncatch = thrower;
@@ -179,7 +184,7 @@ class ppromise {
 
   }
 
-  static _catch = function (oncatch = null) {
+  except = function (oncatch = null) {
 
     if (typeof oncatch != "function") oncatch = thrower;
   
@@ -190,7 +195,7 @@ class ppromise {
   
   }
 
-  static finally = function (onfinally) {
+  finally = function (onfinally) {
     
     if (state != "pending") return onfinally(val);
     onresolve.push(onfinally);
