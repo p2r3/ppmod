@@ -821,7 +821,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
     });
 
     // Set up a trigger_gravity for modifying the player's local gravity
-    ppmod.trigger(player.GetOrigin() + Vector(0, 0, 36.5), Vector(16, 16, 36), "trigger_gravity", Vector(), function (trigger):(player) {
+    ppmod.trigger(player.GetOrigin() + Vector(0, 0, 36.5), Vector(16, 16, 36), "trigger_gravity", Vector(), true).then(function (trigger):(player) {
 
       trigger.__KeyValueFromFloat("Gravity", 1.0);
       player.GetScriptScope()["ppmod_player_gravity"] <- trigger;
@@ -1153,7 +1153,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
   
   }
 
-  return ppromise(function (resolve, reject):(type) {
+  return ppromise(function (resolve, reject):(type, pos, size, ang) {
 
     ppmod.create(type).then(function (ent):(pos, size, ang, resolve) {
 
@@ -1184,7 +1184,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
   
   }
 
-  return ppromise(function (resolve, reject) {
+  return ppromise(function (resolve, reject):(pos, size, type, ang) {
 
     ppmod.brush(pos, size, type, ang, true).then(function (ent):(pos, size, ang, resolve) {
 
