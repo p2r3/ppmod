@@ -246,33 +246,41 @@ class ppromise {
 
 }
 
-function Vector::_mul (other) {
-  if (typeof other == "Vector") {
-    return Vector(this.x * other.x, this.y * other.y, this.z * other.z);
-  } else {
-    return Vector(this.x * other, this.y * other, this.z * other);
+try {
+  
+  function Vector::_mul (other) {
+    if (typeof other == "Vector") {
+      return Vector(this.x * other.x, this.y * other.y, this.z * other.z);
+    } else {
+      return Vector(this.x * other, this.y * other, this.z * other);
+    }
   }
-}
 
-function Vector::_div (other) {
-  if (typeof other == "Vector") {
-    return Vector(this.x / other.x, this.y / other.y, this.z / other.z);
-  } else {
-    return Vector(this.x / other, this.y / other, this.z / other);
+  function Vector::_div (other) {
+    if (typeof other == "Vector") {
+      return Vector(this.x / other.x, this.y / other.y, this.z / other.z);
+    } else {
+      return Vector(this.x / other, this.y / other, this.z / other);
+    }
   }
-}
 
-function Vector::equals (other) {
-  if (this.x == other.x && this.y == other.y && this.z == other.z) return true;
-  return false;
-}
+  function Vector::equals (other) {
+    if (this.x == other.x && this.y == other.y && this.z == other.z) return true;
+    return false;
+  }
 
-function Vector::_tostring () {
-  return "Vector(" + this.x + ", " + this.y + ", " + this.z + ")";
-}
+  function Vector::_tostring () {
+    return "Vector(" + this.x + ", " + this.y + ", " + this.z + ")";
+  }
 
-function Vector::ToKVString () {
-  return this.x + " " + this.y + " " + this.z;
+  function Vector::ToKVString () {
+    return this.x + " " + this.y + " " + this.z;
+  }
+
+} catch (e) {
+
+  printl("[ppmod] Failed to modify Vector class: " + e);
+
 }
 
 /*********************/
@@ -532,44 +540,66 @@ function Vector::ToKVString () {
 
 }
 
-// Implement shorthands of the above functions into the entities as methods 
+// Implement shorthands of the above functions into the entities as methods
 local entclasses = [CBaseEntity, CBaseAnimating, CBaseFlex, CBasePlayer, CEnvEntityMaker, CLinkedPortalDoor, CPortal_Player, CPropLinkedPortalDoor, CSceneEntity, CTriggerCamera];
 for (local i = 0; i < entclasses.len(); i ++) {
 
-  entclasses[i]._set <- function (key, val) {
-    if (this.ValidateScriptScope()) {
-      this.GetScriptScope()["__keyval_" + key.tolower()] <- val;
-    }
-    ::ppmod.keyval(this, key, val);
-    return val;
-  }
-  entclasses[i]._get <- function (key) {
-    if (this.ValidateScriptScope()) {
-      local keystr = "__keyval_" + key.tolower();
-      if (keystr in this.GetScriptScope()) {
-        return this.GetScriptScope()[keystr];
-      }
-    }
-    return null;
-  }
+  try {
 
-  entclasses[i].Fire <- function (action = "Use", value = "", delay = 0.0, activator = null, caller = null) {
-    return ::EntFireByHandle(this, action, value.tostring(), delay, activator, caller);
-  }
-  entclasses[i].AddOutput <- function (output, target, input = "Use", value = "", delay = 0, max = -1) {
-    return ::ppmod.addoutput(this, output, target, input, value, delay, max);
-  }
-  entclasses[i].AddScript <- function (output, scr = "", delay = 0, max = -1, passthrough = false) {
-    return ::ppmod.addscript(this, output, scr, delay, max, passthrough);
-  }
-  entclasses[i].RunScript <- function (scr) {
-    return ::ppmod.runscript(this, scr);
-  }
-  entclasses[i].SetMoveParent <- function (_parent) {
-    return ::ppmod.setparent(this, _parent);
-  }
-  entclasses[i].SetHook <- function (input, scr, max = -1) {
-    return ::ppmod.hook(this, input, scr, max);
+    entclasses[i]._set <- function (key, val) {
+      if (this.ValidateScriptScope()) {
+        this.GetScriptScope()["__keyval_" + key.tolower()] <- val;
+      }
+      ::ppmod.keyval(this, key, val);
+      return val;
+    }
+    entclasses[i]._get <- function (key) {
+      if (this.ValidateScriptScope()) {
+        local keystr = "__keyval_" + key.tolower();
+        if (keystr in this.GetScriptScope()) {
+          return this.GetScriptScope()[keystr];
+        }
+      }
+      return null;
+    }
+
+    entclasses[i].Fire <- function (action = "Use", value = "", delay = 0.0, activator = null, caller = null) {
+      return ::EntFireByHandle(this, action, value.tostring(), delay, activator, caller);
+    }
+    entclasses[i].AddOutput <- function (output, target, input = "Use", value = "", delay = 0, max = -1) {
+      return ::ppmod.addoutput(this, output, target, input, value, delay, max);
+    }
+    entclasses[i].AddScript <- function (output, scr = "", delay = 0, max = -1, passthrough = false) {
+      return ::ppmod.addscript(this, output, scr, delay, max, passthrough);
+    }
+    entclasses[i].RunScript <- function (scr) {
+      return ::ppmod.runscript(this, scr);
+    }
+    entclasses[i].SetMoveParent <- function (_parent) {
+      return ::ppmod.setparent(this, _parent);
+    }
+    entclasses[i].SetHook <- function (input, scr, max = -1) {
+      return ::ppmod.hook(this, input, scr, max);
+    }
+
+  } catch (e) {
+
+    local classname;
+    switch (entclasses[i]) {
+      case CBaseEntity: classname = "CBaseEntity"; break;
+      case CBaseAnimating: classname = "CBaseAnimating"; break;
+      case CBaseFlex: classname = "CBaseFlex"; break;
+      case CBasePlayer: classname = "CBasePlayer"; break;
+      case CEnvEntityMaker: classname = "CEnvEntityMaker"; break;
+      case CLinkedPortalDoor: classname = "CLinkedPortalDoor"; break;
+      case CPortal_Player: classname = "CPortal_Player"; break;
+      case CPropLinkedPortalDoor: classname = "CPropLinkedPortalDoor"; break;
+      case CSceneEntity: classname = "CSceneEntity"; break;
+      case CTriggerCamera: classname = "CTriggerCamera"; break;
+    }
+
+    printl("[ppmod] Failed to modify " + classname + " class: " + e);
+
   }
 
 }
