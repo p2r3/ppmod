@@ -118,96 +118,95 @@ class ppstring {
 
 }
 
-class ppromise {
+::ppromise <- function (func) {
 
-  onresolve = null;
-  onfulfill = null;
-  onreject = null;
+  local inst = {
 
-  resolve = null;
-  reject = null;
+    onresolve = [],
+    onfulfill = [],
+    onreject = [],
 
-  state = "pending";
-  val = null;
+    state = "pending",
+    value = null,
 
-  constructor (func) {
+    identity = function (x) { return x },
+    thrower = function (x) { throw x },
 
-    onresolve = [];
-    onfulfill = [];
-    onreject = [];
+    then = null,
+    except = null,
+    finally = null,
+    
+    resolve = null,
+    reject = null
 
-    state = "pending";
-    val = null;
+  };
 
-    resolve = function (val = null, p = this) {
-
-      if (p.state != "pending") return;
-
-      for (local i = 0; i < p.onfulfill.len(); i ++) p.onfulfill[i](val);
-      for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
-      
-      p.state = "fulfilled";
-      p.val = val;
-
-    }
-
-    reject = function (err = null, p = this) {
-        
-      if (p.state != "pending") return;
-
-      for (local i = 0; i < p.onreject.len(); i ++) p.onreject[i](err);
-      for (local i = 0; i < p.onresolve.len(); i ++) p.onresolve[i]();
-
-      p.state = "rejected";
-      p.val = err;
-
-    }
-
-    try {
-      func(resolve, reject);
-    } catch (e) {
-      reject(e);
-    }
-  
-  }
-
-  static identity = function (x) return x;
-  static thrower = function (x) throw x;
-
-  static then = function (onthen = null, oncatch = null) {
+  inst.then = function (onthen = null, oncatch = null):(inst) {
     
     if (typeof onthen != "function") onthen = identity;
     if (typeof oncatch != "function") oncatch = thrower;
 
-    if (state == "fulfilled") { onthen(val); return this }
-    if (state == "rejected") { oncatch(val); return this }
+    if (inst.state == "fulfilled") { onthen(inst.value); return inst }
+    if (inst.state == "rejected") { oncatch(inst.value); return inst }
 
-    onfulfill.push(onthen);
-    onreject.push(oncatch);
+    inst.onfulfill.push(onthen);
+    inst.onreject.push(oncatch);
 
-    return this;
+    return inst;
 
-  }
+  };
 
-  static except = function (oncatch = null) {
+  inst.except = function (oncatch = null) {
 
     if (typeof oncatch != "function") oncatch = thrower;
   
-    if (state == "rejected") return oncatch(val);
-    onreject.push(oncatch);
+    if (inst.state == "rejected") return oncatch(inst.value);
+    inst.onreject.push(oncatch);
 
-    return this;
+    return inst;
   
-  }
+  };
 
-  static finally = function (onfinally) {
+  inst.finally = function (onfinally) {
     
-    if (state != "pending") return onfinally(val);
-    onresolve.push(onfinally);
+    if (inst.state != "pending") return onfinally(inst.value);
+    inst.onresolve.push(onfinally);
 
-    return this;
+    return inst;
 
+  };
+
+  inst.resolve = function (val = null):(inst) {
+
+    if (inst.state != "pending") return;
+
+    for (local i = 0; i < inst.onfulfill.len(); i ++) inst.onfulfill[i](val);
+    for (local i = 0; i < inst.onresolve.len(); i ++) inst.onresolve[i]();
+    
+    inst.state = "fulfilled";
+    inst.value = val;
+
+  };
+
+  inst.reject = function (err = null):(inst) {
+      
+    if (inst.state != "pending") return;
+
+    for (local i = 0; i < inst.onreject.len(); i ++) inst.onreject[i](err);
+    for (local i = 0; i < inst.onresolve.len(); i ++) inst.onresolve[i]();
+
+    inst.state = "rejected";
+    inst.value = err;
+
+  };
+
+  try {
+    func(inst.resolve, inst.reject);
+  } catch (e) {
+    inst.reject(e);
   }
+
+  return inst;
 
 }
 
