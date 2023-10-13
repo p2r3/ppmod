@@ -173,7 +173,7 @@ class ppstring {
 
     then = ::ppromise_base.then,
     except = ::ppromise_base.except,
-    finally = ::ppromise_base.finally,
+    finally = ::ppromise_base.finally
     
     resolve = null,
     reject = null
@@ -214,38 +214,38 @@ class ppstring {
 
 }
 
-::async_threads <- {};
-::async <- function (func) {
+::ppmod.asyncgen <- [];
+::ppmod.asyncrun <- function (id) {
 
-  local thread = newthread(func.bindenv(this));
-  async_threads[this] <- thread;
-
-  return function (...):(thread) {
-    
-    local threadq = ppmod.scrq_add(thread, 1);
-
-    local str = "ppmod.scrq_get(" + threadq + ").call(";
-    for (local i = 0; i < vargc; i ++) {
-      str += "ppmod.scrq_get(" + ppmod.scrq_add(vargv[i], 1) + ")";
-      if (i != vargc - 1) str += ",";
-    }
-    str += ")";
-
-    compilestring(str)();
-
+  local next = resume ppmod.asyncgen[id];
+  if (next == null) {
+    ppmod.asyncgen[id] = null;
+    return;
   }
+
+  next.then(function (val):(id) {
+    ::syncnext <- val;
+    ppmod.asyncrun(id);
+  });
 
 }
 
-::await <- function (promise) {
+::syncnext <- null;
+::async <- function (func) {
 
-  if (!(this in async_threads)) throw "await is only valid in async functions";
-  local thread = async_threads[this];
+  return function ():(func) {
 
-  promise.then(function (val):(thread) {
-    thread.wakeup(val);
-  });
-  return suspend();
+    for (local i = 0; i < ppmod.asyncgen.len(); i ++) {
+      if (ppmod.asyncgen[i] == null) {
+        ppmod.asyncgen[i] = func();
+        return ppmod.asyncrun(i);
+      }
+    }
+
+    ppmod.asyncgen.push(func());
+    ppmod.asyncrun(ppmod.asyncgen.len() - 1);
+
+  }
 
 }
 
