@@ -118,6 +118,45 @@ class ppstring {
 
 }
 
+::ppromise_base <- {
+  
+  then = function (onthen = null, oncatch = null) {
+    
+    if (typeof onthen != "function") onthen = identity;
+    if (typeof oncatch != "function") oncatch = thrower;
+
+    if (state == "fulfilled") { onthen(value); return inst }
+    if (state == "rejected") { oncatch(value); return inst }
+
+    onfulfill.push(onthen);
+    onreject.push(oncatch);
+
+    return this;
+
+  },
+
+  except = function (oncatch = null) {
+
+    if (typeof oncatch != "function") oncatch = thrower;
+  
+    if (state == "rejected") return oncatch(value);
+    onreject.push(oncatch);
+
+    return this;
+  
+  },
+
+  finally = function (onfinally) {
+    
+    if (state != "pending") return onfinally(value);
+    onresolve.push(onfinally);
+
+    return this;
+
+  }
+
+};
+
 ::ppromise <- function (func) {
 
   local inst = {
@@ -132,47 +171,12 @@ class ppstring {
     identity = function (x) { return x },
     thrower = function (x) { throw x },
 
-    then = null,
-    except = null,
-    finally = null,
+    then = ::ppromise_base.then,
+    except = ::ppromise_base.except,
+    finally = ::ppromise_base.finally,
     
     resolve = null,
     reject = null
-
-  };
-
-  inst.then = function (onthen = null, oncatch = null):(inst) {
-    
-    if (typeof onthen != "function") onthen = identity;
-    if (typeof oncatch != "function") oncatch = thrower;
-
-    if (inst.state == "fulfilled") { onthen(inst.value); return inst }
-    if (inst.state == "rejected") { oncatch(inst.value); return inst }
-
-    inst.onfulfill.push(onthen);
-    inst.onreject.push(oncatch);
-
-    return inst;
-
-  };
-
-  inst.except = function (oncatch = null) {
-
-    if (typeof oncatch != "function") oncatch = thrower;
-  
-    if (inst.state == "rejected") return oncatch(inst.value);
-    inst.onreject.push(oncatch);
-
-    return inst;
-  
-  };
-
-  inst.finally = function (onfinally) {
-    
-    if (inst.state != "pending") return onfinally(inst.value);
-    inst.onresolve.push(onfinally);
-
-    return inst;
 
   };
 
@@ -189,7 +193,7 @@ class ppstring {
   };
 
   inst.reject = function (err = null):(inst) {
-      
+
     if (inst.state != "pending") return;
 
     for (local i = 0; i < inst.onreject.len(); i ++) inst.onreject[i](err);
@@ -216,7 +220,7 @@ class ppstring {
   local thread = newthread(func.bindenv(this));
   async_threads[this] <- thread;
 
-  return function (...):(thread, await) {
+  return function (...):(thread) {
     
     local threadq = ppmod.scrq_add(thread, 1);
 
@@ -238,7 +242,7 @@ class ppstring {
   if (!(this in async_threads)) throw "await is only valid in async functions";
   local thread = async_threads[this];
 
-  promise.then(function (val):(promise, thread) {
+  promise.then(function (val):(thread) {
     thread.wakeup(val);
   });
   return suspend();
