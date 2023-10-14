@@ -777,16 +777,27 @@ for (local i = 0; i < entclasses.len(); i ++) {
   pplayer.eyes.__KeyValueFromString("Target", eyename);
   pplayer.eyes.SetAngles(0, 0, 90.0);
 
-  local playername = player.GetName();
-  player.__KeyValueFromString("Targetname", UniqueString("pplayer"));
-  
-  ppmod.wait(function ():(player, playername) {
-    player.__KeyValueFromString("Targetname", playername);
-  }, FrameTime());
-
   EntFireByHandle(pplayer.eyes, "SetMeasureReference", eyename, 0.0, null, null);
-  EntFireByHandle(pplayer.eyes, "SetMeasureTarget", player.GetName(), 0.0, null, null);
   EntFireByHandle(pplayer.eyes, "Enable", "", 0.0, null, null);
+
+  // logic_measure_movement relies on targetname for selecting entities
+  // This changes the player's targetname briefly and set it back right away
+  local nameswap = function ():(pplayer) {
+    
+    local playername = pplayer.ent.GetName();
+    pplayer.ent.__KeyValueFromString("Targetname", UniqueString("pplayer"));
+    
+    EntFireByHandle(pplayer.eyes, "SetMeasureTarget", pplayer.ent.GetName(), 0.0, null, null);
+
+    ppmod.wait(function ():(pplayer, playername) {
+      pplayer.ent.__KeyValueFromString("Targetname", playername);
+    }, FrameTime());
+
+  };
+
+  nameswap(); // Swap the player's name now, and on every next load
+  local auto = Entities.CreateByClassname("logic_auto");
+  auto.__KeyValueFromString("OnMapSpawn", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + ppmod.scrq_add(nameswap, -1) + ")()\x001B0\x001B-1");
 
   // Set up a game_ui for listening to player movement inputs
   local gameui = Entities.CreateByClassname("game_ui");
