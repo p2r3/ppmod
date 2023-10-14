@@ -155,7 +155,7 @@ class ppstring {
 
   }
 
-};
+}
 
 ::ppromise <- function (func) {
 
@@ -838,6 +838,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
     ppmod.trigger(player.GetOrigin() + Vector(0, 0, 36.5), Vector(16, 16, 36), "trigger_gravity", Vector(), true).then(function (trigger):(player) {
 
       trigger.__KeyValueFromFloat("Gravity", 1.0);
+      EntFireByHandle(trigger, "Disable", "", 0.0, null, null);
       player.GetScriptScope()["ppmod_player_gravity"] <- trigger;
 
       ppmod.interval(function ():(trigger, player) {
@@ -943,6 +944,8 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
   pplayer.gravity <- function (gravity):(player) {
     local trigger = player.GetScriptScope()["ppmod_player_gravity"];
+    if (gravity == 1.0) EntFireByHandle(trigger, "Disable", "", 0.0, null, null);
+    else EntFireByHandle(trigger, "Enable", "", 0.0, null, null);
     // Zero values have no effect, this is hacky but works well enough
     if (gravity == 0.0) trigger.__KeyValueFromString("Gravity", "0.0000000000000001");
     else trigger.__KeyValueFromFloat("Gravity", gravity);
