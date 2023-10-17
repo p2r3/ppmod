@@ -852,19 +852,23 @@ for (local i = 0; i < entclasses.len(); i ++) {
   pplayer.holding <- function (classes = null):(player) {
 
     // List of all known holdable entities
-    if (classes == null) classes = [
-      "prop_weighted_cube",
-      "prop_monster_box",
-      "prop_physics",
-      "prop_physics_override",
-      "prop_physics_paintable",
-      "npc_personality_core",
-      "npc_portal_turret_floor",
-      "npc_security_camera",
-      "prop_glass_futbol"
-    ];
+    if (classes == null) {
+      classes = pparray([
+        "prop_weighted_cube",
+        "prop_monster_box",
+        "prop_physics",
+        "prop_physics_override",
+        "prop_physics_paintable",
+        "npc_personality_core",
+        "npc_portal_turret_floor",
+        "npc_security_camera",
+        "prop_glass_futbol"
+      ]);
+    } else if (!(classes instanceof pparray)) {
+      classes = pparray(classes);
+    }
 
-    return ppromise(function (resolve, reject):(classess) {
+    return ppromise(function (resolve, reject):(classes) {
 
       local scrqid = ppmod.scrq_add(resolve, 1);
       local name = UniqueString("ppmod_holding");
@@ -887,7 +891,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
         while (curr = Entities.FindInSphere(curr, player.GetCenter(), 128.0)) {
 
           if (!curr.IsValid()) continue;
-          if (arrfind(classes, curr.GetClassname()) == -1) continue;
+          if (classes.find(curr.GetClassname()) == -1) continue;
 
           EntFireByHandle(filter, "TestActivator", "", 0.0, curr, null);
 
@@ -899,7 +903,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
         while (curr = Entities.Next(curr)) {
 
           if (!curr.IsValid()) continue;
-          if (arrfind(classes, curr.GetClassname()) == -1) continue;
+          if (classes.find(curr.GetClassname()) == -1) continue;
 
           EntFireByHandle(filter, "TestActivator", "", 0.0, curr, null);
           
