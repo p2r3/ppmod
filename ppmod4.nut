@@ -1630,6 +1630,27 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 }
 
+::ppmod.catapult <- function (ent, vec) {
+
+  local speed = vec.Norm();
+
+  local trigger = Entities.CreateByClassname("trigger_catapult");
+  trigger.__KeyValueFromInt("Solid", 3);
+  trigger.SetAbsOrigin(ent.GetOrigin());
+  trigger.SetForwardVector(vec);
+  trigger.SetSize(Vector(-0.2, -0.2, -0.2), Vector(0.2, 0.2, 0.2));
+  trigger.__KeyValueFromInt("CollisionGroup", 1);
+
+  local ang = trigger.GetAngles();
+  trigger.__KeyValueFromInt("SpawnFlags", 8);
+  trigger.__KeyValueFromFloat("PhysicsSpeed", speed);
+  trigger.__KeyValueFromString("LaunchDirection", ang.x+" "+ang.y+" "+ang.z);
+
+  EntFireByHandle(trigger, "Enable", "", 0.0, null, null);
+  EntFireByHandle(trigger, "Kill", "", 0.0, null, null);
+
+}
+
 /******************/
 // Game interface //
 /******************/
