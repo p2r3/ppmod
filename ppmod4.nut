@@ -1248,6 +1248,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
   local formatreturn = function (fraction, ray):(start, end, ent, world, portals) {
 
+    if (world) fraction = min(fraction, TraceLine(start, end, null));
     local dirvec = end - start;
 
     local output = {
@@ -1281,7 +1282,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
     // First, normalize the vector to get a unit vector
     dirvec.Norm();
 
-    // Then, alculate yaw, pitch and roll in degrees
+    // Then, calculate yaw, pitch and roll in degrees
     local yaw = atan2(dirvec.y, dirvec.x) / PI * 180;
     local pitch = asin(-dirvec.z) / PI * 180;
     local roll = atan2(dirvec.z, sqrt(dirvec.x * dirvec.x + dirvec.y * dirvec.y)) / PI * 180;
@@ -1313,10 +1314,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
   };
 
-  if (!ent) {
-    if (world) return formatreturn( TraceLine(start, end, null), ray );
-    return formatreturn( 1.0, ray );
-  }
+  if (!ent) return formatreturn( 1.0, ray );
 
   local len, div;
   if (!ray) {
@@ -1350,7 +1348,6 @@ for (local i = 0; i < entclasses.len(); i ++) {
         local curr = ppmod.ray(start, end, ent[i], false, portals, [len, div]).fraction;
         if (curr < lowest) lowest = curr;
       }
-      if (world) return formatreturn( min(lowest, TraceLine(start, end, null)), [len, div] );
       return formatreturn( lowest, [len, div] );
 
     }
@@ -1362,14 +1359,25 @@ for (local i = 0; i < entclasses.len(); i ++) {
       local curr = ppmod.ray(start, end, next, false, portals, [len, div]).fraction;
       if (curr < lowest) lowest = curr;
     }
-    if (world) return formatreturn( min(lowest, TraceLine(start, end, null)), [len, div] );
     return formatreturn( lowest, [len, div] );
 
   }
 
   local pos = ent.GetOrigin();
-  local ang = ent.GetAngles() * (PI / 180);
+  
+  local mins = ent.GetBoundingMins();
+  local maxs = ent.GetBoundingMaxs();
 
+  if (pos.x + mins.x > max(start.x, end.x)) return formatreturn( 1.0, [len, div] );
+  if (pos.x + maxs.x < min(start.x, end.x)) return formatreturn( 1.0, [len, div] );
+
+  if (pos.y + mins.y > max(start.y, end.y)) return formatreturn( 1.0, [len, div] );
+  if (pos.y + maxs.y < min(start.y, end.y)) return formatreturn( 1.0, [len, div] );
+
+  if (pos.z + mins.z > max(start.z, end.z)) return formatreturn( 1.0, [len, div] );
+  if (pos.z + maxs.z < min(start.z, end.z)) return formatreturn( 1.0, [len, div] );
+
+  local ang = ent.GetAngles() * (PI / 180.0);
   local c1 = cos(ang.z);
   local s1 = sin(ang.z);
   local c2 = cos(ang.x);
@@ -1383,8 +1391,6 @@ for (local i = 0; i < entclasses.len(); i ++) {
     [-s2, c2 * s1, c1 * c2]
   ];
 
-  local mins = ent.GetBoundingMins();
-  local maxs = ent.GetBoundingMaxs();
   mins = [mins.x, mins.y, mins.z];
   maxs = [maxs.x, maxs.y, maxs.z];
 
@@ -1425,15 +1431,14 @@ for (local i = 0; i < entclasses.len(); i ++) {
       tmin[i] = (bmax[i] - start[i]) * div[i];
       tmax[i] = (bmin[i] - start[i]) * div[i];
     }
-    if(tmin[0] > tmax[i] || tmin[i] > tmax[0]) return formatreturn( 1.0, [len, div] );
-    if(tmin[i] > tmin[0]) tmin[0] = tmin[i];
-    if(tmax[i] < tmax[0]) tmax[0] = tmax[i];
+    if (tmin[0] > tmax[i] || tmin[i] > tmax[0]) return formatreturn( 1.0, [len, div] );
+    if (tmin[i] > tmin[0]) tmin[0] = tmin[i];
+    if (tmax[i] < tmax[0]) tmax[0] = tmax[i];
   }
 
   if (tmin[0] < 0) tmin[0] = 1.0;
   else tmin[0] /= len;
 
-  if (world) return formatreturn( min(tmin[0], TraceLine(start, end, null)), [len, div] );
   return formatreturn( tmin[0], [len, div] );
 
 }
