@@ -1637,6 +1637,13 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 ::ppmod.catapult <- function (ent, vec) {
 
+  if (!(typeof ent == "instance" && ent instanceof CBaseEntity)) {
+    ppmod.getall(ent, function (curr):(vec) {
+      ppmod.catapult(curr, vec);
+    });
+    return;
+  }
+
   local speed = vec.Norm();
 
   local trigger = Entities.CreateByClassname("trigger_catapult");
