@@ -1449,6 +1449,20 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 }
 
+::ppmod.inbounds <- function (point) {
+
+  local ent = null;
+  while (ent = Entities.Next(ent)) {
+    if (!ent.IsValid()) continue;
+    if (TraceLine(point, ent.GetOrigin(), null) == 1.0) {
+      return true;
+    }
+  }
+
+  return false;
+
+}
+
 ::ppmod.button <- function (type, pos, ang = Vector()) {
 
   // Ensure that sounds are precached by creating a dummy entity
