@@ -881,11 +881,10 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
       local filter = Entities.CreateByClassname("filter_player_held");
       filter.__KeyValueFromString("Targetname", name);
-      filter.__KeyValueFromString("OnPass", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrqid + ")(true)\x001B0\x001B1");
-      filter.__KeyValueFromString("OnPass", "!self\x001BKill\x1B\x001B0\x001B1");
+      filter.__KeyValueFromString("OnPass", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrqid + ")(true);self.Destroy()\x001B0\x001B1");
       
       local relay = Entities.CreateByClassname("logic_relay");
-      relay.__KeyValueFromString("OnUser1", name + "\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrqid + ")(false)\x001B0\x001B1");
+      relay.__KeyValueFromString("OnUser1", name + "\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrqid + ")(false);self.Destroy()\x001B0\x001B1");
       relay.__KeyValueFromString("OnUser1", "!self\x001BOnUser2\x1B\x001B0\x001B1");
       relay.__KeyValueFromString("OnUser2", "!self\x001BKill\x1B\x001B0\x001B1");
 
