@@ -550,20 +550,26 @@ for (local i = 0; i < entclasses.len(); i ++) {
   try {
 
     entclasses[i]._set <- function (key, val) {
-      if (this.ValidateScriptScope()) {
-        this.GetScriptScope()["__keyval_" + key.tolower()] <- val;
+      switch (typeof val) {
+        case "integer":
+        case "bool":
+          this.__KeyValueFromInt(key, val.tointeger());
+          break;
+        case "float":
+          this.__KeyValueFromFloat(key, val);
+          break;
+        case "Vector":
+          this.__KeyValueFromVector(key, val);
+          break;
+        default:
+          this.__KeyValueFromString(key, val.tostring());
       }
-      ::ppmod.keyval(this, key, val);
       return val;
     }
     entclasses[i]._get <- function (key) {
-      if (this.ValidateScriptScope()) {
-        local keystr = "__keyval_" + key.tolower();
-        if (keystr in this.GetScriptScope()) {
-          return this.GetScriptScope()[keystr];
-        }
+      return function (value = "", delay = 0.0, activator = null, caller = null):(key) {
+        return ::EntFireByHandle(this, key, value.tostring(), delay, activator, caller);
       }
-      return null;
     }
 
     entclasses[i].Fire <- function (action = "Use", value = "", delay = 0.0, activator = null, caller = null) {
