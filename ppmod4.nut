@@ -3,7 +3,15 @@
   author: PortalRunner
 */
 
-if ("ppmod" in this) return;
+if (!("Entities" in this)) {
+  printl("[ppmod] Error: ppmod4 was included in a scope without CEntities!");
+  return;
+}
+
+if ("ppmod" in this) {
+  printl("[ppmod] Error: ppmod is already loaded!");
+  return;
+}
 ::ppmod <- {};
 
 /********************/
@@ -282,7 +290,7 @@ try {
 
 } catch (e) {
 
-  printl("[ppmod] Failed to modify Vector class: " + e);
+  printl("[ppmod] Warning: failed to modify Vector class: " + e);
 
 }
 
@@ -607,7 +615,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
       case CTriggerCamera: classname = "CTriggerCamera"; break;
     }
 
-    printl("[ppmod] Failed to modify " + classname + " class: " + e);
+    printl("[ppmod] Warning: failed to modify " + classname + " class: " + e);
 
   }
 
@@ -1251,14 +1259,15 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 ::ppmod.ray <- function (start, end, ent = null, world = true, portals = false, ray = null) {
 
-  local formatreturn = function (fraction, ray):(start, end, ent, world, portals) {
+  local formatreturn = function (fraction, ray, hitent = null):(start, end, ent, world, portals) {
 
     if (world) fraction = min(fraction, TraceLine(start, end, null));
     local dirvec = end - start;
 
     local output = {
       fraction = fraction,
-      point = start + dirvec * fraction
+      point = start + dirvec * fraction,
+      entity = hitent
     };
 
     if (!portals) return output;
@@ -1335,8 +1344,8 @@ for (local i = 0; i < entclasses.len(); i ++) {
   if (typeof ent == "array") {
 
     // If an array contains only two Vectors, treat those instead as the origin point and half-widths of an entity, respectively
-    if (ent.len() == 2 && typeof ent[0] == "Vector" && typeof ent[1] == "Vector") {
-      
+    if (ent.len() == 2) if (typeof ent[0] == "Vector" && typeof ent[1] == "Vector") {
+
       local pos = ent[0], size = ent[1];
 
       ent = {
@@ -1348,23 +1357,24 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
     } else {
 
-      local lowest = 1.0;
-      for (local i = 0; i < ent.len(); i++) {
-        local curr = ppmod.ray(start, end, ent[i], false, portals, [len, div]).fraction;
-        if (curr < lowest) lowest = curr;
+      local closest = ppmod.ray(start, end, ent[0], false, portals, [len, div]);
+      for (local i = 1; i < ent.len(); i ++) {
+        local curr = ppmod.ray(start, end, ent[i], false, portals, [len, div]);
+        if (curr.fraction < closest.fraction) closest = curr;
       }
-      return formatreturn( lowest, [len, div] );
+      return formatreturn( closest.fraction, [len, div], closest.entity );
 
     }
 
   } else if (typeof ent == "string") {
 
-    local lowest = 1.0, next = null;
+    local next = ppmod.get(ent);
+    local closest = ppmod.ray(start, end, next, false, portals, [len, div]);
     while (next = ppmod.get(ent, next)) {
-      local curr = ppmod.ray(start, end, next, false, portals, [len, div]).fraction;
-      if (curr < lowest) lowest = curr;
+      local curr = ppmod.ray(start, end, next, false, portals, [len, div]);
+      if (curr.fraction < closest.fraction) closest = curr;
     }
-    return formatreturn( lowest, [len, div] );
+    return formatreturn( closest.fraction, [len, div], closest.entity );
 
   }
 
@@ -1444,7 +1454,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
   if (tmin[0] < 0) tmin[0] = 1.0;
   else tmin[0] /= len;
 
-  return formatreturn( tmin[0], [len, div] );
+  return formatreturn( tmin[0], [len, div], ent );
 
 }
 
