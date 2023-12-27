@@ -32,6 +32,11 @@ class pparray {
   function _typeof () return "array";
   function _get (idx) return arr[idx];
   function _set (idx, val) return arr[idx] = val;
+  function _nexti(previdx) {  // Note: You don't have an iterator, which is why your `pparray` can't be used in foreach
+    if(this.len() == 0) return null
+    if (previdx == null) return 0;
+    return previdx < this.len() - 1 ? previdx + 1 : null;
+  }
   function _tostring () {
     local str = "[";
     for (local i = 0; i < arr.len(); i ++) {
