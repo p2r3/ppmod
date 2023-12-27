@@ -1711,52 +1711,64 @@ for (local i = 0; i < entclasses.len(); i ++) {
 // Game interface //
 /******************/
 
-::ppmod.text <- function (text = "", x = -1.0, y = -1.0) {
+::ppmod.text <- class {
+  ent = null;
 
-  local ent = Entities.CreateByClassname("game_text");
+  constructor(text = "", x = -1.0, y = -1.0) {
+    this.ent = Entities.CreateByClassname("game_text");
+    this.ent.__KeyValueFromString("Message", text);
+    this.ent.__KeyValueFromString("Color", "255 255 255");
+    this.ent.__KeyValueFromFloat("X", x);
+    this.ent.__KeyValueFromFloat("Y", y);
+  }
 
-  ent.__KeyValueFromString("Message", text);
-  ent.__KeyValueFromString("Color", "255 255 255");
-  ent.__KeyValueFromFloat("X", x);
-  ent.__KeyValueFromFloat("Y", y);
+  function GetEntity() {
+    return this.ent
+  }
 
-  return {
+  function SetPosition(x, y) {
+    this.ent.__KeyValueFromFloat("X", x);
+    this.ent.__KeyValueFromFloat("Y", y);
+  }
 
-    GetEntity = function ():(ent) {
-      return ent;
-    },
-    SetPosition = function (x, y):(ent) {
-      ent.__KeyValueFromFloat("X", x);
-      ent.__KeyValueFromFloat("Y", y);
-    },
-    SetText = function (text):(ent) {
-      ent.__KeyValueFromString("Message", text);
-    },
-    SetSize = function (size):(ent) {
-      // Channels sorted from smallest to biggest font size
-      ent.__KeyValueFromInt("Channel", [2, 1, 4, 0, 5, 3][size]);
-    },
-    SetColor = function (c1, c2 = null):(ent) {
-      ent.__KeyValueFromString("Color", c1);
-      if (c2) ent.__KeyValueFromString("Color2", c2);
-    },
-    SetFade = function (fin, fout, fx = false):(ent) {
-      ent.__KeyValueFromFloat("FadeIn", fin);
-      ent.__KeyValueFromFloat("FXTime", fin);
-      ent.__KeyValueFromFloat("FadeOut", fout);
-      if (fx) ent.__KeyValueFromInt("Effect", 2);
-      else ent.__KeyValueFromInt("Effect", 0);
-    },
-    Display = function (hold = null, player = null):(ent) {
-      if (!hold) hold = FrameTime();
-      ent.__KeyValueFromFloat("HoldTime", hold);
-      if (player) ent.__KeyValueFromInt("SpawnFlags", 0);
-      else ent.__KeyValueFromInt("SpawnFlags", 1);
-      EntFireByHandle(ent, "Display", "", 0.0, player, null);
-    }
+  function SetText(text) {
+    this.ent.__KeyValueFromString("Message", text);
+  }
 
-  };
+  function SetSize(size) {
+    // Channels sorted from smallest to biggest font size
+    this.ent.__KeyValueFromInt("Channel", [2, 1, 4, 0, 5, 3][size]);
+  }
 
+  function SetColor(c1, c2 = null) {
+    this.ent.__KeyValueFromString("Color", c1);
+    if(c2) 
+      this.ent.__KeyValueFromString("Color2", c2);
+  }
+
+  function SetFade(fin, fout, fx = false) {
+    this.ent.__KeyValueFromFloat("FadeIn", fin);
+    this.ent.__KeyValueFromFloat("FXTime", fin);
+    this.ent.__KeyValueFromFloat("FadeOut", fout);
+
+    if(fx) {
+      this.ent.__KeyValueFromInt("Effect", 2);
+    } else 
+      this.ent.__KeyValueFromInt("Effect", 0);
+  }
+
+  function Display(hold = null, player = null) {
+    if (hold == null) 
+      hold = FrameTime();
+
+    this.ent.__KeyValueFromFloat("HoldTime", hold);
+    if (player) {
+      this.ent.__KeyValueFromInt("SpawnFlags", 0);
+    } else 
+    this.ent.__KeyValueFromInt("SpawnFlags", 1);
+
+    EntFireByHandle(ent, "Display", "", 0.0, player, null);
+  }
 }
 
 ::ppmod.fwrite <- function (path, str) { // EXPERIMENTAL
