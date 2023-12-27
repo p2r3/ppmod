@@ -4,14 +4,13 @@
 */
 
 if (!("Entities" in this)) {
-  printl("[ppmod] Error: ppmod4 was included in a scope without CEntities!");
-  return;
+  return printl("[ppmod] Error: ppmod4 was included in a scope without CEntities!");
 }
 
 if ("ppmod" in this) {
-  printl("[ppmod] Error: ppmod is already loaded!");
-  return;
+  return printl("[ppmod] Error: ppmod is already loaded!");
 }
+
 ::ppmod <- {};
 
 /********************/
@@ -32,6 +31,11 @@ class pparray {
   function _typeof () return "array";
   function _get (idx) return arr[idx];
   function _set (idx, val) return arr[idx] = val;
+  function _nexti(previdx) {  // Note: You don't have an iterator, which is why your `pparray` can't be used in foreach
+    if(this.len() == 0) return null
+    if (previdx == null) return 0;
+    return previdx < this.len() - 1 ? previdx + 1 : null;
+  }
   function _tostring () {
     local str = "[";
     for (local i = 0; i < arr.len(); i ++) {
@@ -83,9 +87,10 @@ class pparray {
 }
 
 class ppstring {
+  string = null; // fix
 
   constructor (str = "") {
-    string = str.tostring();
+    this.string = str.tostring(); // Note: the index 'string' does not exist
   }
 
   function _typeof () return "string";
@@ -257,6 +262,11 @@ class ppstring {
 
 }
 
+/* 
+  Imo: Bad decision, as it could create a situation where the same code might behave 
+    differently because of these functions, which eliminates stability both for the library and the user's code. 
+  Perhaps it would be better to remove this block altogether.
+*/
 try {
   
   function Vector::_mul (other) {
@@ -555,6 +565,11 @@ try {
 local entclasses = [CBaseEntity, CBaseAnimating, CBaseFlex, CBasePlayer, CEnvEntityMaker, CLinkedPortalDoor, CPortal_Player, CPropLinkedPortalDoor, CSceneEntity, CTriggerCamera];
 for (local i = 0; i < entclasses.len(); i ++) {
 
+  /* 
+  Imo: Bad decision, as it could create a situation where the same code might behave 
+    differently because of these functions, which eliminates stability both for the library and the user's code. 
+  Perhaps it would be better to remove this block altogether.
+  */
   try {
 
     entclasses[i]._set <- function (key, val) {
@@ -1696,52 +1711,64 @@ for (local i = 0; i < entclasses.len(); i ++) {
 // Game interface //
 /******************/
 
-::ppmod.text <- function (text = "", x = -1.0, y = -1.0) {
+::ppmod.text <- class {
+  ent = null;
 
-  local ent = Entities.CreateByClassname("game_text");
+  constructor(text = "", x = -1.0, y = -1.0) {
+    this.ent = Entities.CreateByClassname("game_text");
+    this.ent.__KeyValueFromString("Message", text);
+    this.ent.__KeyValueFromString("Color", "255 255 255");
+    this.ent.__KeyValueFromFloat("X", x);
+    this.ent.__KeyValueFromFloat("Y", y);
+  }
 
-  ent.__KeyValueFromString("Message", text);
-  ent.__KeyValueFromString("Color", "255 255 255");
-  ent.__KeyValueFromFloat("X", x);
-  ent.__KeyValueFromFloat("Y", y);
+  function GetEntity() {
+    return this.ent
+  }
 
-  return {
+  function SetPosition(x, y) {
+    this.ent.__KeyValueFromFloat("X", x);
+    this.ent.__KeyValueFromFloat("Y", y);
+  }
 
-    GetEntity = function ():(ent) {
-      return ent;
-    },
-    SetPosition = function (x, y):(ent) {
-      ent.__KeyValueFromFloat("X", x);
-      ent.__KeyValueFromFloat("Y", y);
-    },
-    SetText = function (text):(ent) {
-      ent.__KeyValueFromString("Message", text);
-    },
-    SetSize = function (size):(ent) {
-      // Channels sorted from smallest to biggest font size
-      ent.__KeyValueFromInt("Channel", [2, 1, 4, 0, 5, 3][size]);
-    },
-    SetColor = function (c1, c2 = null):(ent) {
-      ent.__KeyValueFromString("Color", c1);
-      if (c2) ent.__KeyValueFromString("Color2", c2);
-    },
-    SetFade = function (fin, fout, fx = false):(ent) {
-      ent.__KeyValueFromFloat("FadeIn", fin);
-      ent.__KeyValueFromFloat("FXTime", fin);
-      ent.__KeyValueFromFloat("FadeOut", fout);
-      if (fx) ent.__KeyValueFromInt("Effect", 2);
-      else ent.__KeyValueFromInt("Effect", 0);
-    },
-    Display = function (hold = null, player = null):(ent) {
-      if (!hold) hold = FrameTime();
-      ent.__KeyValueFromFloat("HoldTime", hold);
-      if (player) ent.__KeyValueFromInt("SpawnFlags", 0);
-      else ent.__KeyValueFromInt("SpawnFlags", 1);
-      EntFireByHandle(ent, "Display", "", 0.0, player, null);
-    }
+  function SetText(text) {
+    this.ent.__KeyValueFromString("Message", text);
+  }
 
-  };
+  function SetSize(size) {
+    // Channels sorted from smallest to biggest font size
+    this.ent.__KeyValueFromInt("Channel", [2, 1, 4, 0, 5, 3][size]);
+  }
 
+  function SetColor(c1, c2 = null) {
+    this.ent.__KeyValueFromString("Color", c1);
+    if(c2) 
+      this.ent.__KeyValueFromString("Color2", c2);
+  }
+
+  function SetFade(fin, fout, fx = false) {
+    this.ent.__KeyValueFromFloat("FadeIn", fin);
+    this.ent.__KeyValueFromFloat("FXTime", fin);
+    this.ent.__KeyValueFromFloat("FadeOut", fout);
+
+    if(fx) {
+      this.ent.__KeyValueFromInt("Effect", 2);
+    } else 
+      this.ent.__KeyValueFromInt("Effect", 0);
+  }
+
+  function Display(hold = null, player = null) {
+    if (hold == null) 
+      hold = FrameTime();
+
+    this.ent.__KeyValueFromFloat("HoldTime", hold);
+    if (player) {
+      this.ent.__KeyValueFromInt("SpawnFlags", 0);
+    } else 
+    this.ent.__KeyValueFromInt("SpawnFlags", 1);
+
+    EntFireByHandle(ent, "Display", "", 0.0, player, null);
+  }
 }
 
 ::ppmod.fwrite <- function (path, str) { // EXPERIMENTAL
