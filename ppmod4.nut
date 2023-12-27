@@ -4,14 +4,13 @@
 */
 
 if (!("Entities" in this)) {
-  printl("[ppmod] Error: ppmod4 was included in a scope without CEntities!");
-  return;
+  return printl("[ppmod] Error: ppmod4 was included in a scope without CEntities!");
 }
 
 if ("ppmod" in this) {
-  printl("[ppmod] Error: ppmod is already loaded!");
-  return;
+  return printl("[ppmod] Error: ppmod is already loaded!");
 }
+
 ::ppmod <- {};
 
 /********************/
@@ -88,9 +87,10 @@ class pparray {
 }
 
 class ppstring {
+  string = null; // fix
 
   constructor (str = "") {
-    string = str.tostring();
+    this.string = str.tostring(); // Note: the index 'string' does not exist
   }
 
   function _typeof () return "string";
