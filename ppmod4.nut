@@ -262,6 +262,11 @@ class ppstring {
 
 }
 
+/* 
+  Imo: Bad decision, as it could create a situation where the same code might behave 
+    differently because of these functions, which eliminates stability both for the library and the user's code. 
+  Perhaps it would be better to remove this block altogether.
+*/
 try {
   
   function Vector::_mul (other) {
@@ -560,6 +565,11 @@ try {
 local entclasses = [CBaseEntity, CBaseAnimating, CBaseFlex, CBasePlayer, CEnvEntityMaker, CLinkedPortalDoor, CPortal_Player, CPropLinkedPortalDoor, CSceneEntity, CTriggerCamera];
 for (local i = 0; i < entclasses.len(); i ++) {
 
+  /* 
+  Imo: Bad decision, as it could create a situation where the same code might behave 
+    differently because of these functions, which eliminates stability both for the library and the user's code. 
+  Perhaps it would be better to remove this block altogether.
+  */
   try {
 
     entclasses[i]._set <- function (key, val) {
