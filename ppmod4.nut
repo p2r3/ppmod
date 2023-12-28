@@ -1350,6 +1350,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
   if (typeof ent == "array") {
 
     // If an array contains only two Vectors, treat those instead as the origin point and half-widths of an entity, respectively
+    local isbbox = false;
     if (ent.len() == 2) if (typeof ent[0] == "Vector" && typeof ent[1] == "Vector") {
 
       local pos = ent[0], size = ent[1];
@@ -1361,7 +1362,12 @@ for (local i = 0; i < entclasses.len(); i ++) {
         GetBoundingMins = function ():(size) { return Vector() - size },
       };
 
-    } else {
+      isbbox = true;
+
+    }
+    
+    // Squirrel sucks, we can't just have an 'else' here
+    if (!isbbox) {
 
       local closest = ppmod.ray(start, end, ent[0], false, portals, [len, div]);
       for (local i = 1; i < ent.len(); i ++) {
