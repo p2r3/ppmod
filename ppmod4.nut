@@ -1446,7 +1446,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
     start.x > bmin[0] && start.x < bmax[0] &&
     start.y > bmin[1] && start.y < bmax[1] &&
     start.z > bmin[2] && start.z < bmax[2]
-  ) return formatreturn( 0.0, [len, div] );
+  ) return formatreturn( 0.0, [len, div], ent );
 
   start = [start.x, start.y, start.z];
 
