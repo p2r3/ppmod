@@ -1395,14 +1395,17 @@ for (local i = 0; i < entclasses.len(); i ++) {
   local mins = ent.GetBoundingMins();
   local maxs = ent.GetBoundingMaxs();
 
-  // if (pos.x + mins.x > max(start.x, end.x)) return formatreturn( 1.0, [len, div] );
-  // if (pos.x + maxs.x < min(start.x, end.x)) return formatreturn( 1.0, [len, div] );
+  local minmin = min(mins.x, min(mins.y, mins.z));
+  local maxmax = max(maxs.x, max(maxs.y, maxs.z));
 
-  // if (pos.y + mins.y > max(start.y, end.y)) return formatreturn( 1.0, [len, div] );
-  // if (pos.y + maxs.y < min(start.y, end.y)) return formatreturn( 1.0, [len, div] );
+  if (pos.x + minmin > max(start.x, end.x)) return formatreturn( 1.0, [len, div] );
+  if (pos.x + maxmax < min(start.x, end.x)) return formatreturn( 1.0, [len, div] );
 
-  // if (pos.z + mins.z > max(start.z, end.z)) return formatreturn( 1.0, [len, div] );
-  // if (pos.z + maxs.z < min(start.z, end.z)) return formatreturn( 1.0, [len, div] );
+  if (pos.y + minmin > max(start.y, end.y)) return formatreturn( 1.0, [len, div] );
+  if (pos.y + maxmax < min(start.y, end.y)) return formatreturn( 1.0, [len, div] );
+
+  if (pos.z + minmin > max(start.z, end.z)) return formatreturn( 1.0, [len, div] );
+  if (pos.z + maxmax < min(start.z, end.z)) return formatreturn( 1.0, [len, div] );
 
   local ang = ent.GetAngles() * (PI / 180.0);
   local c1 = cos(ang.z);
