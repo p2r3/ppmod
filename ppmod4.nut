@@ -1503,7 +1503,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
   if (type == "prop_floor_ball_button") model = "props/ball_button.mdl";
   if (type == "prop_under_floor_button") model = "props_underground/underground_floor_button.mdl";
 
-  return ppromise(function (resolve, reject):(model) {
+  return ppromise(function (resolve, reject):(type, pos, ang, model) {
 
     // First, create a prop_dynamic with the appropriate model
     ppmod.create(model).then(function (ent):(type, pos, ang, resolve) {
