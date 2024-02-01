@@ -88,3 +88,71 @@ The `ppstring` class implements some additional string features not present in P
 ```squirrel
   str.replace("l", "L") // Returns "HeLLo worLd!"
 ```
+
+## Entity management
+These functions help with the Source entity input/output system. They mostly consist of streamlined versions of existing essential functions.
+
+### ppmod.get
+Searches for an entity by various criteria and returns its handle. Searches can be done by:
+- Targetname
+- Classname
+- Model
+- Entity index
+- Position (more on that later)
+
+Here are some examples of finding the first laser cube on `sp_a2_triple_laser`:
+```squirrel
+  ppmod.get("new_box") // By targetname
+  ppmod.get("prop_weighted_cube") // By classname
+  ppmod.get("models/props/reflection_cube.mdl") // By model
+  ppmod.get(51) // By entity index (not recommended)
+```
+
+Iterating over entities can be done by providing the previous entity's handle as the second argument:
+```squirrel
+  local first = ppmod.get("prop_testchamber_door"); // First chamber door (usually entrance)
+  local second = ppmod.get("prop_testchamber_door", first); // Second chamber door (usually exit)
+```
+
+Or, to iterate over every cube in a map:
+```squirrel
+  local cube = null;
+  while (cube = ppmod.get("prop_weighted_cube", cube)) {
+    printl("Cube found at: " + cube.GetOrigin());
+  }
+```
+
+As mentioned before, searches can also be performed by position:
+```squirrel
+  ppmod.get(Vector(7687, -5863, 18)) // Starting position of the first cube on sp_a2_triple_laser
+  ppmod.get(Vector(7687, -5863, 18), 8) // Same search, but narrowed down to a 8 unit radius (default is 32)
+```
+
+You can also apply a filter containing any of the previously mentioned search criteria to narrow down a position search:
+```squirrel
+  local playerPos = GetPlayer().GetOrigin();
+  local radius = 1024;
+
+  // Search for a chamber door within 1024 units of the player
+  ppmod.get(playerPos, radius, "prop_testchamber_door");
+```
+
+### ppmod.getall
+Runs a callback function for every entity that matches the search. Mostly intended for use internally. First argument is an array of `ppmod.get` arguments, the second argument is the callback function, which is provided each iteration's respective entity.
+```squirrel
+  ppmod.getall(["prop_weighted_cube"], function (cube) {
+    printl("Cube found at: " + cube.GetOrigin());
+  });
+```
+
+### ppmod.prev
+Performs a `ppmod.get` search in reverse. Useful for finding the last entity of a sequence.
+```squirrel
+  ppmod.prev("prop_testchamber_door") // Gets the last door in the map
+```
+
+### ppmod.fire
+Fires an input to an entity, either by classname, targetname or entity handle.
+```squirrel
+  ppmod.fire(target, action, value, delay, activator, caller)
+```
