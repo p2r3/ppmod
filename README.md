@@ -4,7 +4,6 @@ VScript library for rapid prototyping of Portal 2 mods.
 The focus of this project is to provide tools that assist in developing Portal 2 VScript mods faster and much more comfortably than through vanilla VScript. This involves employing various hacks and adding missing features or fixing broken ones through entities often specific to Portal 2. While ppmod strives to be performant, this does not come at the cost of ease of use.
 
 ## Installation
-
 Since ppmod4, the environment is expected to be as clean as possible, without any instantiated entities or vectors. This can be achieved by placing the script file in `scripts/vscripts` and calling it at the very top of `mapspawn.nut`, after making sure that the current scope has server-side control:
 ```squirrel
   // File: "scripts/vscripts/mapspawn.nut"
@@ -13,6 +12,39 @@ Since ppmod4, the environment is expected to be as clean as possible, without an
   IncludeScript("ppmod4"); // Include ppmod4 as early as possible
 ```
 Including ppmod4 in an already populated environment will still work at the cost of additional vector metamethods and entity method abstractions. This will get logged to the console as a warning, but is technically harmless if these features are unused.
+
+## Getting started
+Setting up and working with an environment like this for the first time can be overwhelming, so here's some boilerplate to help you get started. This script will spawn a red cube in front of the player's head, and make it print to the console once it gets fizzled. This should provide a solid example that you can then play around with to get an idea of what it's like to work with ppmod.
+```squirrel
+  // File: "scripts/vscripts/mapspawn.nut"
+
+  if (!("Entities" in this)) return;
+  IncludeScript("ppmod4");
+
+  // This function is called whenever a map is fully loaded
+  // We wrap it in async() to make it more comfortable to use asynchronous functions inline
+  ppmod.onauto(async(function () {
+
+    // Provides us with additional player info, like eye position and angles
+    yield ppmod.player(GetPlayer());
+    local pplayer = ::syncnext;
+
+    // Props cannot be created with the CreateByClassname method, so we use ppmod.create instead
+    yield ppmod.create("prop_weighted_cube");
+    local cube = ::syncnext;
+
+    // Teleports the new cube to 64 units in front of the player's eyes
+    local pos = pplayer.eyes.GetOrigin() + pplayer.eyes.GetForwardVector() * 64;
+    cube.SetOrigin(pos);
+    // Colors the cube red with the "Color" input
+    ppmod.fire(cube, "Color", "255 0 0");
+    // Connects a script function to the cube's "OnFizzled" output
+    ppmod.addscript(cube, "OnFizzled", function () {
+      printl("The red cube has been fizzled!");
+    });
+
+  }));
+```
 
 ## Global utilities
 These are essential utility functions, classes and methods that Portal 2's implementation of Squirrel and VScript should (arguably) have by default. This includes abstractions and shorthands of already existing features.
