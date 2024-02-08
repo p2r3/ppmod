@@ -188,3 +188,58 @@ Fires an input to an entity, either by classname, targetname or entity handle.
 ```squirrel
   ppmod.fire(target, action, value, delay, activator, caller)
 ```
+This functions very similarly to methods like `DoEntFire` or `EntFireByHandle`, with some additional quality-of-life changes:
+- The `target` may be either a string, entity handle, or an (array of) argument(s) passed to `ppmod.get`.
+- Every argument other than the `target` holds a default placeholder value.
+- The `value` is automatically converted to a string.
+
+This means that `ppmod.fire` can be used as a universal shorthand for firing inputs to entities. All of the following examples are valid:
+```squirrel
+  ppmod.fire("prop_weighted_cube", "Dissolve", "", 2, null, null); // Fizzle all cubes in 2 seconds
+  ppmod.fire("named_cube", "Dissolve"); // Fizzle a specific cube
+  ppmod.fire([Vector(...), 128, "prop_weighted_cube"], "Dissolve"); // Find all cubes within a 128u radius and fizzle them
+```
+
+### ppmod.keyval
+Sets a keyvalue for an entity provided by either classname, targetname or handle.
+```squirrel
+  ppmod.keyval(entity, key, value)
+```
+This functions similarly to `__KeyValueFrom...` methods, or the keyvalue format of the `AddOutput` input. The differences are:
+- The `entity` may be provided as either a string, entity handle, or an (array of) argument(s) passed to `ppmod.get`.
+- Value types are detected and converted automatically.
+- The keyvalue is applied instantly, skipping the entity I/O queue.
+
+Similarly to `ppmod.fire`, this functions as a universal shorthand for keyvalues. Here are some valid examples:
+```squirrel
+  ppmod.keyval("prop_weighted_cube", "RenderColor", "255 0 0"); // Colors all cubes red
+  ppmod.keyval("weapon_portalgun", "CanFirePortal1", false); // Disables the portal gun's blue portal
+  ppmod.keyval([Vector(...), 128], "angles", Vector(-90, 0, 0)); // Rotates entities within a 128u radius to face directly upwards
+```
+
+### ppmod.flags
+Sets an entity's spawnflags. This is really just an abstraction of the "SpawnFlags" keyvalue.
+```squirrel
+  local trigger = ppmod.get(Vector(...), 32, "trigger_once");
+  ppmod.flags(trigger, 1, 2, 8); // Makes a trigger react to clients, NPCs and physics props
+```
+The flags are provided as a variable number of arguments and are summed up to create the value set as the SpawnFlags keyvalue.
+
+### ppmod.addoutput
+Connects an entity output to another entity's input. For more info on entity I/O, [see here](https://developer.valvesoftware.com/wiki/Inputs_and_Outputs).
+```squirrel
+  ppmod.addoutput(entity, output, target, input, value, delay, max);
+```
+The arguments of this function are identical to those used in Hammer or those passed to the `AddOutput` input. Note that:
+- The `entity` and `target` may be provided as either a string, entity handle, or an (array of) argument(s) passed to `ppmod.get`.
+- Outputs are added instantly, skipping the entity I/O queue.
+- Quotes and special characters are safe to use, with the exception of `\x1B`.
+
+### ppmod.addscript
+Similar to its sister function `ppmod.addoutput`, but instead of firing an input when an output is received, a script function is called.
+```squirrel
+  ppmod.addscript(entity, output, script, delay, max, passthrough)
+```
+The arguments here are similar to those in `ppmod.addoutput`, except:
+- The `script` may be either a string of single-line Squirrel code, or a function.
+- The `passthrough` argument provides the given function with the output's `activator` and `caller` as arguments.
