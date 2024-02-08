@@ -213,6 +213,7 @@ This functions similarly to `__KeyValueFrom...` methods, or the keyvalue format 
 Similarly to `ppmod.fire`, this functions as a universal shorthand for keyvalues. Here are some valid examples:
 ```squirrel
   ppmod.keyval("prop_weighted_cube", "RenderColor", "255 0 0"); // Colors all cubes red
+  ppmod.keyval("cube1", "Targetname", "cube2"); // Changes the name of "cube1" to "cube2"
   ppmod.keyval("weapon_portalgun", "CanFirePortal1", false); // Disables the portal gun's blue portal
   ppmod.keyval([Vector(...), 128], "angles", Vector(-90, 0, 0)); // Rotates entities within a 128u radius to face directly upwards
 ```
@@ -242,4 +243,75 @@ Similar to its sister function `ppmod.addoutput`, but instead of firing an input
 ```
 The arguments here are similar to those in `ppmod.addoutput`, except:
 - The `script` may be either a string of single-line Squirrel code, or a function.
-- The `passthrough` argument provides the given function with the output's `activator` and `caller` as arguments.
+- Setting `passthrough` to `true` provides the given function with the output's `activator` and `caller` as arguments.
+
+### ppmod.runscript
+Runs a script as the specified entity. Nearly identical to `ppmod.fire(entity, "RunScriptCode", script)`, with the exception that the script can be either a string or a script function.
+```squirrel
+  ppmod.runscript(entity, script)
+```
+
+### ppmod.setparent
+Sets the parent of the given child entity to a parent entity, joining their movement together.
+```squirrel
+  ppmod.setparent(child, parent)
+```
+Both the parent and the child can be provided as either a string, entity handle, or an (array of) argument(s) passed to `ppmod.get`. Setting the parent to a falsy value like `null` will remove any parent from the child. This acts as a cleaner alternative to the `SetParent` and `ClearParent` entity inputs.
+
+### ppmod.hook
+Sets an entity's [input hook](https://developer.valvesoftware.com/wiki/VScript_Fundamentals#Input_Hooks).
+```squirrel
+  ppmod.hook(entity, input, script, max)
+```
+The given script function gets called whenever the entity receives the specified input. If this function returns `false`, the input is discarded. Otherwise, it gets executed as per usual. This can be used to make specific inputs conditional, or to disable them outright. Note that input names are case sensitive, and use the CamelCase format.
+
+## Shorthands for entity management
+Many of the functions documented above are also implemented as methods in most entity classes (assuming that ppmod was included before entities were instantiated). This provides some syntactic sugar that makes entity code shorter and cleaner.
+
+### Keyvalue assignment
+Keyvalues can be assigned as a property of an entity's handle.
+```squirrel
+  local pgun = ppmod.get("weapon_portalgun");
+  pgun.CanFirePortal1 = false; // Disables the portal gun's blue portal
+```
+Note that you cannot retrieve keyvalues this way.
+
+### Firing inputs
+Inputs can be fired by calling them as a method of an entity's handle. All arguments remain optional, and are ordered just like in `ppmod.fire`.
+```squirrel
+  local cube = ppmod.get("prop_weighted_cube");
+  cube.Color("255 0 0", 2.5); // Colors the cube red after 2.5 seconds
+```
+Alternatively, you can fire inputs by calling the `Fire` method of the handle.
+```squirrel
+  cube.Fire("Dissolve"); // Fizzles the cube
+```
+
+### Adding outputs
+Outputs can be added via the `AddOutput` method of an entity's handle. Arguments remain the same as with `ppmod.addoutput`.
+```squirrel
+  ent.AddOutput(output, target, input, value, delay, max)
+```
+Similarly, scripts can be added via the `AddScript` method.
+```squirrel
+  ent.AddScript(output, scr, delay, max, passthrough)
+```
+
+### Running scripts
+The `RunScript` method acts as a shorthand of `ppmod.runscript`.
+```squirrel
+  ent.RunScript(script)
+```
+
+### Parenting
+Entities can be parented via the `SetMoveParent` method. Behavior is the same as with `ppmod.setparent`.
+```squirrel
+  ent.SetMoveParent(parent)
+```
+Note that the method `GetMoveParent` exists in Portal 2 by default, and can be used to retrieve the parent entity handle.
+
+### Hooking inputs
+Hook functions can be added to inputs via the `SetHook` method. Arguments remain the same as with `ppmod.hook`.
+```squirrel
+  ent.SetHook(input, script, max)
+```
