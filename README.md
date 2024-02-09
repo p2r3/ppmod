@@ -315,3 +315,103 @@ Hook functions can be added to inputs via the `SetHook` method. Arguments remain
 ```squirrel
   ent.SetHook(input, script, max)
 ```
+
+## Control flow
+These functions implement additional features to VScript's program control flow, like timers and intervals, essential for game programming.
+
+### ppmod.wait
+Runs the given script after the specified time.
+```squirrel
+  ppmod.wait(script, seconds, name)
+```
+The script may be provided as either a string of single-line VScript or a function. The time is to be provided in seconds, and can be either an integer or a float. The `name` argument is optional. If set, it names the underlying `logic_relay` entity, which can then be found and destroyed, aborting the timer.
+
+Here is an example of using this function to fizzle a cube in 2 seconds, unless the player picks it up before then:
+```squirrel
+  local cube = ppmod.get("prop_weighted_cube");
+
+  ppmod.wait(function ():(cube) {
+    cube.Dissolve();
+  }, 2.0, "wait_dissolve");
+
+  ppmod.addoutput(cube, "OnPlayerPickup", "wait_dissolve", "Kill");
+```
+Note that this function returns a handle for the `logic_relay` entity, which can also be used to destroy the timer without having to give it a name:
+```squirrel
+  local timer = ppmod.wait(...);
+  if (condition) timer.Destroy();
+```
+
+### ppmod.interval
+Runs the given script repeatedly in the specified time interval.
+```squirrel
+  ppmod.interval(script, seconds, name)
+```
+The arguments for this function are nearly identical to those used for `ppmod.wait`, with the only exception being that the time is optional. If the interval time is not set (or if set to 0), the script will get called on every entity tick.
+
+Here is an example of a script that hurts the player every 0.5 seconds if they aren't standing on a cube:
+```squirrel
+  local player = GetPlayer();
+
+  ppmod.interval(function ():(player) {
+
+    local feetpos = player.GetOrigin() - Vector(0, 0, 18);
+    local cube = ppmod.get(feetpos, 8, "prop_weighted_cube");
+
+    if (!cube) {
+      player.SetHealth(player.GetHealth() - 20);
+    }
+
+  }, 0.5);
+```
+
+### ppmod.ontick
+Runs the given script for every console tick, or waits the specified amount of ticks to run a script.
+```squirrel
+  ppmod.ontick(script, pause, timeout)
+```
+The `script` may be provided as either a string of single-line VScript, or a function. If `pause` is set to `true` (default), the loop will not run while the game is paused. If `timeout` is set to `-1` (default), the loop will run indefinitely for every tick. Otherwise, this function acts as a timer, and will wait for the specified amount of ticks to pass before running the script once.
+
+Here is a simple example that will print "Hello Portal 2!" to the console every tick, even when the game is paused.
+```squirrel
+  ppmod.ontick(function () {
+    printl("Hello Portal 2!");
+  }, false);
+```
+Note that it is generally recommended to use `ppmod.interval` or `ppmod.wait` instead, where applicable. This function will not preserve its ticks through save files, and large scale use of `ppmod.ontick` loops can theoretically cause console buffer overruns. The only recommended usecase for this function is for keeping time during game pauses.
+
+### ppmod.once
+Ensures that a script is called only once on the current map.
+```squirrel
+  ppmod.once(script, name)
+```
+The `script` may be provided as either a string of single-line VScript, or a function. The `name` argument is optional, and can be used to rename and later remove the underlying dummy entity, which allows the script to be run again. Note that this function also returns a handle for said entity. If a name is not provided, the entity is instead named after the given script or reference to the given function. Because of this, functions created inline can't be governed with this function.
+
+It is hard to find a use for this function nowadays, and it is generally considered deprecated. It used to be helpful in older versions of ppmod, before callback functions were supported.
+
+### ppmod.onauto
+Runs the given script once the map has fully loaded.
+```squirrel
+  ppmod.onauto(script, onload)
+```
+The `script` may be provided as either a string of single-line VScript, or a function. The `onload` argument is optional (`false` by default), and when set to `true`, calls the provided script on not only the initial map load, but also any save file loads.
+
+This function is essential for almost any gameplay modding, and will often appear at the top of many ppmod scripts, as most entities are not accessible until the map has fully loaded. In single-player, this means waiting for the `logic_auto` entity to fire. In networked co-op games, this function also waits for the remote player (P-body) to fully connect before calling the script.
+
+### ppmod.detach
+Works around script timeouts by catching the exception they throw.
+```squirrel
+  ppmod.detach(script, args)
+```
+In Portal 2's implementation of Squirrel, scripts (queries) are given a limited time to run, so that a simple `while (true)` loop doesn't hang the game. For compute-intensive operations, this can mean that the script is aborted before calculations are finished. When this happens, the VM throws a `Script terminated by SQQuerySuspend` exception. This function catches that exception, and calls the given function again, passing it the arguments from the previous run. If a different exception is caught, ppmod traces it back to the line on which `ppmod.detach` was called. Note that some of the trace data is unfortunately lost this way.
+
+The `script` argument expects a function which is passed one argument - a table. The `args` argument is this table, which is passed back to the function every time it is called. Here is an example of using this function to call a for loop which increments an integer until it overflows:
+```squirrel
+  ppmod.detach(function (args) {
+
+    while (args.i >= 0) args.i ++;
+    printl("i overflowed to " + args.i);
+
+  }, { i = 0 });
+```
+Note that this will most likely take some time to run, during which the game will freeze. Be careful not to leave infinite loops running like this, since the only other safeguard is, theoretically, a stack overflow.
