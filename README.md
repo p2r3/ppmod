@@ -121,6 +121,74 @@ The `ppstring` class implements some additional string features not present in P
   str.replace("l", "L") // Returns "HeLLo worLd!"
 ```
 
+### ppromise
+Implements a JavaScript-like "promise" system for working with asynchronous operations.
+```squirrel
+  ppromise(func)
+```
+In Portal 2, there are numerous mutually unsyncronised threads, which can be a hassle to work with. Namely, console commands and entity actions are the most common offenders in generating asynchronous code. Historically, ppmod has used callback functions to accomodate for this, but since ppmod4, a "thenable" system was established for clarity and consistency.
+
+Setting up a basic ppromise means wrapping a function with the `ppromise` constructor, which returns a ppromise instance. (Internally, these aren't actually classes or objects due to a workaround for a bug in Portal 2's Squirrel runtime.) Here is an example of a simple promise that resolves in 5 seconds:
+```squirrel
+  local wait = ppromise(function (resolve, reject) {
+    ppmod.wait(function ():(resolve) {
+      resolve("5 seconds have passed");
+    }, 5);
+  });
+```
+
+There are several ways of obtaining the result of a ppromise. The simplest by far is to attach a script to the `then`, `except`, or `finally` methods:
+```squirrel
+  // Prints "5 seconds have passed".
+  wait.then(function (result) {
+    printl(result);
+  });
+
+  // Prints either the value given to reject(), or any errors caught by the ppromise.
+  wait.except(function (err) {
+    printl(err);
+  });
+
+  // Prints either the value of resolve() or reject(), whichever came first.
+  wait.finally(function (value) {
+    printl(value);
+  });
+```
+Note that only one function can be attached to each output, and only one of `then` or `except` gets called (whichever is encountered first), while `finally` gets called regardless.
+
+You can also get the value and state of a ppromise directly:
+```squirrrel
+  wait.state // One of "pending", "fulfilled", or "rejected"
+  wait.value // The value passed to either resolve() or reject()
+```
+
+Lastly, the value of a ppromise can be resolved inline via async functions.
+
+### async
+To improve code clarity and reduce nesting, ppmod implements JavaScript-like `async` functions, which can resolve `ppromise`s inline using the `yield` keyword, which in this case works similarly to JavaScript's `await`.
+```squirrel
+  async(func)
+```
+
+The simplest way of declaring such a function is to wrap it in `async()`. Here is an example of such a function that waits for `ppmod.create` to spawn an entity:
+```squirrel
+  local createCube = async(function () {
+
+    yield ppmod.create("prop_weighted_cube");
+    local cube = ::syncnext;
+
+    cube.SetOrigin(Vector(...));
+    ...
+
+  });
+
+  // Can be called like a normal function
+  createCube(); 
+```
+There are some important things to note here. Firstly, for context, here `ppmod.create` returns a `ppromise` that resolves to the created entity's handle. Secondly, `yield` on its own does not return this value. These `async` functions work by exploiting Squirrel's generators, which leads to admittedly hacky syntax. The value of the last `yield`ed `ppromise` is instead stored in the `syncnext` global.
+
+Due to a bug in how Portal 2 handles restoring the script scope from save files, saving before an `async` function has finished running can lead to game freezes or crashes. It is therefore not recommended to use `async` functions in tick loops, and instead reserve them for one-time events like map loads or entity outputs.
+
 ## Entity management
 These functions help with the Source entity input/output system. They mostly consist of streamlined versions of existing essential functions.
 
