@@ -483,3 +483,99 @@ The `script` argument expects a function which is passed one argument - a table.
   }, { i = 0 });
 ```
 Note that this will most likely take some time to run, during which the game will freeze. Be careful not to leave infinite loops running like this, since the only other safeguard is, theoretically, a stack overflow.
+
+## Player interface
+Provides more information about and ways to interact with a player.
+```squirrel
+  ppmod.player(player)
+```
+This function acts as a constructor and expects one argument - the entity handle of a player. It returns a `ppromise` which resolves to a `pplayer` instance (in reality just a table) which contains methods that allow for more control over the player than vanilla VScript provides.
+
+### pplayer.eyes
+Provides accurate eye position and angles.
+```
+  pplayer.eyes.GetOrigin() // Eye position
+  pplayer.eyes.GetAngles() // Eye angles
+  pplayer.eyes.GetForwardVector() // Eye facing vector
+```
+In Portal 2, retrieving the player's angles directly will return the rotation of the player model, which differs significantly from the player's view angles. Instead, `pplayer.eyes` creates and returns a `logic_measure_movement` entity, which can be referenced for accurate eye position.
+
+### pplayer.holding
+Determines whether the player is holding a prop.
+```squirrel
+  pplayer.holding().then(function (state) {
+
+    if (state) {
+      // ... is holding a prop
+    } else {
+      // ... is not holding a prop 
+    }
+
+  });
+```
+This function returns a `ppromise` that resolves to a single boolean for whether or not the player is holding something. Optionally, `pplayer.holding` can be passed one argument - an array of entity classes to check. By default, every entity class that can be picked up in Portal 2 is checked. Checking only for specific classes can improve performance.
+
+### Event listeners
+Allows for listening to player actions. Each of these functions expects one argument - a function to attach. Multiple functions can be attached to one event.
+- `pplayer.jump` - Fired when the player issues a jump input.
+- `pplayer.land` - Fired when the player lands from a jump or fall.
+- `pplayer.duck` - Fired when the player finishes the crouching animation.
+- `pplayer.unduck` - Fired when the player finishes the uncrouching animation.
+
+Here is an example of using `pplayer.jump` to listen for jumps:
+```squirrel
+  ppmod.player(GetPlayer()).then(function (pplayer) {
+
+    // Note: this will fire for every jump input, including those issued mid-air
+    pplayer.jump(function () {
+      printl("The player has jumped!");
+    });
+
+  });
+```
+
+### pplayer.grounded
+Returns `true` if the player is on the ground, `false` otherwise.
+```squirrel
+  pplayer.grounded() // Returns true or false
+```
+
+### pplayer.input
+Allows for listening to player inputs.
+```squirrel
+  pplayer.input(input, script)
+```
+The `input` argument expects a string specifying the input command to listen for. The `script` argument can be either a function, or a string of single-line VScript code. Note that only the inputs provided by `game_ui` are supported, namely:
+- `+moveleft` and `-moveleft`
+- `+moveright` and `-moveright`
+- `+forward` and `-forward`
+- `+back` and `-back`
+- `+attack` and `-attack`
+- `+attack2` and `-attack2`
+
+Here is an example of using `pplayer.input` to listen for when the player has attempted to shoot a portal:
+```squirrel
+  ppmod.player(GetPlayer()).then(function (pplayer) {
+
+    // Note: this will fire for every +attack input, even if the player can't shoot portals
+    pplayer.input("+attack", function () {
+      printl("Portal shot attempted!");
+    });
+
+  });
+```
+
+### pplayer.gravity
+Changes the player's gravity without affecting the gravity of other players or entities.
+```
+  pplayer.gravity(gravity)
+```
+One argument is expected - a multiplier for the strength of the player's gravity. A value of `1` will leave it unchanged, a value of `0` will disable gravity entirely, a value of `2` will make it twice as strong, and so on.
+
+### pplayer.ent
+Holds the entity handle that was used to instantiate this `pplayer` instance.
+```squirrel
+  ppmod.player(GetPlayer()).then(function (pplayer) {
+    pplayer.ent == GetPlayer() // true
+  });
+```
