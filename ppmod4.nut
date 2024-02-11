@@ -1475,15 +1475,14 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 ::ppmod.inbounds <- function (point) {
 
-  local ent = null;
-  while (ent = Entities.Next(ent)) {
-    if (!ent.IsValid()) continue;
-    if (TraceLine(point, ent.GetOrigin(), null) == 1.0) {
-      return true;
-    }
-  }
+  if (TraceLine(point, point + Vector(65536, 0, 0), null) == 1.0) return false;
+  if (TraceLine(point, point - Vector(65536, 0, 0), null) == 1.0) return false;
+  if (TraceLine(point, point + Vector(0, 65536, 0), null) == 1.0) return false;
+  if (TraceLine(point, point - Vector(0, 65536, 0), null) == 1.0) return false;
+  if (TraceLine(point, point + Vector(0, 0, 65536), null) == 1.0) return false;
+  if (TraceLine(point, point - Vector(0, 0, 65536), null) == 1.0) return false;
 
-  return false;
+  return true;
 
 }
 
