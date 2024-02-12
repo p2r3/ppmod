@@ -974,20 +974,57 @@ for (local i = 0; i < entclasses.len(); i ++) {
     else trigger.__KeyValueFromFloat("Gravity", gravity);
   };
 
-  pplayer.movesim <- function (move, accel = 10, fric = 0, ground = Vector(0, 0, -1), grav = null, ftime = null, eyes = null, sfric = 0.25):(player, pplayer) {
+  pplayer.friction <- function (fric, ftime = null, grounded = null):(pplayer) {
+
+    // Don't touch velocity if the player isn't grounded
+    if (grounded == false) return;
+    if (grounded == null && !pplayer.grounded()) return;
+
+    if (ftime == null) ftime = FrameTime();
+
+    local vel = pplayer.ent.GetVelocity();
+    local veldir = vel + Vector();
+    local absvel = veldir.Norm();
+
+    // Cancel out existing friction calculations
+    if (absvel >= 100) {
+      vel *= 1 / (1 - ftime * 4);
+    } else {
+      vel += veldir * (ftime * 400);
+    }
+
+    // Simulate our own friction
+    absvel = vel.Length();
+
+    if (absvel >= 100) {
+      vel *= 1 - ftime * fric;
+    } else if (fric > 0) {
+      if (fric / 0.6 < absvel) {
+        vel -= veldir * (ftime * 400);
+      } else if (absvel > 0) {
+        vel *= mask;
+      }
+    }
+
+    // Apply calculated velocity 
+    pplayer.ent.SetVelocity(vel);
+
+  };
+
+  pplayer.movesim <- function (move, accel = 10, fric = 0, sfric = 0.25, grav = null, ftime = null, eyes = null):(player, pplayer) {
 
     if (ftime == null) ftime = FrameTime();
     if (eyes == null) eyes = pplayer.eyes;
-    if (grav == null) grav = ground * 600;
+    if (grav == null) grav = Vector(0, 0, -600);
 
     if (!pplayer.grounded()) accel *= sfric;
 
     local vel = player.GetVelocity();
-    local mask = Vector(fabs(ground.x), fabs(ground.y), fabs(ground.z));
+    local mask = Vector(0, 0, 1);
 
     if (fric > 0) {
 
-      local veldir = Vector(vel.x, vel.y, vel.z);
+      local veldir = vel + Vector();
       local absvel = veldir.Norm();
 
       if (absvel >= 100) {
@@ -1009,21 +1046,20 @@ for (local i = 0; i < entclasses.len(); i ++) {
     left.Norm();
 
     local wishvel = Vector();
-    wishvel.x = forward.x * move.x + left.x * move.y;
-    wishvel.y = forward.y * move.x + left.y * move.y;
-    wishvel.z = forward.z * move.x + left.z * move.y;
+    wishvel.x = forward.x * move.y + left.x * move.x;
+    wishvel.y = forward.y * move.y + left.y * move.x;
+    wishvel.z = forward.z * move.y + left.z * move.x;
     wishvel -= wishvel * mask;
     local wishspeed = wishvel.Norm();
 
-    local vertvel = vel * mask;
-    vel -= vertvel;
-    local currspeed = vel.Dot(wishvel);
+    local horizvel = vel - vel * mask;
+    local currspeed = horizvel.Dot(wishvel);
 
     local addspeed = wishspeed - currspeed;
     local accelspeed = accel * ftime * wishspeed;
     if (accelspeed > addspeed) accelspeed = addspeed;
 
-    local finalvel = vel + wishvel * accelspeed + vertvel + grav * ftime;
+    local finalvel = vel + wishvel * accelspeed + grav * ftime;
     player.SetVelocity(finalvel);
 
   };
