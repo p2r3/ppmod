@@ -493,7 +493,7 @@ This function acts as a constructor and expects one argument - the entity handle
 
 ### pplayer.eyes
 Provides accurate eye position and angles.
-```
+```squirrel
   pplayer.eyes.GetOrigin() // Eye position
   pplayer.eyes.GetAngles() // Eye angles
   pplayer.eyes.GetForwardVector() // Eye facing vector
@@ -567,10 +567,30 @@ Here is an example of using `pplayer.input` to listen for when the player has at
 
 ### pplayer.gravity
 Changes the player's gravity without affecting the gravity of other players or entities.
-```
+```squirrel
   pplayer.gravity(gravity)
 ```
 One argument is expected - a multiplier for the strength of the player's gravity. A value of `1` will leave it unchanged, a value of `0` will disable gravity entirely, a value of `2` will make it twice as strong, and so on.
+
+### pplayer.friction
+Changes the player's friction without affecting the friction of other players or entities.
+```squirrel
+  pplayer.friction(friction, frametime, grounded)
+```
+This function is expected to be run in a tick loop. The `friction` argument holds the same meaning as the `sv_friction` console variable (hidden in Portal 2), the `frametime` argument (optional) specifies the interval at which this function will be called. If set to `null` (default), the value of the internal function `FrameTime()` will be assumed. The `grounded` argument (optional) is a boolean, specifying whether or not the player is on the ground. Setting this to `false` essentially skips running the function entirely. If set to `null` (default), the value of `pplayer.grounded()` is used.
+
+Here is an example of setting the player's friction to 2, which is half of the default value:
+```squirrel
+  ppmod.player(GetPlayer()).then(function (pplayer) {
+
+    // Note: this function calculates the friction for one tick at a time, so a tick loop is used
+    ppmod.interval(function ():(pplayer) {
+      pplayer.friction(2.0);
+    });
+
+  });
+```
+Note that the calculations performed expect the value of `sv_friction` to be `4`, which it is by default, and typically cannot be changed without unlocking the console variable via a plugin.
 
 ### pplayer.ent
 Holds the entity handle that was used to instantiate this `pplayer` instance.
