@@ -1150,6 +1150,88 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 }
 
+::ppmod.onportal_func <- [];
+::ppmod.onportal <- function (func) {
+
+  ppmod.onportal_func.push(func);
+  if (ppmod.onportal_func.len() != 1) return;
+
+  ::ppmod.onportal_check <- function (portal) {
+    
+    ppmod.runscript("worldspawn", function ():(portal) {
+
+      local pgun = null;
+      local color = null;
+
+      while (pgun = Entities.FindByClassname(pgun, "weapon_portalgun")) {
+        
+        local scope = pgun.GetScriptScope();
+        
+        if (scope["ppmod_onportal_attack_time"] == Time()) {
+          color = 1;
+          break;
+        }
+
+        if (scope["ppmod_onportal_attack2_time"] == Time()) {
+          color = 2;
+          break;
+        }
+
+      }
+
+      if (color == null) pgun = null;
+
+      for (local i = 0; i < ppmod.onportal_func.len(); i ++) {
+        ppmod.onportal_func[i]({
+          portal = portal,
+          pgun = pgun,
+          color = color
+        });
+      }
+
+    });
+
+  };
+
+  ppmod.interval(function () {
+
+    local pgun = null;
+    while (pgun = Entities.FindByClassname(pgun, "weapon_portalgun")) {
+
+      if (!pgun.IsValid()) continue;
+      if (!pgun.ValidateScriptScope()) continue;
+
+      local scope = pgun.GetScriptScope();
+      if ("ppmod_onportal_attack_time" in scope) continue;
+
+      scope["ppmod_onportal_attack_time"] <- 0.0;
+      scope["ppmod_onportal_attack2_time"] <- 0.0;
+
+      pgun.__KeyValueFromString("OnFiredPortal1", "!self\x001BRunScriptCode\x001Bself.GetScriptScope()[\"ppmod_onportal_attack_time\"]<-Time()\x001B0\x001B-1");
+      pgun.__KeyValueFromString("OnFiredPortal2", "!self\x001BRunScriptCode\x001Bself.GetScriptScope()[\"ppmod_onportal_attack2_time\"]<-Time()\x001B0\x001B-1");
+
+    }
+
+    local portal = null;
+    while (portal = Entities.FindByClassname(portal, "prop_portal")) {
+
+      if (!portal.IsValid()) continue;
+      if (!portal.ValidateScriptScope()) continue;
+
+      local scope = portal.GetScriptScope();
+      if ("ppmod_onportal_flag" in scope) continue;
+
+      scope["ppmod_onportal_flag"] <- true;
+
+      portal.__KeyValueFromString("OnPlacedSuccessfully", "!self\x001BRunScriptCode\x001Bppmod.onportal_check(self)\x001B0\x001B-1");
+      ppmod.onportal_check(portal);
+
+    }
+
+  });
+
+}
+
 /*******************/
 // World interface //
 /*******************/
