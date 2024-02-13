@@ -1134,14 +1134,14 @@ for (local i = 0; i < entclasses.len(); i ++) {
 }
 
 ::ppmod.onportal_func <- [];
-::ppmod.onportal <- function (func, once = false) {
+::ppmod.onportal <- function (func) {
 
   ppmod.onportal_func.push(func);
   if (ppmod.onportal_func.len() != 1) return;
 
-  ::ppmod.onportal_check <- function (portal) {
+  ::ppmod.onportal_check <- function (portal, first) {
     
-    ppmod.runscript("worldspawn", function ():(portal) {
+    ppmod.runscript("worldspawn", function ():(portal, first) {
 
       local pgun = null;
       local color = null;
@@ -1168,7 +1168,8 @@ for (local i = 0; i < entclasses.len(); i ++) {
         ppmod.onportal_func[i]({
           portal = portal,
           weapon = pgun,
-          color = color
+          color = color,
+          first = first
         });
       }
 
@@ -1176,7 +1177,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
   };
 
-  ppmod.interval(function ():(once) {
+  ppmod.interval(function () {
 
     local pgun = null;
     while (pgun = Entities.FindByClassname(pgun, "weapon_portalgun")) {
@@ -1206,8 +1207,8 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
       scope["ppmod_onportal_flag"] <- true;
 
-      if (!once) portal.__KeyValueFromString("OnPlacedSuccessfully", "!self\x001BRunScriptCode\x001Bppmod.onportal_check(self)\x001B0\x001B-1");
-      ppmod.onportal_check(portal);
+      portal.__KeyValueFromString("OnPlacedSuccessfully", "!self\x001BRunScriptCode\x001Bppmod.onportal_check(self,false)\x001B0\x001B-1");
+      ppmod.onportal_check(portal, true);
 
     }
 
