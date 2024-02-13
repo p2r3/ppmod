@@ -1131,7 +1131,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
 }
 
 ::ppmod.onportal_func <- [];
-::ppmod.onportal <- function (func) {
+::ppmod.onportal <- function (func, once = false) {
 
   ppmod.onportal_func.push(func);
   if (ppmod.onportal_func.len() != 1) return;
@@ -1173,7 +1173,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
   };
 
-  ppmod.interval(function () {
+  ppmod.interval(function ():(every) {
 
     local pgun = null;
     while (pgun = Entities.FindByClassname(pgun, "weapon_portalgun")) {
@@ -1184,11 +1184,11 @@ for (local i = 0; i < entclasses.len(); i ++) {
       local scope = pgun.GetScriptScope();
       if ("ppmod_onportal_attack_time" in scope) continue;
 
-      scope["ppmod_onportal_attack_time"] <- 0.0;
-      scope["ppmod_onportal_attack2_time"] <- 0.0;
+      scope.ppmod_onportal_attack_time <- 0.0;
+      scope.ppmod_onportal_attack2_time <- 0.0;
 
-      pgun.__KeyValueFromString("OnFiredPortal1", "!self\x001BRunScriptCode\x001Bself.GetScriptScope()[\"ppmod_onportal_attack_time\"]<-Time()\x001B0\x001B-1");
-      pgun.__KeyValueFromString("OnFiredPortal2", "!self\x001BRunScriptCode\x001Bself.GetScriptScope()[\"ppmod_onportal_attack2_time\"]<-Time()\x001B0\x001B-1");
+      pgun.__KeyValueFromString("OnFiredPortal1", "!self\x001BRunScriptCode\x001Bself.GetScriptScope().ppmod_onportal_attack_time<-Time()\x001B0\x001B-1");
+      pgun.__KeyValueFromString("OnFiredPortal2", "!self\x001BRunScriptCode\x001Bself.GetScriptScope().ppmod_onportal_attack2_time<-Time()\x001B0\x001B-1");
 
     }
 
@@ -1203,7 +1203,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
       scope["ppmod_onportal_flag"] <- true;
 
-      portal.__KeyValueFromString("OnPlacedSuccessfully", "!self\x001BRunScriptCode\x001Bppmod.onportal_check(self)\x001B0\x001B-1");
+      if (!once) portal.__KeyValueFromString("OnPlacedSuccessfully", "!self\x001BRunScriptCode\x001Bppmod.onportal_check(self)\x001B0\x001B-1");
       ppmod.onportal_check(portal);
 
     }
