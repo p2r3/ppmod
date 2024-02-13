@@ -1082,71 +1082,51 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 }
 
-// Currently, this function only sets up dummies for ppmod.ray and returns the most likely linked partner.
-// In the future, this will provide various utilities for portal-related mods.
+::ppmod.portal <- function (portal) {
 
-/* Examples include:
-    - event for entities teleported to the portal with handle provided in callback
-    - preventing teleportation with a solid wall
-    - idk lmao
-*/
-::ppmod.portals <- function (portal = null) {
-
-  if (Entities.FindByName(null, "ppmod_portals_p_anchor") == null) {
-
-    local p_anchor = Entities.CreateByClassname("info_target");
-    local r_anchor = Entities.CreateByClassname("info_target");
-
-    p_anchor.__KeyValueFromString("Targetname", "ppmod_portals_p_anchor");
-    r_anchor.__KeyValueFromString("Targetname", "ppmod_portals_r_anchor");
-
-    ppmod.setparent(r_anchor, p_anchor);
-
+  if (!portal.ValidateScriptScope()) {
+    throw "[ppmod] Error: Could not validate entity script scope in ppmod.portal";
   }
 
-  if (!portal) return;
+  local scope = portal.GetScriptScope();
+  if ("ppmod_portal" in scope) return scope.ppmod_portal;
 
-  local partner = null, curr = null, first = true;
-  while (curr = Entities.FindByClassname(curr, "prop_portal")) {
-    if (curr == portal) break;
-    first = !first;
-    partner = curr;
-  }
-
-  if (first) {
-    partner = Entities.FindByClassname(portal, "prop_portal");
-  }
-
-  if (!partner) return { partner = null };
-
-  if (!portal.ValidateScriptScope() || !partner.ValidateScriptScope()) {
-    throw "ppmod.portals: Could not validate entity script scope";
-  }
-
-  if (!("trigger" in portal.GetScriptScope())) portal.GetScriptScope()["trigger"] <- ppmod.trigger(portal.GetOrigin() + portal.GetForwardVector() * 4, Vector(2, 32, 54), "trigger_multiple");
-  if (!("trigger" in partner.GetScriptScope())) partner.GetScriptScope()["trigger"] <- ppmod.trigger(partner.GetOrigin() + partner.GetForwardVector() * 4, Vector(2, 32, 54), "trigger_multiple");
+  local trigger = Entities.CreateByClassname("trigger_multiple");
   
-  portal.GetScriptScope()["trigger"].SetForwardVector(portal.GetForwardVector());
-  partner.GetScriptScope()["trigger"].SetForwardVector(partner.GetForwardVector());
+  trigger.__KeyValueFromInt("Solid", 3);
+  trigger.SetAbsOrigin(portal.GetOrigin());
+  trigger.SetForwardVector(portal.GetForwardVector());
+  trigger.SetSize(portal.GetBoundingMins(), portal.GetBoundingMaxs());
 
-  ppmod.setparent(portal.GetScriptScope()["trigger"], portal);
-  ppmod.setparent(partner.GetScriptScope()["trigger"], partner);
+  trigger.__KeyValueFromInt("CollisionGroup", 10);
+  trigger.__KeyValueFromInt("SpawnFlags", 11);
+  EntFireByHandle(trigger, "Enable", "", 0.0, null, null);
 
-  return {
-    partner = partner,
-    block = function (enable):(portal, partner) {
-      if (enable) {
-        portal.GetScriptScope()["trigger"].__KeyValueFromInt("CollisionGroup", 0);
-        partner.GetScriptScope()["trigger"].__KeyValueFromInt("CollisionGroup", 0);
-      } else {
-        portal.GetScriptScope()["trigger"].__KeyValueFromInt("CollisionGroup", 1);
-        partner.GetScriptScope()["trigger"].__KeyValueFromInt("CollisionGroup", 1);
+  local scrq_idx = ppmod.scrq_add(function (ent):(scope) {
+    ppmod.runscript("worldspawn", function ():(ent, scope) {
+
+      // Ideally this would be an equality comparison, I need to find a way to make this consistent
+      if (Time() - scope.ppmod_portal.tptime > FrameTime() + 0.001) return;
+
+      for (local i = 0; i < scope.ppmod_portal.tpfunc.len(); i ++) {
+        scope.ppmod_portal.tpfunc[i](ent);
       }
-    },
-    onteleport = function () {
-      
-    }
+
+    });
+  }, -1);
+
+  trigger.__KeyValueFromString("OnEndTouch", "worldspawn\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrq_idx + ")(activator)\x001B0\x001B-1");
+  portal.__KeyValueFromString("OnEntityTeleportFromMe", "!self\x001BRunScriptCode\x001Bself.GetScriptScope().ppmod_portal.tptime<-Time()\x001B0\x001B-1");
+
+  EntFireByHandle(trigger, "SetParent", "!activator", 0.0, portal, null);
+
+  scope.ppmod_portal <- {
+    tptime = 0.0,
+    tpfunc = [],
+    OnTeleport = function (func):(scope) { scope.ppmod_portal.tpfunc.push(func) }
   };
+
+  return scope.ppmod_portal;
 
 }
 
@@ -1184,7 +1164,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
       for (local i = 0; i < ppmod.onportal_func.len(); i ++) {
         ppmod.onportal_func[i]({
           portal = portal,
-          pgun = pgun,
+          weapon = pgun,
           color = color
         });
       }
@@ -1380,6 +1360,15 @@ for (local i = 0; i < entclasses.len(); i ++) {
   return decal;
 
 }
+
+// Set up some dummy entites for simplifying ray-through-portal calculations
+local p_anchor = Entities.CreateByClassname("info_target");
+local r_anchor = Entities.CreateByClassname("info_target");
+
+p_anchor.__KeyValueFromString("Targetname", "ppmod_portals_p_anchor");
+r_anchor.__KeyValueFromString("Targetname", "ppmod_portals_r_anchor");
+
+EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null);
 
 ::ppmod.ray <- function (start, end, ent = null, world = true, portals = false, ray = null) {
 
