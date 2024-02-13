@@ -1096,7 +1096,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
   trigger.__KeyValueFromInt("Solid", 3);
   trigger.SetAbsOrigin(portal.GetOrigin());
   trigger.SetForwardVector(portal.GetForwardVector());
-  trigger.SetSize(portal.GetBoundingMins(), portal.GetBoundingMaxs());
+  trigger.SetSize(Vector(-8, -32, -56), Vector(0, 32, 56));
 
   trigger.__KeyValueFromInt("CollisionGroup", 10);
   trigger.__KeyValueFromInt("SpawnFlags", 11);
@@ -1105,8 +1105,11 @@ for (local i = 0; i < entclasses.len(); i ++) {
   local scrq_idx = ppmod.scrq_add(function (ent):(scope) {
     ppmod.runscript("worldspawn", function ():(ent, scope) {
 
-      // Ideally this would be an equality comparison, I need to find a way to make this consistent
-      if (Time() - scope.ppmod_portal.tptime > FrameTime() + 0.001) return;
+      local ticks_now = (Time() / FrameTime()).tointeger();
+      local ticks_tp = (scope.ppmod_portal.tptime / FrameTime()).tointeger();
+
+      // 1 tick tolerance, ideally 0 one day
+      if (ticks_now - ticks_tp > 1) return;
 
       for (local i = 0; i < scope.ppmod_portal.tpfunc.len(); i ++) {
         scope.ppmod_portal.tpfunc[i](ent);
