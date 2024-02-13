@@ -1173,7 +1173,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
   };
 
-  ppmod.interval(function ():(every) {
+  ppmod.interval(function ():(once) {
 
     local pgun = null;
     while (pgun = Entities.FindByClassname(pgun, "weapon_portalgun")) {
