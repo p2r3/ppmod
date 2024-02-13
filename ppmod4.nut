@@ -82,6 +82,7 @@ class pparray {
     for (local i = 0; i < arr.len(); i ++) {
       if (arr[i] == match) return i;
     }
+    return -1;
   }
 
   arr = null;
