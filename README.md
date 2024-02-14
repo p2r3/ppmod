@@ -599,3 +599,92 @@ Holds the entity handle that was used to instantiate this `pplayer` instance.
     pplayer.ent == GetPlayer() // true
   });
 ```
+
+## World interface
+These functions provide ways to interact with the world and physical entities.
+
+### ppmod.create
+Creates an entity by running the given command and retrieves its handle.
+```squirrel
+  ppmod.create(command, key)
+```
+The `command` argument is the console command to run for creating the entity. Provided just an entity classname, the function uses the `ent_create` command. Providing a model path (any string ending with `.mdl`) will use `prop_dynamic_create`. The `key` argument is optional, and can be used to specify the exact criteria by which to search for the newly created entity. If not provided, the `key` is guessed from the input command. The function returns a `ppromise`, which resolves with the handle of the newly created entity.
+
+In Portal 2, creating an entity with methods like `Entities.CreateByClassname` or `CreateProp` can be problematic, especially if the entity is complicated, is a physics prop, or isn't precached in some way. This is because these methods don't run initialization code often required for full functionality of many entities. Console commands are better in this regard, but pose a new issue - after an entity has been created, consistently getting a reference to it in VScript can be hard. This is why `ppmod.create` exists.
+
+Here are a few examples of creating cubes with this function:
+```squirrel
+  // The simplest method, just providing the classname
+  ppmod.create("prop_weighted_cube").then(function (cube) {
+    cube.SetOrigin(Vector(...));
+  });
+
+  // Using the game-specific command for spawning a companion cube
+  ppmod.create("ent_create_portal_companion_cube").then(function (cube) {
+    cube.SetOrigin(Vector(...));
+  });
+
+  // Using prop_physics_create to spawn a generic physics prop with the reflection cube model
+  ppmod.create("prop_physics_create props/reflection_cube.mdl").then(function (cube) {
+    cube.SetOrigin(Vector(...));
+  });
+```
+
+Note that excessive back-to-back use of `ppmod.create` can cause the wrong handle to be returned. For cases where a large number of entities needs to be spawned, it is recommended to either spread the spawns across ticks in batches, or to use `CreateProp` where applicable, assuming that the model has been precached.
+
+### ppmod.give
+Creates a variable amount of entities under the player's feet.
+```squirrel
+  ppmod.give(classname, amount)
+```
+The `classname` argument expects the classname of the entity to spawn as a string. The `amount` argument is optional (1 by default) and denotes the amount of entities of the given classname to spawn at once. This function returns a `ppromise` which resolves to the last entity created by this function.
+
+While this functions a lot like the `give` console command, no console commands are actually used. Instead, the `game_player_equip` entity is spawned temporarily. However, due to a bug in Portal 2, this entity seems to cause crashes when used in co-op.
+
+Here is an example of spawning a cube at the player's feet with this function:
+```squirrel
+  ppmod.give("prop_weighted_cube").then(function (cube) {
+    // ... do something with cube
+  });
+```
+
+### ppmod.brush
+Creates a solid, invisible brush entity.
+```squirrel
+  ppmod.brush(position, size, type, angles, create)
+```
+The `position` argument is a Vector to the center of the brush. The `size` argument is a Vector containing the half-width of the brush along each axis. The `type` argument is the classname of the brush entity as a string. The `angles` argument (optional) expects a Vector, with the properties being pitch, yaw and roll for X, Y and Z, respectively. Lastly, the `create` argument (optional) is a boolean, specifying whether or not to use `ppmod.create` for creating the brush instead of `Entities.CreateByClassname` to work around unloaded entity features. If `create` is `false` (default), this function returns a handle to the newly created brush entity. If `create` is `true`, it creates a `ppromise` which resolves to a handle for the brush entity.
+
+Here is an example of creating an invisible, outlined box at the center of the `sp_a2_triple_laser` chamber:
+```squirrel
+  local brush = ppmod.brush(Vector(7808, -5629, 64), Vector(32, 32, 32), "func_brush");
+  ppmod.keyval(brush, "Targetname", "test_brush");
+  
+  SendToConsole("developer 1");
+  SendToConsole("ent_bbox test_brush");
+```
+Note that these brush entities cannot be assigned custom textures or complex shapes, as that requires a model for the brush to be precompiled into the map. Many brush entities may also not function as expected, even with `create` set to `true`.
+
+### ppmod.trigger
+Similar to `ppmod.brush`, creates a non-solid trigger volume entity.
+```squirrel
+  ppmod.trigger(position, size, type, angles, create)
+```
+The arguments and return values are the exact same as those used for `ppmod.brush`, refer to the documentation of that function.
+
+The primary differences between this function and `ppmod.brush` are the output entity's spawn flags and the lack of collision. Every entity created via this function has its `SpawnFlags` keyvalue set to `1`, which in most cases means that only players can trigger it. This can, of course, later be changed to account for other entities and props. Another notable exception is that if a trigger's `type` is set to `trigger_once`, it will automatically remove itself after being touched.
+
+Here is an example of creating an invisible, outlined trigger at the center of the `sp_a2_triple_laser` chamber, which spawns a cube once the player touches it:
+```squirrel
+  local trigger = ppmod.trigger(Vector(7808, -5629, 64), Vector(32, 32, 32), "trigger_once");
+  ppmod.keyval(trigger, "Targetname", "test_trigger");
+
+  ppmod.addscript(trigger, "OnStartTouch", function () {
+    ppmod.create("prop_weighted_cube").then(function (cube) {
+      cube.SetOrigin(Vector(7808, -5629, 128));
+    });
+  });
+
+  SendToConsole("developer 1");
+  SendToConsole("ent_bbox test_trigger");
+```
