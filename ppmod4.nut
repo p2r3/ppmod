@@ -1315,7 +1315,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
     local trigger = type;
     if (typeof type == "string") trigger = ppmod.brush(pos, size, type, ang);
 
-    trigger.__KeyValueFromInt("CollisionGroup", 1);
+    trigger.__KeyValueFromInt("CollisionGroup", 10);
     trigger.__KeyValueFromInt("SpawnFlags", 1);
     EntFireByHandle(trigger, "Enable", "", 0.0, null, null);
 
