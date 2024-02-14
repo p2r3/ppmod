@@ -630,7 +630,7 @@ Here are a few examples of creating cubes with this function:
   });
 ```
 
-Note that excessive back-to-back use of `ppmod.create` can cause the wrong handle to be returned. For cases where a large number of entities needs to be spawned, it is recommended to either spread the spawns across ticks in batches, or to use `CreateProp` where applicable, assuming that the model has been precached.
+Note that excessive back-to-back use of `ppmod.create` can cause the wrong handle to be returned. For cases where a large number of entities needs to be spawned, it is recommended to either spread the spawns across ticks in batches, or to use `ppmod.give` or `CreateProp` where applicable, assuming in the latter case that the model has been precached.
 
 ### ppmod.give
 Creates a variable amount of entities under the player's feet.
