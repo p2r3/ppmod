@@ -1269,11 +1269,24 @@ for (local i = 0; i < entclasses.len(); i ++) {
   equip.__KeyValueFromInt(classname, amount);
   EntFireByHandle(equip, "Use", "", 0.0, player, null);
   
-  return ppromise(function (resolve, reject) {
+  return ppromise(function (resolve, reject):(classname, amount, equip) {
 
-    local script = "ppmod.scrq_get(" + ppmod.scrq_add(resolve, 1) + ")(ppmod.prev(\"" + classname + "\"))";
+    local scrq_id = ppmod.scrq_add(function ():(resolve, classname, amount) {
 
-    EntFireByHandle(equip, "RunScriptCode", script, 0.0, null, null);
+      local arr = array(amount);
+      local curridx = 0;
+
+      local ent = null;
+      while (ent = Entities.FindByClassname(ent, classname)) {
+        arr[curridx] = ent;
+        if (++curridx == amount) curridx = 0;
+      }
+
+      resolve(arr);
+
+    }, 1);
+
+    EntFireByHandle(equip, "RunScriptCode", "ppmod.scrq_get(" + scrq_id + ")()", 0.0, null, null);
     EntFireByHandle(equip, "Kill", "", 0.0, null, null);
 
   });
