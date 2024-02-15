@@ -230,36 +230,39 @@ class ppstring {
 }
 
 ::ppmod.asyncgen <- [];
-::ppmod.asyncrun <- function (id) {
+::ppmod.asyncrun <- function (id, resolve) {
 
   local next = resume ppmod.asyncgen[id];
-  if (next == null) {
+  if (ppmod.asyncgen[id].getstatus() == "dead") {
     ppmod.asyncgen[id] = null;
-    return;
+    return resolve(next);
   }
 
-  next.then(function (val):(id) {
-    ::syncnext <- val;
-    ppmod.asyncrun(id);
+  next.then(function (val):(id, resolve) {
+    ::yielded <- val;
+    ppmod.asyncrun(id, resolve);
   });
 
 }
 
-::syncnext <- null;
+::yielded <- null;
 ::async <- function (func) {
 
   return function ():(func) {
+    return ppromise(function (resolve, reject):(func) {
 
-    for (local i = 0; i < ppmod.asyncgen.len(); i ++) {
-      if (ppmod.asyncgen[i] == null) {
-        ppmod.asyncgen[i] = func();
-        return ppmod.asyncrun(i);
+      for (local i = 0; i < ppmod.asyncgen.len(); i ++) {
+        if (ppmod.asyncgen[i] == null) {
+          ppmod.asyncgen[i] = func();
+          ppmod.asyncrun(i, resolve);
+          return;
+        }
       }
-    }
 
-    ppmod.asyncgen.push(func());
-    ppmod.asyncrun(ppmod.asyncgen.len() - 1);
-
+      ppmod.asyncgen.push(func());
+      ppmod.asyncrun(ppmod.asyncgen.len() - 1, resolve);
+    
+    });
   }
 
 }
