@@ -1424,7 +1424,9 @@ EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null
     if (!portal) return output;
 
     // Find the other portal
-    local other = ppmod.portals(portal).partner;
+    local other = Entities.FindByClassname(portal, "prop_portal");
+    if (other == null) other = Entities.FindByClassname(null, "prop_portal");
+    if (other == portal) return output;
 
     local p_anchor = Entities.FindByName(null, "ppmod_portals_p_anchor");
     local r_anchor = Entities.FindByName(null, "ppmod_portals_r_anchor");
@@ -1441,7 +1443,7 @@ EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null
 
     // Calculate angles from vector of ray direction
     // First, normalize the vector to get a unit vector
-    dirvec.Norm();
+    local len = dirvec.Norm();
 
     // Then, calculate yaw, pitch and roll in degrees
     local yaw = atan2(dirvec.y, dirvec.x) / PI * 180;
@@ -1469,9 +1471,9 @@ EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null
     if (other.GetForwardVector().z > epsilon && offset.z < -epsilon) return output;
     if (other.GetForwardVector().z < -epsilon && offset.z > epsilon) return output;
 
-    local newend = r_anchor.GetOrigin() + r_anchor.GetForwardVector() * ((end - start).Length() * (1.0 - fraction));
+    local newend = r_anchor.GetOrigin() + r_anchor.GetForwardVector() * (len * (1.0 - fraction));
 
-    return ppmod.ray(newstart, newend, ent, world, true, ray);
+    return ppmod.ray(newstart, newend, ent, world, true);
 
   };
 
