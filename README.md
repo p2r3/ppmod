@@ -175,7 +175,7 @@ The simplest way of declaring such a function is to wrap it in `async()`. Here i
   local createCube = async(function () {
 
     yield ppmod.create("prop_weighted_cube");
-    local cube = ::syncnext;
+    local cube = yielded;
 
     cube.SetOrigin(Vector(...));
     ...
@@ -185,7 +185,7 @@ The simplest way of declaring such a function is to wrap it in `async()`. Here i
   // Can be called like a normal function
   createCube(); 
 ```
-There are some important things to note here. Firstly, for context, here `ppmod.create` returns a `ppromise` that resolves to the created entity's handle. Secondly, `yield` on its own does not return this value. These `async` functions work by exploiting Squirrel's generators, which leads to admittedly hacky syntax. The value of the last `yield`ed `ppromise` is instead stored in the `syncnext` global.
+There are some important things to note here. Firstly, for context, here `ppmod.create` returns a `ppromise` that resolves to the created entity's handle. Secondly, `yield` on its own does not return this value. These `async` functions work by exploiting Squirrel's generators, which leads to admittedly hacky syntax. The value of the last `yield`ed `ppromise` is instead stored in the `yielded` global.
 
 Due to a bug in how Portal 2 handles restoring the script scope from save files, saving before an `async` function has finished running can lead to game freezes or crashes. It is therefore not recommended to use `async` functions in tick loops, and instead reserve them for one-time events like map loads or entity outputs.
 
