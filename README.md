@@ -654,7 +654,7 @@ Creates a solid, invisible brush entity.
 ```squirrel
   ppmod.brush(position, size, type, angles, create)
 ```
-The `position` argument is a Vector to the center of the brush. The `size` argument is a Vector containing the half-width of the brush along each axis. The `type` argument is the classname of the brush entity as a string. The `angles` argument (optional) expects a Vector, with the properties being pitch, yaw and roll for X, Y and Z, respectively. Lastly, the `create` argument (optional) is a boolean, specifying whether or not to use `ppmod.create` for creating the brush instead of `Entities.CreateByClassname` to work around unloaded entity features. If `create` is `false` (default), this function returns a handle to the newly created brush entity. If `create` is `true`, it creates a `ppromise` which resolves to a handle for the brush entity.
+The `position` argument is a Vector to the center of the brush. The `size` argument is a Vector containing the half-width of the brush along each axis. The `type` argument is the classname of the brush entity as a string. The `angles` argument (optional) expects a Vector, with the properties being pitch, yaw, and roll for X, Y, and Z, respectively. Lastly, the `create` argument (optional) is a boolean, specifying whether or not to use `ppmod.create` for creating the brush instead of `Entities.CreateByClassname` to work around unloaded entity features. If `create` is `false` (default), this function returns a handle to the newly created brush entity. If `create` is `true`, it creates a `ppromise` which resolves to a handle for the brush entity.
 
 Here is an example of creating an invisible, outlined box at the center of the `sp_a2_triple_laser` chamber:
 ```squirrel
@@ -689,3 +689,154 @@ Here is an example of creating an invisible, outlined trigger at the center of t
   SendToConsole("developer 1");
   SendToConsole("ent_bbox test_trigger");
 ```
+
+### ppmod.project
+Creates a projected texture of the given texture and returns its handle.
+```squirrel
+  ppmod.project(material, position, angles, simple, far)
+```
+The `material` argument expects a path to the material (texture) to be projected. Self-illuminating textures work best. The `position` argument is a Vector to the origin of the projection. The `angles` argument (optional) expects a Vector containing the orientation of the projection with the properties being pitch, yaw, and roll for X, Y, and Z, respectively. If not provided, the entity will point directly downward (pitch 90). The `simple` argument (optional) is a boolean, denoting whether the projection is "simple" (i.e. applied flat to the nearest brush) or a true projection (`false` by default). The `far` argument (optional) specifies how far out the texture should be projected in Hammer units (128 by default).
+
+Here is an example of projecting a red arrow on a wall in the `sp_a2_triple_laser` chamber entrance:
+```squirrel
+  // Projections require shadows to be enabled
+  SendToConsole("r_shadows 1");
+
+  // Prevent any other lights from turning on (explained in docs)
+  ppmod.getall(["env_projectedtexture"], function (light) {
+    ppmod.hook(light, "TurnOn", function () { return false });
+  });
+
+  // Spawn the arrow projection
+  ppmod.project("signage/underground_arrow", Vector(7840, -5200, 81), Vector(0, 180), false, 70);
+```
+Note that by default, Portal 2 only allows one projected texture to exist at a time. However, this check is only performed when the `TurnOn` input is called on an `env_projectedtexture` entity. By disabling this input via an input hook, we prevent this check from being run by, for example, chamber entrance triggers. Projected textures spawn turned on by default, therefore the input isn't actually necessary in most cases.
+
+### ppmod.decal
+Applies decals on world brushes.
+```squirrel
+  ppmod.decal(material, position, angles)
+```
+The `material` argument expects a path to the material (texture) for the decal. The `position` argument is a Vector to some point on the brush where the decal should be applied. The `angles` argument (optional) expects a Vector containing the orientation of the projection with the properties being pitch, yaw, and roll for X, Y, and Z, respectively. If not provided, the entity will point directly downward (pitch 90). However, in practice, the angle seems to affect very little.
+
+While projected textures are best used for dynamically overlaying light projections on surfaces, decals can be useful for either their intended purpose (i.e. bullet holes, explosion dust), or for essentially changing the textures of entire brushes. Here is an example of making the back wall of the `sp_a2_triple_laser` chamber non-portalable:
+```squirrel
+  // Ensuring decals are enabled
+  SendToConsole("r_drawdecals 1");
+  // This is required for making large decals less glitchy
+  SendToConsole("gpu_level 1");
+
+  // Create the decal to color the wall black
+  ppmod.decal("metal/black_wall_metal_002b", Vector(7968, -5440, 128));
+
+  // Create a brush to prevent portal placement
+  ppmod.brush(Vector(7968, -5408, 128), Vector(1, 96, 128), "func_brush");
+```
+Note that if you plan to use materials which aren't intended for use as decals, it is recommended to set `gpu_level` to `1` or `0` (no real difference between these values), as otherwise the normal/bumpmap data of the material can cause the texture to flicker.
+
+### ppmod.ray
+Traces a ray between two points, returning points of collision with the world or entities.
+```squirrel
+  ppmod.ray(start, end, entity, world, portals, ray)
+```
+The `start` and `end` arguments are Vectors to the start and end points of the ray, respectively. The `entity` argument (optional), specifies which entities to test for collisions with the ray. This can be either a single handle or classname, an array of either, or an array with two Vectors containing the origin and half-widths of a bounding box, or an array of such arrays. If `null` or not specified, no collision with entities will be calculated. The `world` argument (optional, `true` by default) is a boolean, denoting whether or not collisions with static world geometry should be considered. The `portals` argument (optional, `false` by default) denotes whether the ray should attempt to teleport through portals. The `ray` argument (optional) is mostly intended for use internally, though can also be used to reduce the calculations for multiple consecutive rays.
+
+This function returns a table with the following elements:
+- `fraction` - a fraction along the line where an intersection occurred;
+- `point` - the point of intersection;
+- `entity` - the closest intersected entity (`null` if none).
+
+Here is an example of drawing a box at the location where a ray cast 256 units from the player's eyes intersects either the world or a cube each tick:
+```squirrel
+  // Allow for drawing the intersection box through portals
+  SendToConsole("cl_debugoverlaysthroughportals 1");
+
+  ppmod.player(GetPlayer()).then(function (pplayer) {
+    ppmod.interval(function ():(pplayer) {
+
+      // Cast a ray 256 units forward from the player's eyes
+      local start = pplayer.eyes.GetOrigin();
+      local end = start + pplayer.eyes.GetForwardVector() * 256;
+
+      // This ray will collide with the static world, cubes, and will pass through portals.
+      local ray = ppmod.ray(start, end, "prop_weighted_cube", true, true);
+
+      // If the ray didn't intersect anything, don't draw a box.
+      if (ray.fraction == 1.0) return;
+
+      // If the ray hit a cube, draw a green box. Otherwise, draw a red box.
+      if (ray.entity) {
+        DebugDrawBox(ray.point, Vector(-2, -2, -2), Vector(2, 2, 2), 0, 255, 0, 100, -1);
+      } else {
+        DebugDrawBox(ray.point, Vector(-2, -2, -2), Vector(2, 2, 2), 255, 0, 0, 100, -1);
+      }
+
+    });
+  });
+```
+Note that only the axis-aligned bounding boxes of entities are checked for intersections, which may lead to slight mismatches with the actual model of some props.
+
+As mentioned before, multiple similar calls to `ppmod.ray` can be optimized using the `ray` argument. Note that this is very situational, and probably won't matter in most cases. Regardless, here's how the value of `ray` is calculated:
+```squirrel
+  local dir = end - start;
+  local len = dir.Norm();
+  local div = [1.0 / dir.x, 1.0 / dir.y, 1.0 / dir.z];
+
+  local ray = [len, div];
+```
+
+### ppmod.inbounds
+Checks whether a point is inbounds.
+```squirrel
+  ppmod.inbounds(point)
+```
+This function accepts one argument - a Vector to the point which the check is to be performed on. It returns a boolean - `true` if the point is inbounds, and `false` if it isn't. Note that this function can return false positives in super specific cases, but is generally safe to use for any of the campaign maps.
+
+### ppmod.button
+Creates a button prop and fixes common issues associated with spawning buttons dynamically.
+```squirrel
+  ppmod.button(type, position, angles)
+```
+The first argument is the classname for the button. All of the Portal 2 floor and pedestal buttons are supported. The `position` argument is a Vector to the spawn position of the new button. The `angles` argument (optional) expects a Vector, with the properties being pitch, yaw, and roll for X, Y, and Z, respectively. If not set, all angles will be 0. This function returns a `ppromise`, which resolves to a table. The contents of this table differ depending on the type of button spawned.
+
+If a pedestal button is spawned, the `ppromise` resolves to this table:
+- `GetButton()` - returns the `func_rot_button` entity used for registering `+use` presses;
+- `GetProp()` - returns the `prop_dynamic` entity acting as the physical button;
+- `SetDelay(delay)` - sets a delay in seconds before the button can be pressed again;
+- `SetTimer(enabled)` - enables or disables the ticking timer sound, expects a boolean, doesn't actually delay the output;
+- `SetPermanent(enabled)` - enables or disables locking the button down, expects a boolean;
+- `OnPressed(script)` - attaches the given script string or function to the button's `OnPressed` event.
+
+If a floor button is spawned, the `ppromise` resolves to this table:
+- `GetTrigger()` - returns the `trigger_multiple` entity used for detecting collisions;
+- `GetProp()` - returns the `prop_dynamic` entity acting as the physical button;
+- `GetCount()` - returns the amount of entities currently holding down the button;
+- `OnPressed(script)` - attaches the given script string or function to the event of the button being pressed.
+- `OnUnpressed(script)` - attaches the given script string or function to the event of the button being released.
+
+The reason this entity exists is that buttons created dynamically, even when using commands like `ent_create`, are broken in several ways by default. Instead, `ppmod.button` reconstructs the button from the ground up and simulates its behavior in VScript.
+
+Here is an example of creating a button that opens the exit door on `sp_a2_triple_laser`:
+```squirrel
+  ppmod.button("prop_button", Vector(7200, -5280, 0)).then(function (button) {
+
+    button.OnPressed(function () {
+      ppmod.fire("@exit_door-door_open_relay", "Trigger");
+    });
+    button.SetPermanent(true);
+
+  });
+```
+
+### ppmod.catapult
+Launches a physics prop in the given direction.
+```squirrel
+  ppmod.catapult(entity, vector)
+```
+The first argument is the entity to launch. The second argument is a Vector, the direction of which is used to control the launch trajectory and the length of which is used to set the launch speed.
+
+Here is an example of launching every cube on the current map directly upwards:
+```squirrel
+  ppmod.catapult("prop_weighted_cube", Vector(0, 0, 400));
+```
+Note that you might first have to ensure that the prop you're launching is not asleep. In most cases, this can be done via the `Wake` input.
