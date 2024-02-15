@@ -248,8 +248,13 @@ class ppstring {
 ::yielded <- null;
 ::async <- function (func) {
 
-  return function ():(func) {
-    return ppromise(function (resolve, reject):(func) {
+  return function (...):(func) {
+
+    local args = array(vargc + 1);
+    for (local i = 0; i < vargc; i ++) args[i + 1] = vargv[i];
+    args[0] = this;
+
+    return ppromise(function (resolve, reject):(func, args) {
 
       for (local i = 0; i < ppmod.asyncgen.len(); i ++) {
         if (ppmod.asyncgen[i] == null) {
@@ -259,10 +264,11 @@ class ppstring {
         }
       }
 
-      ppmod.asyncgen.push(func());
+      ppmod.asyncgen.push(func.acall(args));
       ppmod.asyncrun(ppmod.asyncgen.len() - 1, resolve);
     
     });
+
   }
 
 }
