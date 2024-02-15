@@ -1388,7 +1388,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
   decal.SetAbsOrigin(pos);
   decal.SetAngles(ang.x, ang.y, ang.z);
-  decal.__KeyValueFromString("TextureName", material);
+  decal.__KeyValueFromString("Texture", material);
   EntFireByHandle(decal, "Activate", "", 0.0, null, null);
 
   return decal;
