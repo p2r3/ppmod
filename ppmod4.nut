@@ -1140,10 +1140,126 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
   EntFireByHandle(trigger, "SetParent", "!activator", 0.0, portal, null);
 
+  local OnTeleport = function (func):(scope) {
+    scope.ppmod_portal.tpfunc.push(func);
+  };
+
+  local new_detector = function (allids):(portal) {
+
+    local detector = Entities.CreateByClassname("func_portal_detector");
+
+    detector.__KeyValueFromInt("Solid", 3);
+    detector.SetAbsOrigin(portal.GetOrigin());
+    detector.SetSize(Vector(-0.1, -0.1, -0.1), Vector(0.1, 0.1, 0.1));
+
+    detector.__KeyValueFromInt("CollisionGroup", 10);
+    detector.__KeyValueFromInt("CheckAllIDs", allids);
+
+    EntFireByHandle(detector, "Enable", "", 0.0, null, null);
+
+    return detector;
+
+  };
+
+  local GetColor = function ():(new_detector) {
+    return ppromise(function (resolve, reject):(new_detector) {
+
+      local scrq_idx = ppmod.scrq_add(resolve, 1);
+
+      local detector = new_detector(1);
+      detector.__KeyValueFromString("OnStartTouchPortal1", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrq_idx + ")(1);self.Destroy()\x001B0\x001B1");
+      detector.__KeyValueFromString("OnStartTouchPortal2", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrq_idx + ")(2);self.Destroy()\x001B0\x001B1");
+
+    });
+  };
+
+  local GetActivatedState = function ():(new_detector) {
+    return ppromise(function (resolve, reject):(new_detector) {
+
+      local scrq_idx = ppmod.scrq_add(resolve, 1);
+
+      local detector = new_detector(1);
+      detector.__KeyValueFromString("OnStartTouchLinkedPortal", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrq_idx + ")(true);self.Destroy()\x001B0\x001B1");
+      detector.__KeyValueFromString("OnUser1", "!self\x001BRunScriptCode\x001Bif(self.IsValid())ppmod.scrq_get(" + scrq_idx + ")(false)\x001B0\x001B1");
+      detector.__KeyValueFromString("OnUser1", "!self\x001BKill\x001B\x001B0\x001B1");
+      EntFireByHandle(detector, "FireUser1", "", 0.0, null, null);
+
+    });
+  };
+
+  local GetLinkageGroupID = function ():(new_detector, portal) {
+    return ppromise(function (resolve, reject):(new_detector, portal) {
+
+      local detector = new_detector(0);
+      local params = { id = 0 };
+
+      local check = function ():(detector, params, portal) {
+
+        if (!detector.IsValid()) return;
+        params.id ++;
+
+        detector.__KeyValueFromInt("LinkageGroupID", params.id);
+        detector.SetAbsOrigin(portal.GetOrigin());
+        EntFireByHandle(detector, "Enable", "", 0.0, null, null);
+        
+        EntFireByHandle(detector, "FireUser1", "", 0.0, null, null);
+
+      };
+
+      local scrq_idx_resolve = ppmod.scrq_add(resolve, 1);
+      local scrq_idx_params = ppmod.scrq_add(params, 1);
+      local scrq_idx_check = ppmod.scrq_add(check, -1);
+
+      detector.__KeyValueFromString("OnStartTouchPortal", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrq_idx_resolve + ")(ppmod.scrq_get(" + scrq_idx_params + ").id);ppmod.scrq[" + scrq_idx_check + "] = null;self.Destroy()\x001B0\x001B1");
+      detector.__KeyValueFromString("OnUser1", "!self\x001BRunScriptCode\x001Bif(self.IsValid())ppmod.scrq_get(" + scrq_idx_check + ")()\x001B0\x001B-1");
+
+      EntFireByHandle(detector, "FireUser1", "", 0.0, null, null);
+
+    });
+  };
+
+  local GetPartnerInstance = function ():(portal, GetLinkageGroupID) {
+    return ppromise(function (resolve, reject):(portal, GetLinkageGroupID) {
+
+      GetLinkageGroupID().then(function (id):(resolve, portal) {
+
+        local param = {};
+        param.next <- function (curr):(id, resolve, portal, param) {
+
+          curr = Entities.FindByClassname(curr, "prop_portal");
+          if (curr == null) return resolve(null);
+
+          if (curr == portal) return param.next(curr);
+          local pportal = ppmod.portal(curr);
+
+          pportal.GetLinkageGroupID().then(function (currid):(resolve, param, curr, pportal, id) {
+
+            if (currid != id) return param.next(curr);
+            
+            pportal.GetActivatedState().then(function (state):(resolve, param, curr) {
+              if (state) return resolve(curr);
+              return param.next(curr);
+            });
+
+          });
+
+        };
+
+        param.next(null);
+
+      });
+      
+    });
+  };
+
   scope.ppmod_portal <- {
     tptime = 0.0,
     tpfunc = [],
-    OnTeleport = function (func):(scope) { scope.ppmod_portal.tpfunc.push(func) }
+    OnTeleport = OnTeleport,
+    GetColor = GetColor,
+    GetActivatedState = GetActivatedState,
+    GetLinkageGroupID = GetLinkageGroupID,
+    GetPartnerInstance = GetPartnerInstance
   };
 
   return scope.ppmod_portal;
