@@ -739,7 +739,7 @@ Traces a ray between two points, returning points of collision with the world or
 ```squirrel
   ppmod.ray(start, end, entity, world, portals, ray)
 ```
-The `start` and `end` arguments are Vectors to the start and end points of the ray, respectively. The `entity` argument (optional), specifies which entities to test for collisions with the ray. This can be either a single handle or classname, an array of either, or an array with two Vectors containing the origin and half-widths of a bounding box, or an array of such arrays. If `null` or not specified, no collision with entities will be calculated. The `world` argument (optional, `true` by default) is a boolean, denoting whether or not collisions with static world geometry should be considered. The `portals` argument (optional, `false` by default) denotes whether the ray should attempt to teleport through portals. The `ray` argument (optional) is mostly intended for use internally, though can also be used to reduce the calculations for multiple consecutive rays.
+The `start` and `end` arguments are Vectors to the start and end points of the ray, respectively. The `entity` argument (optional), specifies which entities to test for collisions with the ray. This can be either a single handle or classname, an array of either, or an array with two Vectors containing the origin and half-widths of a bounding box, or an array of such arrays. If `null` or not specified, no collision with entities will be calculated. The `world` argument (optional, `true` by default) is a boolean, denoting whether or not collisions with static world geometry should be considered. The `portals` argument (optional) can be used to enable tracing rays through portals when provided an array of two `prop_portal` handles to consider. If provided anything else, the ray will not teleport through portals. The `ray` argument (optional) is mostly intended for use internally, though can also be used to reduce the calculations for multiple consecutive rays.
 
 This function returns a table with the following elements:
 - `fraction` - a fraction along the line where an intersection occurred;
@@ -758,8 +758,12 @@ Here is an example of drawing a box at the location where a ray cast 256 units f
       local start = pplayer.eyes.GetOrigin();
       local end = start + pplayer.eyes.GetForwardVector() * 256;
 
+      // Create an array containing all portals on the current map
+      local portal = null, portals = [];
+      while (portal = ppmod.get("prop_portal", portal)) portals.push(portal);
+
       // This ray will collide with the static world, cubes, and will pass through portals.
-      local ray = ppmod.ray(start, end, "prop_weighted_cube", true, true);
+      local ray = ppmod.ray(start, end, "prop_weighted_cube", true, portals);
 
       // If the ray didn't intersect anything, don't draw a box.
       if (ray.fraction == 1.0) return;

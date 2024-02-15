@@ -1520,7 +1520,7 @@ r_anchor.__KeyValueFromString("Targetname", "ppmod_portals_r_anchor");
 
 EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null);
 
-::ppmod.ray <- function (start, end, ent = null, world = true, portals = false, ray = null) {
+::ppmod.ray <- function (start, end, ent = null, world = true, portals = null, ray = null) {
 
   local formatreturn = function (fraction, ray, hitent = null):(start, end, ent, world, portals) {
 
@@ -1534,15 +1534,15 @@ EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null
     };
 
     if (!portals) return output;
+    if (typeof portals != "array") return output;
+    if (portals.len() < 2) return output;
 
-    // Check if we're intersecting a portal's bounding box
+    // Check if we're intersecting the bounding box of one of the provided portals
     local portal = Entities.FindByClassnameWithin(null, "prop_portal", output.point, 1.0);
-    if (!portal) return output;
+    if (portal != portals[0] && portal != portals[1]) return output;
 
-    // Find the other portal
-    local other = Entities.FindByClassname(portal, "prop_portal");
-    if (other == null) other = Entities.FindByClassname(null, "prop_portal");
-    if (other == portal) return output;
+    // Determine which portal is the other portal
+    local other = (portal == portals[0]) ? portals[1] : portals[0];
 
     local p_anchor = Entities.FindByName(null, "ppmod_portals_p_anchor");
     local r_anchor = Entities.FindByName(null, "ppmod_portals_r_anchor");
@@ -1589,7 +1589,7 @@ EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null
 
     local newend = r_anchor.GetOrigin() + r_anchor.GetForwardVector() * (len * (1.0 - fraction));
 
-    return ppmod.ray(newstart, newend, ent, world, true);
+    return ppmod.ray(newstart, newend, ent, world, portals);
 
   };
 
