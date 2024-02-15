@@ -27,11 +27,11 @@ Setting up and working with an environment like this for the first time can be o
 
     // Provides us with additional player info, like eye position and angles
     yield ppmod.player(GetPlayer());
-    local pplayer = ::syncnext;
+    local pplayer = yielded;
 
     // Props cannot be created with the CreateByClassname method, so we use ppmod.create instead
     yield ppmod.create("prop_weighted_cube");
-    local cube = ::syncnext;
+    local cube = yielded;
 
     // Teleports the new cube to 64 units in front of the player's eyes
     local pos = pplayer.eyes.GetOrigin() + pplayer.eyes.GetForwardVector() * 64;
