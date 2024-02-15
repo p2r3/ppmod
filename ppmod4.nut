@@ -140,8 +140,8 @@ class ppstring {
     if (typeof onthen != "function") onthen = identity;
     if (typeof oncatch != "function") oncatch = thrower;
 
-    if (state == "fulfilled") { onthen(value); return inst }
-    if (state == "rejected") { oncatch(value); return inst }
+    if (state == "fulfilled") { onthen(value); return this }
+    if (state == "rejected") { oncatch(value); return this }
 
     onfulfill.push(onthen);
     onreject.push(oncatch);
