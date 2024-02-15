@@ -199,11 +199,11 @@ class ppstring {
 
     if (inst.state != "pending") return;
 
-    for (local i = 0; i < inst.onfulfill.len(); i ++) inst.onfulfill[i](val);
-    for (local i = 0; i < inst.onresolve.len(); i ++) inst.onresolve[i]();
-    
     inst.state = "fulfilled";
     inst.value = val;
+
+    for (local i = 0; i < inst.onfulfill.len(); i ++) inst.onfulfill[i](val);
+    for (local i = 0; i < inst.onresolve.len(); i ++) inst.onresolve[i]();
 
   };
 
@@ -211,11 +211,12 @@ class ppstring {
 
     if (inst.state != "pending") return;
 
-    for (local i = 0; i < inst.onreject.len(); i ++) inst.onreject[i](err);
-    for (local i = 0; i < inst.onresolve.len(); i ++) inst.onresolve[i]();
-
     inst.state = "rejected";
     inst.value = err;
+
+    if (inst.onreject.len() == 0) inst.thrower(err);
+    else for (local i = 0; i < inst.onreject.len(); i ++) inst.onreject[i](err);
+    for (local i = 0; i < inst.onresolve.len(); i ++) inst.onresolve[i]();
 
   };
 
@@ -230,17 +231,23 @@ class ppstring {
 }
 
 ::ppmod.asyncgen <- [];
-::ppmod.asyncrun <- function (id, resolve) {
+::ppmod.asyncrun <- function (id, resolve, reject) {
 
-  local next = resume ppmod.asyncgen[id];
+  local next;
+  try {
+    next = resume ppmod.asyncgen[id];
+  } catch (e) {
+    return reject(e);
+  }
+
   if (ppmod.asyncgen[id].getstatus() == "dead") {
     ppmod.asyncgen[id] = null;
     return resolve(next);
   }
 
-  next.then(function (val):(id, resolve) {
+  next.then(function (val):(id, resolve, reject) {
     ::yielded <- val;
-    ppmod.asyncrun(id, resolve);
+    ppmod.asyncrun(id, resolve, reject);
   });
 
 }
@@ -259,13 +266,13 @@ class ppstring {
       for (local i = 0; i < ppmod.asyncgen.len(); i ++) {
         if (ppmod.asyncgen[i] == null) {
           ppmod.asyncgen[i] = func();
-          ppmod.asyncrun(i, resolve);
+          ppmod.asyncrun(i, resolve, reject);
           return;
         }
       }
 
       ppmod.asyncgen.push(func.acall(args));
-      ppmod.asyncrun(ppmod.asyncgen.len() - 1, resolve);
+      ppmod.asyncrun(ppmod.asyncgen.len() - 1, resolve, reject);
     
     });
 
