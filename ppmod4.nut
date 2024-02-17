@@ -265,7 +265,7 @@ class ppstring {
 
       for (local i = 0; i < ppmod.asyncgen.len(); i ++) {
         if (ppmod.asyncgen[i] == null) {
-          ppmod.asyncgen[i] = func();
+          ppmod.asyncgen[i] = func.acall(args);
           ppmod.asyncrun(i, resolve, reject);
           return;
         }
