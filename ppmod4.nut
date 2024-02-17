@@ -133,7 +133,7 @@ class ppstring {
 
 }
 
-::ppromise_base <- {
+local ppromise_base = {
   
   then = function (onthen = null, oncatch = null) {
     
@@ -172,7 +172,7 @@ class ppstring {
 
 }
 
-::ppromise <- function (func) {
+::ppromise <- function (func):(ppromise_base) {
 
   local inst = {
 
@@ -186,9 +186,9 @@ class ppstring {
     identity = function (x) { return x },
     thrower = function (x) { throw x },
 
-    then = ::ppromise_base.then,
-    except = ::ppromise_base.except,
-    finally = ::ppromise_base.finally
+    then = ppromise_base.then,
+    except = ppromise_base.except,
+    finally = ppromise_base.finally
     
     resolve = null,
     reject = null
