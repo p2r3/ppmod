@@ -311,6 +311,17 @@ try {
     return this.x + " " + this.y + " " + this.z;
   }
 
+  function Vector::Normalize() {
+    this.Norm();
+    return this;
+  }
+
+  function Vector::Normalize2D() {
+    this.z = 0.0;
+    this.Norm();
+    return this;
+  }
+
 } catch (e) {
 
   printl("[ppmod] Warning: failed to modify Vector class: " + e);
