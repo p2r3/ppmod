@@ -89,6 +89,55 @@ class pparray {
 
 }
 
+class heap {
+
+  constructor(maxsize){
+    arr = pparray(maxsize*2+1,0);
+  }
+  function isempty () return size == 0;
+  function bubbledown (hole) {
+    local temp = arr[hole];
+    while(hole * 2 <= size){
+      local child = hole * 2;
+      if(child != size && arr[child + 1] < arr[child]) child++;
+      if(arr[child] < temp)
+        arr[hole] = arr[child]
+      else
+        break;
+      hole = child;
+    }
+    arr[hole] = temp;
+  }
+  function remove () {
+    if(isempty()){
+      //exception
+    }else{
+      local tmp = arr[1];
+      arr[1] = arr[size--];
+      bubbledown(1);
+      return tmp;
+    }
+  }
+  function gettop () {
+    if(isempty()){
+      //exception
+    }else{
+      return arr[1];
+    }
+  }
+  function insert (val) {
+    arr[0] = val;
+    local hole = ++size;
+    while(val < arr[hole / 2]){
+      arr[hole] = arr[hole / 2];
+      hole /= 2;
+    }
+    arr[hole] = val;
+  }
+  arr = pparray([0]);
+  size = 0;
+}
+
 class ppstring {
 
   constructor (str = "") {
