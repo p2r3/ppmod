@@ -111,17 +111,22 @@ class pparray {
 
 class ppheap {
 
-  constructor(maxs){
+  constructor(maxs, comparator = null){
     maxsize = maxs;
     arr = pparray(maxsize*4+1,0);
+    if(comparator) {
+      comp = comparator;
+    }else{
+      comp = function (a, b) {return a<b;};
+    }
   }
   function isempty () return size == 0;
   function bubbledown (hole) {
     local temp = arr[hole];
     while(hole * 2 <= size){
       local child = hole * 2;
-      if(child != size && arr[child + 1] < arr[child]) child++;
-      if(arr[child] < temp)
+      if(child != size && comp(arr[child + 1], arr[child])) child++;
+      if(comp(arr[child], temp))
         arr[hole] = arr[child]
       else
         break;
@@ -152,7 +157,7 @@ class ppheap {
     }
     arr[0] = val;
     local hole = ++size;
-    while(val < arr[hole / 2]){
+    while(comp(val, arr[hole / 2])){
       arr[hole] = arr[hole / 2];
       hole /= 2;
     }
@@ -161,6 +166,7 @@ class ppheap {
   arr = pparray([0]);
   size = 0;
   maxsize = 0;
+  comp = null;
 }
 
 class ppstring {
