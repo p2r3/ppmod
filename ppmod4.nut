@@ -54,7 +54,7 @@ class pparray {
     }
     if(arr.len() < other.len()) return -1;
     else if(arr.len() > other.len()) return 1;
-    return 0; //would be nice if == on pparrays also used this but I don't see a way how to ensure it
+    return 0;
   }
   
   function join (joinstr = "") {
@@ -81,6 +81,17 @@ class pparray {
   function slice (start, end = null) return pparray(arr.slice(start, end || arr.len()));
   function tostring () return _tostring();
   function clear () return arr.clear();
+  function equals (other) {
+    if(arr.len() != other.len()) return 0;
+    for(local i = 0; i < arr.len(); i ++) {
+      if(typeof arr[i] == "array"){
+        if(arr[i].equals(other[i]) == 0) return 0;
+      }else{
+        if(arr[i] != other[i]) return 0;
+      }
+    }
+    return 1;
+  }
   function find (match) {
     if (typeof match == "function") {
       for (local i = 0; i < arr.len(); i ++) {
