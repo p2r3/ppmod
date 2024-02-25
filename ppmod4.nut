@@ -47,7 +47,16 @@ class pparray {
     }
     return str + "]";
   }
-
+  function _cmp (other) {
+    for(local i = 0; i < min(arr.len(),other.len()); i ++) {
+      if(arr[i] < other[i]) return -1;
+      else if(arr[i] > other[i]) return 1;
+    }
+    if(arr.len() < other.len()) return -1;
+    else if(arr.len() > other.len()) return 1;
+    return 0; //would be nice if == on pparrays also used this but I don't see a way how to ensure it
+  }
+  
   function join (joinstr = "") {
     local str = "";
     for (local i = 0; i < arr.len(); i ++) {
@@ -89,10 +98,11 @@ class pparray {
 
 }
 
-class heap {
+class ppheap {
 
-  constructor(maxsize){
-    arr = pparray(maxsize*2+1,0);
+  constructor(maxs){
+    maxsize = maxs;
+    arr = pparray(maxsize*4+1,0);
   }
   function isempty () return size == 0;
   function bubbledown (hole) {
@@ -126,6 +136,9 @@ class heap {
     }
   }
   function insert (val) {
+    if(size == maxsize){
+      //exception
+    }
     arr[0] = val;
     local hole = ++size;
     while(val < arr[hole / 2]){
@@ -136,6 +149,7 @@ class heap {
   }
   arr = pparray([0]);
   size = 0;
+  maxsize = 0;
 }
 
 class ppstring {
