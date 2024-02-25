@@ -47,7 +47,16 @@ class pparray {
     }
     return str + "]";
   }
-
+  function _cmp (other) {
+    for (local i = 0; i < min(arr.len(),other.len()); i ++) {
+      if (arr[i] < other[i]) return -1;
+      else if (arr[i] > other[i]) return 1;
+    }
+    if (arr.len() < other.len()) return -1;
+    else if (arr.len() > other.len()) return 1;
+    return 0;
+  }
+  
   function join (joinstr = "") {
     local str = "";
     for (local i = 0; i < arr.len(); i ++) {
@@ -72,6 +81,17 @@ class pparray {
   function slice (start, end = null) return pparray(arr.slice(start, end || arr.len()));
   function tostring () return _tostring();
   function clear () return arr.clear();
+  function equals (other) {
+    if (arr.len() != other.len()) return 0;
+    for (local i = 0; i < arr.len(); i ++) {
+      if (typeof arr[i] == "array"){
+        if (arr[i].equals(other[i]) == 0) return 0;
+      } else {
+        if (arr[i] != other[i]) return 0;
+      }
+    }
+    return 1;
+  }
   function find (match) {
     if (typeof match == "function") {
       for (local i = 0; i < arr.len(); i ++) {
@@ -86,6 +106,70 @@ class pparray {
   }
 
   arr = null;
+
+}
+
+class ppheap {
+
+  constructor (maxs = 0, comparator = null) {
+    maxsize = maxs;
+    arr = pparray(maxsize*4 + 1,0);
+    if (comparator) {
+      comp = comparator;
+    } else {
+      comp = function (a, b) { return a < b };
+    }
+  }
+
+  function isempty () { return size == 0 };
+  function bubbledown (hole) {
+    local temp = arr[hole];
+    while (hole * 2 <= size) {
+      local child = hole * 2;
+      if (child != size && comp(arr[child + 1], arr[child])) child ++;
+      if (comp(arr[child], temp)) {
+        arr[hole] = arr[child]
+      } else {
+        break;
+      }
+      hole = child;
+    }
+    arr[hole] = temp;
+  }
+  function remove () {
+    if (isempty()) {
+      throw "Heap is empty";
+    } else {
+      local tmp = arr[1];
+      arr[1] = arr[size--];
+      bubbledown(1);
+      return tmp;
+    }
+  }
+  function gettop () {
+    if (isempty()) {
+      throw "Heap is empty";
+    } else {
+      return arr[1];
+    }
+  }
+  function insert (val) {
+    if (size == maxsize) {
+      throw "Exceeding max heap size";
+    }
+    arr[0] = val;
+    local hole = ++size;
+    while (comp(val, arr[hole / 2])) {
+      arr[hole] = arr[hole / 2];
+      hole /= 2;
+    }
+    arr[hole] = val;
+  }
+
+  arr = pparray([0]);
+  size = 0;
+  maxsize = 0;
+  comp = null;
 
 }
 
