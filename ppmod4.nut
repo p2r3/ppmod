@@ -811,39 +811,56 @@ for (local i = 0; i < entclasses.len(); i ++) {
   local auto = Entities.CreateByClassname("logic_auto");
 
   // In online multiplayer games, we delay spawning until both players are ready
-  // The double if statement prevents an exception from IsLocalSplitScreen in SP
-  if (IsMultiplayer()) if (IsLocalSplitScreen()) scr = function ():(scr) {
+  if (IsMultiplayer()) scr = function ():(scr) {
 
-    // Find the lowest significant point of the world's bounding box estimate
-    local ent = null, lowest = 0, curr;
-    while (ent = Entities.Next(ent)) {
+    local outerinterval = UniqueString("ppmod_auto_outerinterval");
 
-      if (!ent.IsValid()) continue;
+    ppmod.interval(function ():(scr, outerinterval) {
+      
+      // Find the host player, typically the first player named "blue"
+      local blue = Entities.FindByName(null, "blue");
+      if (!blue || !blue.IsValid() || blue.GetClassname() != "player") {
+        blue = Entities.FindByClassname(null, "player");
+      }
+      if (!blue || !blue.IsValid()) return;
 
-      curr = ent.GetOrigin().z + ent.GetBoundingMins().z;
-      if (curr < lowest) lowest = curr;
+      Entities.FindByName(null, outerinterval).Destroy();
 
-    }
+      if (IsLocalSplitScreen()) {
+        if (typeof scr == "string") compilestring(scr)();
+        else scr();
+        return;
+      }
 
-    // Additional decrement just to make sure we're below anything significant
-    lowest -= 1024.0;
+      // Find the lowest significant point of the world's bounding box estimate
+      local ent = null, lowest = 0, curr;
+      while (ent = Entities.Next(ent)) {
 
-    // Find the host player, typically the first player named "blue"
-    local blue = Entities.FindByName(null, "blue");
-    if (!blue || !blue.IsValid() || blue.GetClassname() != "player") {
-      blue = Entities.FindByClassname(null, "player");
-    }
+        if (!ent.IsValid()) continue;
 
-    // We move the host below the map and wait until they are teleported back up
-    // This happens once both players finish connecting in network games
-    blue.SetOrigin(Vector(0, 0, lowest));
+        curr = ent.GetOrigin().z + ent.GetBoundingMins().z;
+        if (curr < lowest) lowest = curr;
 
-    local intervalname = UniqueString("ppmod_auto_interval");
-    local timername = UniqueString("ppmod_auto_timer");
+      }
 
-    ppmod.interval(function ():(blue, lowest, scr, intervalname) {
-      local red = Entities.FindByClassname(blue, "player");
-      if (red && red.IsValid() && blue.GetOrigin().z > lowest) {
+      // Additional decrement just to make sure we're below anything significant
+      lowest -= 1024.0;
+
+      // We move the host below the map and wait until they are teleported back up
+      // This happens once both players finish connecting in network games
+      blue.SetOrigin(Vector(0, 0, lowest));
+
+      local intervalname = UniqueString("ppmod_auto_interval");
+      local timername = UniqueString("ppmod_auto_timer");
+
+      ppmod.interval(function ():(blue, lowest, scr, intervalname) {
+
+        local red = Entities.FindByClassname(null, "red");
+        if (!red || !red.IsValid() || red.GetClassname() != "player") {
+          red = Entities.FindByClassname(blue, "player");
+        }
+
+        if (!red || !red.IsValid() || blue.GetOrigin().z <= lowest) return;
 
         if (typeof scr == "string") compilestring(scr)();
         else scr();
@@ -851,8 +868,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
         Entities.FindByName(null, intervalname).Destroy();
         Entities.FindByName(null, timername).Destroy();
 
-      }
-    }, 0.0, intervalname);
+      }, 0.0, intervalname);
+
+    }, 0.0, outerinterval);
 
   };
 
