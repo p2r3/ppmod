@@ -88,6 +88,11 @@ Rounds a number to the specified precision in digits after decimal point, 0 by d
 ```squirrel
   "The vector values are: " + Vector(1, 2, 3).ToKVString() // Returns "The vector values are: 1 2 3"
 ```
+#### Inline normalization
+```squirrel
+  Vector(10, 5, 10).Normalize() // Returns Vector(0.666667, 0.333333, 0.666667)
+  Vector(10, 5, 10).Normalize2D() // Returns Vector(0.894427, 0.447214, 0)
+```
 
 ### Extended array class
 The `pparray` class implements some additional array features not present in Portal 2's version of Squirrel. It can be initialized by either providing a size for a new array (and optionally a value to fill it with) or an existing array.
