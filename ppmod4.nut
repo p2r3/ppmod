@@ -382,6 +382,10 @@ try {
     }
   }
 
+  function Vector::_unm () {
+    return Vector() - this;
+  }
+
   function Vector::equals (other) {
     if (this.x == other.x && this.y == other.y && this.z == other.z) return true;
     return false;
