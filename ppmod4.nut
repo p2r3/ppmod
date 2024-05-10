@@ -1093,6 +1093,10 @@ for (local i = 0; i < entclasses.len(); i ++) {
     ppmod.addoutput(proxy, "OnUnDuck", player, "RunScriptCode", "if (self == activator) " + scrqstr);
   };
 
+  pplayer.ducking <- function ():(player) {
+    return player.GetCenter().z - player.GetOrigin().z < 18.001;
+  };
+
   pplayer.input <- function (str, scr):(gameui) {
     if (str[0] == '+') str = "pressed" + str.slice(1);
     else str = "unpressed" + str.slice(1);
