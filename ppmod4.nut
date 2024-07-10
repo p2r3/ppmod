@@ -855,8 +855,6 @@ for (local i = 0; i < entclasses.len(); i ++) {
       blue.SetOrigin(Vector(0, 0, lowest));
 
       local intervalname = UniqueString("ppmod_auto_interval");
-      local timername = UniqueString("ppmod_auto_timer");
-
       ppmod.interval(function ():(blue, lowest, scr, intervalname) {
 
         local red = Entities.FindByClassname(null, "red");
@@ -870,7 +868,6 @@ for (local i = 0; i < entclasses.len(); i ++) {
         else scr();
 
         Entities.FindByName(null, intervalname).Destroy();
-        Entities.FindByName(null, timername).Destroy();
 
       }, 0.0, intervalname);
 
