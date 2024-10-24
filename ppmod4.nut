@@ -56,7 +56,7 @@ class pparray {
     else if (arr.len() > other.len()) return 1;
     return 0;
   }
-  
+
   function join (joinstr = "") {
     local str = "";
     for (local i = 0; i < arr.len(); i ++) {
@@ -218,9 +218,9 @@ class ppstring {
 }
 
 local ppromise_base = {
-  
+
   then = function (onthen = null, oncatch = null) {
-    
+
     if (typeof onthen != "function") onthen = identity;
     if (typeof oncatch != "function") oncatch = thrower;
 
@@ -237,16 +237,16 @@ local ppromise_base = {
   except = function (oncatch = null) {
 
     if (typeof oncatch != "function") oncatch = thrower;
-  
+
     if (state == "rejected") return oncatch(value);
     onreject.push(oncatch);
 
     return this;
-  
+
   },
 
   finally = function (onfinally) {
-    
+
     if (state != "pending") return onfinally(value);
     onresolve.push(onfinally);
 
@@ -273,7 +273,7 @@ local ppromise_base = {
     then = ppromise_base.then,
     except = ppromise_base.except,
     finally = ppromise_base.finally
-    
+
     resolve = null,
     reject = null
 
@@ -357,7 +357,7 @@ local ppromise_base = {
 
       ppmod.asyncgen.push(func.acall(args));
       ppmod.asyncrun(ppmod.asyncgen.len() - 1, resolve, reject);
-    
+
     });
 
   }
@@ -365,7 +365,7 @@ local ppromise_base = {
 }
 
 try {
-  
+
   function Vector::_mul (other) {
     if (typeof other == "Vector") {
       return Vector(this.x * other.x, this.y * other.y, this.z * other.z);
@@ -429,7 +429,7 @@ try {
     if (curr = Entities.FindByName(arg2, arg1)) return curr;
     if (curr = Entities.FindByClassname(arg2, arg1)) return curr;
     return Entities.FindByModel(arg2, arg1);
-  
+
   }
 
   if (typeof arg1 == "Vector") {
@@ -478,7 +478,7 @@ try {
 }
 
 ::ppmod.getall <- function (args, callback) {
-  
+
   if (typeof args != "array") {
     args = [args];
   }
@@ -488,7 +488,7 @@ try {
   local curr = null;
 
   while (true) {
-    
+
     curr = ppmod.get.acall(args);
 
     if (!curr) return;
@@ -510,7 +510,7 @@ try {
   }
 
   while (true) {
-    
+
     if (vargc < 3) curr = ppmod.get(vargv[0], curr);
     else if (vargc == 3) curr = ppmod.get(vargv[0], vargv[1], curr);
     else curr = ppmod.get(vargv[0], vargv[1], vargv[2], curr);
@@ -535,7 +535,7 @@ try {
     });
     return;
   }
-  
+
   EntFireByHandle(ent, action, value.tostring(), delay, activator, caller);
 
 }
@@ -668,7 +668,7 @@ try {
     throw "ppmod.hook: Could not validate entity script scope";
   }
 
-  if (scr == null) ent.GetScriptScope()["Input"+input] <- function () return true; 
+  if (scr == null) ent.GetScriptScope()["Input"+input] <- function () return true;
   else ent.GetScriptScope()["Input"+input] <- ppmod.scrq_get(ppmod.scrq_add(scr, max));
 
 }
@@ -799,13 +799,13 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
   if (!name) name = scr.tostring();
   if (Entities.FindByName(null, name)) return;
-  
+
   local relay = Entities.CreateByClassname("logic_relay");
   relay.__KeyValueFromString("Targetname", name);
-  
+
   ppmod.addscript(relay, "OnTrigger", scr, 0, 1);
   EntFireByHandle(relay, "Trigger", "", 0.0, null, null);
-  
+
   return relay;
 
 }
@@ -820,7 +820,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
     local outerinterval = UniqueString("ppmod_auto_outerinterval");
 
     ppmod.interval(function ():(scr, outerinterval) {
-      
+
       // Find the host player, typically the first player named "blue"
       local blue = Entities.FindByName(null, "blue");
       if (!blue || !blue.IsValid() || blue.GetClassname() != "player") {
@@ -917,7 +917,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
   // One logic_playerproxy is required for registering jumping and ducking
   local proxy = Entities.FindByClassname(null, "logic_playerproxy");
   if (!proxy) proxy = Entities.CreateByClassname("logic_playerproxy");
-  
+
   // Set up a logic_measure_movement for more accurate view angles
   pplayer.eyes <- Entities.CreateByClassname("logic_measure_movement");
   local eyename = UniqueString("ppmod_eyes");
@@ -934,10 +934,10 @@ for (local i = 0; i < entclasses.len(); i ++) {
   // logic_measure_movement relies on targetname for selecting entities
   // This changes the player's targetname briefly and set it back right away
   local nameswap = function ():(pplayer) {
-    
+
     local playername = pplayer.ent.GetName();
     pplayer.ent.__KeyValueFromString("Targetname", UniqueString("pplayer"));
-    
+
     EntFireByHandle(pplayer.eyes, "SetMeasureTarget", pplayer.ent.GetName(), 0.0, null, null);
 
     ppmod.wait(function ():(pplayer, playername) {
@@ -1027,7 +1027,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
       local filter = Entities.CreateByClassname("filter_player_held");
       filter.__KeyValueFromString("Targetname", name);
       filter.__KeyValueFromString("OnPass", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrqid + ")(true);self.Destroy()\x001B0\x001B1");
-      
+
       local relay = Entities.CreateByClassname("logic_relay");
       relay.__KeyValueFromString("OnUser1", name + "\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrqid + ")(false);self.Destroy()\x001B0\x001B1");
       relay.__KeyValueFromString("OnUser1", "!self\x001BOnUser2\x1B\x001B0\x001B1");
@@ -1056,11 +1056,11 @@ for (local i = 0; i < entclasses.len(); i ++) {
           if (classes.find(curr.GetClassname()) == -1) continue;
 
           EntFireByHandle(filter, "TestActivator", "", 0.0, curr, null);
-          
+
         }
 
       }
-      
+
       EntFireByHandle(relay, "FireUser1", "", 0.0, null, null);
       EntFireByHandle(relay, "Kill", "", 0.0, null, null);
 
@@ -1141,7 +1141,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
       }
     }
 
-    // Apply calculated velocity 
+    // Apply calculated velocity
     pplayer.ent.SetVelocity(vel);
 
   };
@@ -1210,9 +1210,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
         resolve(pplayer);
         Entities.FindByName(null, intervalname).Destroy();
       }
-    
+
     }, 0, intervalname);
-  
+
   });
 
 }
@@ -1227,7 +1227,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
   if ("ppmod_portal" in scope) return scope.ppmod_portal;
 
   local trigger = Entities.CreateByClassname("trigger_multiple");
-  
+
   trigger.__KeyValueFromInt("Solid", 3);
   trigger.SetAbsOrigin(portal.GetOrigin());
   trigger.SetForwardVector(portal.GetForwardVector());
@@ -1319,7 +1319,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
         detector.__KeyValueFromInt("LinkageGroupID", params.id);
         detector.SetAbsOrigin(portal.GetOrigin());
         EntFireByHandle(detector, "Enable", "", 0.0, null, null);
-        
+
         EntFireByHandle(detector, "FireUser1", "", 0.0, null, null);
 
       };
@@ -1353,7 +1353,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
           pportal.GetLinkageGroupID().then(function (currid):(resolve, param, curr, pportal, id) {
 
             if (currid != id) return param.next(curr);
-            
+
             pportal.GetActivatedState().then(function (state):(resolve, param, curr) {
               if (state) return resolve(curr);
               return param.next(curr);
@@ -1366,7 +1366,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
         param.next(null);
 
       });
-      
+
     });
   };
 
@@ -1391,16 +1391,16 @@ for (local i = 0; i < entclasses.len(); i ++) {
   if (ppmod.onportal_func.len() != 1) return;
 
   ::ppmod.onportal_check <- function (portal, first) {
-    
+
     ppmod.runscript("worldspawn", function ():(portal, first) {
 
       local pgun = null;
       local color = null;
 
       while (pgun = Entities.FindByClassname(pgun, "weapon_portalgun")) {
-        
+
         local scope = pgun.GetScriptScope();
-        
+
         if (scope["ppmod_onportal_attack_time"] == Time()) {
           color = 1;
           break;
@@ -1518,7 +1518,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
   // The keyvalue sets the entity classname and amount
   equip.__KeyValueFromInt(classname, amount);
   EntFireByHandle(equip, "Use", "", 0.0, player, null);
-  
+
   return ppromise(function (resolve, reject):(classname, amount, equip) {
 
     local scrq_id = ppmod.scrq_add(function ():(resolve, classname, amount) {
@@ -1540,7 +1540,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
     EntFireByHandle(equip, "Kill", "", 0.0, null, null);
 
   });
-  
+
 }
 
 ::ppmod.brush <- function (pos, size, type = "func_brush", ang = Vector(), create = false) {
@@ -1549,14 +1549,14 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
     local brush = type;
     if (typeof type == "string") brush = Entities.CreateByClassname(type);
-    
+
     brush.__KeyValueFromInt("Solid", 3);
     brush.SetAbsOrigin(pos);
     brush.SetAngles(ang.x, ang.y, ang.z);
     brush.SetSize(Vector() - size, size);
 
     return brush;
-  
+
   }
 
   return ppromise(function (resolve, reject):(type, pos, size, ang) {
@@ -1587,7 +1587,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
     }
 
     return trigger;
-  
+
   }
 
   return ppromise(function (resolve, reject):(pos, size, type, ang) {
@@ -1665,10 +1665,10 @@ EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null
     local p_anchor = Entities.FindByName(null, "ppmod_portals_p_anchor");
     local r_anchor = Entities.FindByName(null, "ppmod_portals_r_anchor");
 
-    // Set portal anchor facing the entry portal 
+    // Set portal anchor facing the entry portal
     p_anchor.SetForwardVector(Vector() - portal.GetForwardVector());
 
-    // Set positions of anchors to entry portal origin and ray endpoint, respectively    
+    // Set positions of anchors to entry portal origin and ray endpoint, respectively
     p_anchor.SetAbsOrigin(portal.GetOrigin());
     r_anchor.SetAbsOrigin(output.point);
 
@@ -1685,7 +1685,7 @@ EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null
     local roll = atan2(dirvec.z, sqrt(dirvec.x * dirvec.x + dirvec.y * dirvec.y)) / PI * 180;
 
     // Due to being parented, r_anchor's angles are usually relative to p_anchor
-    // The "angles" keyvalue, however, is absolute  
+    // The "angles" keyvalue, however, is absolute
     r_anchor.__KeyValueFromString("angles", pitch + " " + yaw + " " + roll);
     // Finally, rotate the portal anchor to get ray starting position and direction
     p_anchor.SetForwardVector(other.GetForwardVector());
@@ -1742,7 +1742,7 @@ EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null
       isbbox = true;
 
     }
-    
+
     // Squirrel sucks, we can't just have an 'else' here
     if (!isbbox) {
 
@@ -1768,7 +1768,7 @@ EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null
   }
 
   local pos = ent.GetOrigin();
-  
+
   local mins = ent.GetBoundingMins();
   local maxs = ent.GetBoundingMaxs();
 
