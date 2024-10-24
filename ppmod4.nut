@@ -1630,13 +1630,15 @@ for (local i = 0; i < entclasses.len(); i ++) {
 }
 
 // Set up some dummy entites for simplifying ray-through-portal calculations
-local p_anchor = Entities.CreateByClassname("info_target");
-local r_anchor = Entities.CreateByClassname("info_target");
+ppmod.onauto(function () {
+  local p_anchor = Entities.CreateByClassname("info_target");
+  local r_anchor = Entities.CreateByClassname("info_target");
 
-p_anchor.__KeyValueFromString("Targetname", "ppmod_portals_p_anchor");
-r_anchor.__KeyValueFromString("Targetname", "ppmod_portals_r_anchor");
+  p_anchor.__KeyValueFromString("Targetname", "ppmod_portals_p_anchor");
+  r_anchor.__KeyValueFromString("Targetname", "ppmod_portals_r_anchor");
 
-EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null);
+  EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null);
+});
 
 ::ppmod.ray <- function (start, end, ent = null, world = true, portals = null, ray = null) {
 
