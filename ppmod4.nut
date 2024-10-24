@@ -1989,7 +1989,7 @@ EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null
         local unpressrl = Entities.CreateByClassname("logic_relay");
         unpressrl.__KeyValueFromInt("SpawnFlags", 2);
 
-        local press = function ():(type, trigger, ent, pressrl, unpressrl) {
+        local press = function ():(type, trigger, ent, pressrl) {
           if (++trigger.GetScriptScope()["count"] == 1) {
 
             EntFireByHandle(pressrl, "Trigger", "", 0.0, null, null);
@@ -2005,7 +2005,7 @@ EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null
           }
         };
 
-        local unpress = function ():(type, trigger, ent) {
+        local unpress = function ():(type, trigger, ent, unpressrl) {
           if (--trigger.GetScriptScope()["count"] == 0) {
 
             EntFireByHandle(unpressrl, "Trigger", "", 0.0, null, null);
