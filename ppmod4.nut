@@ -1865,6 +1865,30 @@ ppmod.onauto(function () {
 
 }
 
+::ppmod.visible <- function (eyes, dest, fov = 90.0) {
+
+  local start = eyes.GetOrigin();
+  local fvec = (dest - start).Normalize();
+
+  // Check if the destination is within the field of view
+  if (eyes.GetForwardVector().Dot(fvec) < cos(fov * PI / 360)) return false;
+
+  local frac, point;
+  do { // Casts a ray which passes through thin walls (glass, grates, etc.)
+
+    frac = TraceLine(start, dest, null);
+    if (frac == 1.0) break;
+
+    point = start + (dest - start) * frac;
+    start = point + fvec * 16.0;
+
+  } while (TraceLine(point + fvec * 16.0, point + fvec * 8.0, null) != 0.0);
+
+  // True if the ray didn't hit anything
+  return frac == 1.0;
+
+}
+
 ::ppmod.button <- function (type, pos, ang = Vector()) {
 
   // Ensure that sounds are precached by creating a dummy entity
