@@ -264,13 +264,22 @@ class ppstring {
 
 }
 
-local ppromise_base = {
+/**
+ * Because of a bug in how objects are restored from Portal 2 save files,
+ * using a class for ppromise causes crashes on save load. Instead, we
+ * mimic a class structure by returning a table from a function.
+ */
 
-  then = function (onthen = null, oncatch = null) {
+// Methods for the ppromise prototypal class
+local ppromise_methods = {
 
-    if (typeof onthen != "function") onthen = identity;
-    if (typeof oncatch != "function") oncatch = thrower;
+  // Attaches a function to be executed when the promise fullfils
+  then = function (onthen, oncatch = function (x) { throw x }) {
+    if (typeof onthen != "function" || typeof oncatch != "function") {
+      throw "[ppromise] Error: Invalid arguments for .then handler";
+    }
 
+    // Run the function immediately if the promise has already fulfilled
     if (state == "fulfilled") { onthen(value); return this }
     if (state == "rejected") { oncatch(value); return this }
 
@@ -278,33 +287,67 @@ local ppromise_base = {
     onreject.push(oncatch);
 
     return this;
-
   },
+  // Attaches a function to be executed when the promise is rejected
+  except = function (oncatch) {
+    if (typeof oncatch != "function") {
+      throw "[ppromise] Error: Invalid argument for .except handler";
+    }
 
-  except = function (oncatch = null) {
-
-    if (typeof oncatch != "function") oncatch = thrower;
-
+    // Run the function immediately if the promise has already rejected
     if (state == "rejected") return oncatch(value);
     onreject.push(oncatch);
 
     return this;
-
   },
-
+  // Attaches a function to be executed when the promise resolves
   finally = function (onfinally) {
+    if (typeof finally != "function") {
+      throw "[ppromise] Error: Invalid argument for .finally handler";
+    }
 
+    // Run the function immediately if the promise has already resolved
     if (state != "pending") return onfinally(value);
     onresolve.push(onfinally);
 
     return this;
+  },
+  // Fulfills the given ppromise instance with the given value
+  resolve = function (inst, val) {
+    // If the promise has already been resolved, do nothing
+    if (inst.state != "pending") return;
 
+    // Update the promise state and value
+    inst.state = "fulfilled";
+    inst.value = val;
+
+    // Call all relevant functions attached to the promise
+    for (local i = 0; i < inst.onfulfill.len(); i ++) inst.onfulfill[i](val);
+    for (local i = 0; i < inst.onresolve.len(); i ++) inst.onresolve[i]();
+  },
+  // Rejects the given ppromise instance with the given value
+  reject = function (inst, err) {
+    // If the promise has already been resolved, do nothing
+    if (inst.state != "pending") return;
+
+    // Update the promise state and value
+    inst.state = "rejected";
+    inst.value = err;
+
+    // If no error handler has been attached, throw the error
+    if (inst.onreject.len() == 0) throw err;
+
+    // Call all relevant functions attached to the promise
+    for (local i = 0; i < inst.onreject.len(); i ++) inst.onreject[i](err);
+    for (local i = 0; i < inst.onresolve.len(); i ++) inst.onresolve[i]();
   }
 
 }
 
-::ppromise <- function (func):(ppromise_base) {
+// Constructor for the ppromise prototypical class
+::ppromise <- function (func):(ppromise_methods) {
 
+  // Create a table to act as the class instance
   local inst = {
 
     onresolve = [],
@@ -314,49 +357,27 @@ local ppromise_base = {
     state = "pending",
     value = null,
 
-    identity = function (x) { return x },
-    thrower = function (x) { throw x },
-
-    then = ppromise_base.then,
-    except = ppromise_base.except,
-    finally = ppromise_base.finally
+    then = ppromise_methods.then,
+    except = ppromise_methods.except,
+    finally = ppromise_methods.finally
 
     resolve = null,
     reject = null
 
   };
 
-  inst.resolve = function (val = null):(inst) {
-
-    if (inst.state != "pending") return;
-
-    inst.state = "fulfilled";
-    inst.value = val;
-
-    for (local i = 0; i < inst.onfulfill.len(); i ++) inst.onfulfill[i](val);
-    for (local i = 0; i < inst.onresolve.len(); i ++) inst.onresolve[i]();
-
+  // Wrappers for the resolve/reject handlers, capturing this instance
+  inst.resolve = function (val = null):(ppromise_methods, inst) {
+    ppromise_methods.resolve(inst, val);
+  };
+  inst.reject = function (err = null):(ppromise_methods, inst) {
+    ppromise_methods.reject(inst, val);
   };
 
-  inst.reject = function (err = null):(inst) {
-
-    if (inst.state != "pending") return;
-
-    inst.state = "rejected";
-    inst.value = err;
-
-    if (inst.onreject.len() == 0) inst.thrower(err);
-    else for (local i = 0; i < inst.onreject.len(); i ++) inst.onreject[i](err);
-    for (local i = 0; i < inst.onresolve.len(); i ++) inst.onresolve[i]();
-
-  };
-
-  try {
-    func(inst.resolve, inst.reject);
-  } catch (e) {
-    inst.reject(e);
-  }
-
+  // Run the input function
+  try { func(inst.resolve, inst.reject) }
+  catch (e) { inst.reject(e) }
+  // Return the table representing a ppromise class instance
   return inst;
 
 }

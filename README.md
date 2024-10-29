@@ -186,7 +186,7 @@ Implements a JavaScript-like "promise" system for working with asynchronous oper
 ```squirrel
   ppromise(func)
 ```
-In Portal 2, there are numerous mutually unsyncronised threads, which can be a hassle to work with. Namely, console commands and entity actions are the most common offenders in generating asynchronous code. Historically, ppmod has used callback functions to accomodate for this, but since ppmod4, a "thenable" system was established for clarity and consistency.
+In Portal 2, there are numerous mutually unsyncronised threads, which can be a hassle to work with. Namely, console commands and entity actions are the most common offenders in generating asynchronous code. Historically, ppmod has used callback functions to accomodate for this, but since version 4, a "thenable" system was established for clarity and consistency.
 
 Setting up a basic ppromise means wrapping a function with the `ppromise` constructor, which returns a ppromise instance. (Internally, these aren't actually classes or objects due to a workaround for a bug in Portal 2's Squirrel runtime.) Here is an example of a simple promise that resolves in 5 seconds:
 ```squirrel
@@ -209,14 +209,14 @@ There are several ways of obtaining the result of a ppromise. The simplest by fa
     printl(err);
   });
 
-  // Prints either the value of resolve() or reject(), whichever came first.
-  wait.finally(function (value) {
-    printl(value);
+  // Called when the promise resolves, regardless of outcome
+  wait.finally(function () {
+    // perform cleanup, etc...
   });
 ```
-Note that only one function can be attached to each output, and only one of `then` or `except` gets called (whichever is encountered first), while `finally` gets called regardless.
+Any number of functions can be attached to each output. Only one of `then` or `except` gets called (whichever is encountered first), while `finally` gets called regardless.
 
-You can also get the value and state of a ppromise directly:
+You can also get the value and state of a ppromise directly, though this isn't recommended:
 ```squirrrel
   wait.state // One of "pending", "fulfilled", or "rejected"
   wait.value // The value passed to either resolve() or reject()
