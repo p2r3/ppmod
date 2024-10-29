@@ -382,21 +382,38 @@ local ppromise_methods = {
 
 }
 
+/**
+ * Asynchronous functions are implemented using Squirrel generators.
+ * Since a generator is essentially a function that can return some output
+ * without exiting, we can use this property to suspend code execution
+ * until another procedure is done processing the returned (yielded)
+ * output, at which point the generator is told to resume.
+ */
+
+// Holds generators used for async functions
 ::ppmod.asyncgen <- [];
-::ppmod.asyncrun <- function (id, resolve, reject) {
+// Holds the value of the last ppromise yielded from an async function
+::yielded <- null;
 
+// Runs an async generator over and over until end of scope is reached
+::ppmod.asyncrun <- function (id, resolve, reject):(ppromise_methods) {
+
+  // Holds the yielded/returned value of the generator
   local next;
-  try {
-    next = resume ppmod.asyncgen[id];
-  } catch (e) {
-    return reject(e);
-  }
+  try { next = resume ppmod.asyncgen[id] }
+  catch (e) { return reject(e) }
 
+  // If the generator has finished running, resolve the async function
   if (ppmod.asyncgen[id].getstatus() == "dead") {
     ppmod.asyncgen[id] = null;
     return resolve(next);
   }
 
+  // Ensure we're handling a ppromise instance
+  if (next.then != ppromise_methods.then) {
+    throw "[async] Error: Function did not yield a ppromise";
+  }
+  // Resume the generator when the promise resolves
   next.then(function (val):(id, resolve, reject) {
     ::yielded <- val;
     ppmod.asyncrun(id, resolve, reject);
@@ -404,17 +421,18 @@ local ppromise_methods = {
 
 }
 
-::yielded <- null;
+// Converts a function to one that returns a ppromise
 ::async <- function (func) {
-
   return function (...):(func) {
 
+    // Extract the arguments and format them for acall()
     local args = array(vargc + 1);
     for (local i = 0; i < vargc; i ++) args[i + 1] = vargv[i];
     args[0] = this;
 
+    // Create a ppromise which runs the input function as a generator
     return ppromise(function (resolve, reject):(func, args) {
-
+      // Find a free spot in ppmod.asyncgen to insert this function
       for (local i = 0; i < ppmod.asyncgen.len(); i ++) {
         if (ppmod.asyncgen[i] == null) {
           ppmod.asyncgen[i] = func.acall(args);
@@ -422,14 +440,12 @@ local ppromise_methods = {
           return;
         }
       }
-
+      // If no free space was found, extend the array by pushing to it
       ppmod.asyncgen.push(func.acall(args));
       ppmod.asyncrun(ppmod.asyncgen.len() - 1, resolve, reject);
-
     });
 
-  }
-
+  };
 }
 
 try {
