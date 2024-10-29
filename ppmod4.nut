@@ -4,12 +4,11 @@
 */
 
 if (!("Entities" in this)) {
-  printl("[ppmod] Error: ppmod4 was included in a scope without CEntities!");
-  return;
+  throw "ppmod: Tried to run in a scope without CEntities!";
 }
 
 if ("ppmod" in this) {
-  printl("[ppmod] Error: ppmod is already loaded!");
+  printl("[ppmod] Warning: ppmod is already loaded!");
   return;
 }
 
@@ -170,7 +169,7 @@ class ppheap {
   // Removes the top element of the heap and returns it
   function remove () {
     if (isempty()) {
-      throw "[ppheap] Error: Heap is empty";
+      throw "ppheap: Heap is empty";
     } else {
       local tmp = arr[1];
       arr[1] = arr[size--];
@@ -181,7 +180,7 @@ class ppheap {
   // Returns the top element of the heap
   function gettop () {
     if (isempty()) {
-      throw "[ppheap] Error: Heap is empty";
+      throw "ppheap: Heap is empty";
     } else {
       return arr[1];
     }
@@ -189,7 +188,7 @@ class ppheap {
   // Insers the given element into the heap
   function insert (val) {
     if (size == maxsize) {
-      throw "[ppheap] Error: Exceeded max heap size";
+      throw "ppheap: Exceeded max heap size";
     }
     arr[0] = val;
     local hole = ++size;
@@ -276,7 +275,7 @@ local ppromise_methods = {
   // Attaches a function to be executed when the promise fullfils
   then = function (onthen, oncatch = function (x) { throw x }) {
     if (typeof onthen != "function" || typeof oncatch != "function") {
-      throw "[ppromise] Error: Invalid arguments for .then handler";
+      throw "ppromise: Invalid arguments for .then handler";
     }
 
     // Run the function immediately if the promise has already fulfilled
@@ -291,7 +290,7 @@ local ppromise_methods = {
   // Attaches a function to be executed when the promise is rejected
   except = function (oncatch) {
     if (typeof oncatch != "function") {
-      throw "[ppromise] Error: Invalid argument for .except handler";
+      throw "ppromise: Invalid argument for .except handler";
     }
 
     // Run the function immediately if the promise has already rejected
@@ -303,7 +302,7 @@ local ppromise_methods = {
   // Attaches a function to be executed when the promise resolves
   finally = function (onfinally) {
     if (typeof finally != "function") {
-      throw "[ppromise] Error: Invalid argument for .finally handler";
+      throw "ppromise: Invalid argument for .finally handler";
     }
 
     // Run the function immediately if the promise has already resolved
@@ -411,7 +410,7 @@ local ppromise_methods = {
 
   // Ensure we're handling a ppromise instance
   if (next.then != ppromise_methods.then) {
-    throw "[async] Error: Function did not yield a ppromise";
+    throw "async: Function did not yield a ppromise";
   }
   // Resume the generator when the promise resolves
   next.then(function (val):(id, resolve, reject) {
