@@ -53,7 +53,7 @@ These are essential utility functions, classes and methods that Portal 2's imple
 Returns the smallest / largest of two values.
 ```squirrel
   min(0.5, 2) // Returns 0.5
-  max(0.5, 2) // Returns 2 
+  max(0.5, 2) // Returns 2
 ```
 
 ### round
@@ -61,7 +61,7 @@ Rounds a number to the specified precision in digits after decimal point, 0 by d
 ```squirrel
   round(1.2345) // Returns 1.0
   round(1.2345, 2) // Returns 1.23
-  round(5.5) // Returns 6 
+  round(5.5) // Returns 6
 ```
 
 ### Vector methods
@@ -188,7 +188,7 @@ The simplest way of declaring such a function is to wrap it in `async()`. Here i
   });
 
   // Can be called like a normal function
-  createCube(); 
+  createCube();
 ```
 There are some important things to note here. Firstly, for context, here `ppmod.create` returns a `ppromise` that resolves to the created entity's handle. Secondly, `yield` on its own does not return this value. These `async` functions work by exploiting Squirrel's generators, which leads to admittedly hacky syntax. The value of the last `yield`ed `ppromise` is instead stored in the `yielded` global.
 
@@ -513,7 +513,7 @@ Determines whether the player is holding a prop.
     if (state) {
       // ... is holding a prop
     } else {
-      // ... is not holding a prop 
+      // ... is not holding a prop
     }
 
   });
@@ -665,7 +665,7 @@ Here is an example of creating an invisible, outlined box at the center of the `
 ```squirrel
   local brush = ppmod.brush(Vector(7808, -5629, 64), Vector(32, 32, 32), "func_brush");
   ppmod.keyval(brush, "Targetname", "test_brush");
-  
+
   SendToConsole("developer 1");
   SendToConsole("ent_bbox test_brush");
 ```
