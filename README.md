@@ -107,9 +107,17 @@ The `pparray` class implements some additional array features not present in Por
 ```squirrel
   arr.join(" - ") // Returns "1 - 2 - 3"
 ```
+#### pparray.indexof
+```squirrel
+  arr.indexof(2) // Returns 1, which is the index of the first element with value 2.
+```
 #### pparray.find
 ```squirrel
-  arr.find(2) // Returns 1, which is the index of the first element with value 2.
+  arr.find(function (a) {return a >= 2}) // Returns 1, which is the index of the first element to pass the compare function.
+```
+#### pparray.includes
+```squirrel
+  arr.includes(4) // Returns false, because the array does not contain the value 4.
 ```
 
 ### Extended string class

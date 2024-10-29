@@ -29,21 +29,26 @@ if ("ppmod" in this) {
   return floor(a * (b = pow(10, b)) + 0.5) / b;
 }
 
+// Extends the functionality of Squirrel arrays
 class pparray {
+
+  arr = null;
 
   constructor (size = 0, fill = null) {
     if (typeof size == "array") arr = size;
     else arr = array(size, fill);
   }
 
+  // Overload operators to mimic a standard array
   function _typeof () return "array";
   function _get (idx) return arr[idx];
   function _set (idx, val) return arr[idx] = val;
   function _nexti (previdx) {
-    if (this.len() == 0) return null;
+    if (orevidx < 0 || previdx >= this.len()) return null;
     if (previdx == null) return 0;
-    return previdx < this.len() - 1 ? previdx + 1 : null;
+    return previdx + 1;
   }
+  // Returns a representation of the array values as a string
   function _tostring () {
     local str = "[";
     for (local i = 0; i < arr.len(); i ++) {
@@ -53,31 +58,24 @@ class pparray {
     }
     return str + "]";
   }
+  // Compares two arrays by their elements
   function _cmp (other) {
-    for (local i = 0; i < min(arr.len(),other.len()); i ++) {
+    local shortest = min(arr.len(), other.len());
+    for (local i = 0; i < shortest; i ++) {
       if (arr[i] < other[i]) return -1;
       else if (arr[i] > other[i]) return 1;
     }
     if (arr.len() < other.len()) return -1;
-    else if (arr.len() > other.len()) return 1;
+    if (arr.len() > other.len()) return 1;
     return 0;
   }
 
-  function join (joinstr = "") {
-    local str = "";
-    for (local i = 0; i < arr.len(); i ++) {
-      str += arr[i];
-      if (i != arr.len() - 1) str += joinstr;
-    }
-    return str;
-  }
+  // Implement standard Squirrel array methods
   function len () return arr.len();
   function append (val) return arr.append(val);
   function push (val) return arr.push(val);
   function extend (other) return arr.extend(other);
   function pop () return arr.pop();
-  function shift () return arr.remove(0);
-  function unshift (val) return arr.insert(0, val);
   function top () return arr.top();
   function insert (idx, val) return arr.insert(idx, val);
   function remove (idx) return arr.remove(idx);
@@ -87,10 +85,24 @@ class pparray {
   function slice (start, end = null) return pparray(arr.slice(start, end || arr.len()));
   function tostring () return _tostring();
   function clear () return arr.clear();
+
+  // Implement additional methods to extend array functionality
+  function shift () return arr.remove(0);
+  function unshift (val) return arr.insert(0, val);
+  // Joins the elements of the array into a string
+  function join (separator = ",") {
+    local str = "";
+    for (local i = 0; i < arr.len(); i ++) {
+      str += arr[i];
+      if (i != arr.len() - 1) str += separator;
+    }
+    return str;
+  }
+  // Checks if the contents of the two arrays are identical
   function equals (other) {
     if (arr.len() != other.len()) return 0;
     for (local i = 0; i < arr.len(); i ++) {
-      if (typeof arr[i] == "array"){
+      if (typeof arr[i] == "array") {
         if (arr[i].equals(other[i]) == 0) return 0;
       } else {
         if (arr[i] != other[i]) return 0;
@@ -98,20 +110,25 @@ class pparray {
     }
     return 1;
   }
-  function find (match) {
-    if (typeof match == "function") {
-      for (local i = 0; i < arr.len(); i ++) {
-        if (match(arr[i])) return i;
-      }
-      return -1;
-    }
-    for (local i = 0; i < arr.len(); i ++) {
+  // Returns the index of the first element to match the input value
+  // Returns -1 if no such element is found
+  function indexof (match, start = 0) {
+    for (local i = start; i < arr.len(); i ++) {
       if (arr[i] == match) return i;
     }
     return -1;
   }
-
-  arr = null;
+  // Returns the index of the first element to pass the compare function
+  function find (match, start = 0) {
+    for (local i = start; i < arr.len(); i ++) {
+      if (match(arr[i])) return i;
+    }
+    return -1;
+  }
+  // Returns true if the array contains the element, false otherwise
+  function includes (match, start = 0) {
+    return indexof(match, start) != -1;
+  }
 
 }
 
