@@ -202,12 +202,16 @@ class ppheap {
 
 }
 
+// Extends the functionality of Squirrel strings
 class ppstring {
+
+  string = null;
 
   constructor (str = "") {
     string = str.tostring();
   }
 
+  // Overload operators to mimic a standard string
   function _typeof () return "string";
   function _tostring () return string;
   function _add (other) return ppstring(string + other.tostring());
@@ -219,14 +223,30 @@ class ppstring {
     return -1;
   }
 
+  // Implement standard Squirrel string methods
   function len () return string.len();
   function tointeger () return string.tointeger();
   function tofloat () return string.tofloat();
   function tostring () return string;
   function slice (start, end = null) return ppstring(string.slice(start, end || string.len()));
-  function find (substr, startidx = 0) return string.find(substr, startidx);
+  function find (substr, start = 0) return string.find(substr, start);
   function tolower () return ppstring(string.tolower());
   function toupper () return ppstring(string.toupper());
+  function strip () return ppstring(::strip(string));
+  function lstrip () return ppstring(::lstrip(string));
+  function rstrip () return ppstring(::rstrip(string));
+
+  // Returns a string which replaces all occurrences of one substring with another
+  function replace (substr, rep) {
+    local out = "", prev = 0, idx = 0;
+    while ((idx = string.find(substr, prev)) != null) {
+      out += string.slice(prev, idx);
+      out += rep;
+      prev = idx + substr.len();
+    }
+    return out + string.slice(prev);
+  }
+  // Returns a Squirrel array representing the string split up by a substring
   function split (substr) {
     local arr = [], curr = 0, prev = 0;
     while ((curr = string.find(substr, curr)) != null) {
@@ -237,12 +257,10 @@ class ppstring {
     arr.push(string.slice(prev));
     return arr;
   }
-  function strip () return ppstring(::strip(string));
-  function lstrip () return ppstring(::lstrip(string));
-  function rstrip () return ppstring(::rstrip(string));
-  function replace (substr, rep) return ppstring(pparray(this.split(substr)).join(rep));
-
-  string = null;
+  // Returns true if the string includes the given substring
+  function includes (substr, start = 0) {
+    return string.find(substr, start) != null;
+  }
 
 }
 

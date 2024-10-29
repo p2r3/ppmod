@@ -176,6 +176,10 @@ The `ppstring` class implements some additional string features not present in P
 ```squirrel
   str.replace("l", "L") // Returns "HeLLo worLd!"
 ```
+#### str.includes
+```squirrel
+  str.includes("world") // Returns true
+```
 
 ### ppromise
 Implements a JavaScript-like "promise" system for working with asynchronous operations.
