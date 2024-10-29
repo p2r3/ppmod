@@ -120,6 +120,50 @@ The `pparray` class implements some additional array features not present in Por
   arr.includes(4) // Returns false, because the array does not contain the value 4.
 ```
 
+### Extended heap class
+The `ppheap` class implements a priority queue data structure using a heap. It supports basic heap operations such as inserting elements and retrieving the top element. The heap can be initialized with a maximum size and an optional comparator function. The default comparator constructs a min-heap.
+```squirrel
+  local heap = ppheap(10, function(a, b) { return a > b }); // Constructs a max-heap
+```
+
+#### insert
+Inserts a new element into the heap. Throws an error if the heap is already at its maximum size.
+```squirrel
+  heap.insert(5)
+  heap.insert(3)
+  heap.insert(10)
+  heap.size // Holds the heap size, which is now 3
+```
+
+#### gettop
+Retrieves the top element of the heap without removing it. Throws an error if the heap is empty.
+```squirrel
+  heap.insert(10)
+  heap.gettop() // Returns 10
+```
+
+#### remove
+Removes the top element of the heap and returns it. Throws an error if the heap is empty.
+```squirrel
+  heap.insert(10)
+  heap.remove() // Returns 10
+```
+
+#### isempty
+Checks if the heap is empty.
+```squirrel
+  heap.isempty() // Returns true if heap is empty, false otherwise
+```
+
+#### bubbledown
+Sifts down the element at the given index to its correct position in the heap
+```squirrel
+  heap.insert(5)
+  heap.insert(3)
+  heap.insert(10)
+  heap.bubbledown(2) // Sifts down the element at index 2 (10) to its correct position in the heap
+```
+
 ### Extended string class
 The `ppstring` class implements some additional string features not present in Portal 2's version of Squirrel. It can be initialized without arguments or by providing an existing string.
 ```squirrel

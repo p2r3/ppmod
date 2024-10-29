@@ -132,11 +132,17 @@ class pparray {
 
 }
 
+// Implements the heap data type
 class ppheap {
+
+  arr = pparray([0]);
+  size = 0;
+  maxsize = 0;
+  comp = null;
 
   constructor (maxs = 0, comparator = null) {
     maxsize = maxs;
-    arr = pparray(maxsize*4 + 1,0);
+    arr = pparray(maxsize * 4 + 1,0);
     if (comparator) {
       comp = comparator;
     } else {
@@ -144,7 +150,9 @@ class ppheap {
     }
   }
 
-  function isempty () { return size == 0 };
+  // Returns true if the heap is empty, false otherwise
+  function isempty () return size == 0;
+  // Sifts down the element at the given index to its correct position in the heap
   function bubbledown (hole) {
     local temp = arr[hole];
     while (hole * 2 <= size) {
@@ -159,9 +167,10 @@ class ppheap {
     }
     arr[hole] = temp;
   }
+  // Removes the top element of the heap and returns it
   function remove () {
     if (isempty()) {
-      throw "Heap is empty";
+      throw "[ppheap] Error: Heap is empty";
     } else {
       local tmp = arr[1];
       arr[1] = arr[size--];
@@ -169,16 +178,18 @@ class ppheap {
       return tmp;
     }
   }
+  // Returns the top element of the heap
   function gettop () {
     if (isempty()) {
-      throw "Heap is empty";
+      throw "[ppheap] Error: Heap is empty";
     } else {
       return arr[1];
     }
   }
+  // Insers the given element into the heap
   function insert (val) {
     if (size == maxsize) {
-      throw "Exceeding max heap size";
+      throw "[ppheap] Error: Exceeded max heap size";
     }
     arr[0] = val;
     local hole = ++size;
@@ -188,11 +199,6 @@ class ppheap {
     }
     arr[hole] = val;
   }
-
-  arr = pparray([0]);
-  size = 0;
-  maxsize = 0;
-  comp = null;
 
 }
 
