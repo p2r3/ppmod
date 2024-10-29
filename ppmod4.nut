@@ -19,9 +19,15 @@ if ("ppmod" in this) {
 // Global Utilities //
 /********************/
 
+// Returns the smallest of two values
 ::min <- function (a, b) return a > b ? b : a;
+// Returns the largest of two values
 ::max <- function (a, b) return a < b ? b : a;
-::round <- function (a, b = 0) return floor (a * (b = pow(10, b)) + 0.5) / b;
+// Rounds the input float, optionally to a set precision
+::round <- function (a, b = 0) {
+  if (b == 0) return floor(a + 0.5);
+  return floor(a * (b = pow(10, b)) + 0.5) / b;
+}
 
 class pparray {
 
