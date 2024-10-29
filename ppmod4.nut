@@ -447,8 +447,9 @@ local ppromise_methods = {
   };
 }
 
+// Extend Vector class functionality
 try {
-
+  // Implement multiplication with other Vectors
   function Vector::_mul (other) {
     if (typeof other == "Vector") {
       return Vector(this.x * other.x, this.y * other.y, this.z * other.z);
@@ -456,7 +457,7 @@ try {
       return Vector(this.x * other, this.y * other, this.z * other);
     }
   }
-
+  // Implement component-wise division with numbers and Vectors
   function Vector::_div (other) {
     if (typeof other == "Vector") {
       return Vector(this.x / other.x, this.y / other.y, this.z / other.z);
@@ -464,39 +465,36 @@ try {
       return Vector(this.x / other, this.y / other, this.z / other);
     }
   }
-
+  // Implement unary minus
   function Vector::_unm () {
     return Vector() - this;
   }
-
+  // Returns true if the components of the two vectors are identical, false otherwise
   function Vector::equals (other) {
     if (this.x == other.x && this.y == other.y && this.z == other.z) return true;
     return false;
   }
-
+  // Returns a string representation of the Vector as a Vector constructor
   function Vector::_tostring () {
     return "Vector(" + this.x + ", " + this.y + ", " + this.z + ")";
   }
-
+  // Fixes the built-in ToKVString function by reimplementing it
   function Vector::ToKVString () {
     return this.x + " " + this.y + " " + this.z;
   }
-
+  // Normalizes the vector and returns it
   function Vector::Normalize() {
     this.Norm();
     return this;
   }
-
+  // Normalizes the vector along just the X/Y axis and returns it
   function Vector::Normalize2D() {
     this.z = 0.0;
     this.Norm();
     return this;
   }
-
 } catch (e) {
-
   printl("[ppmod] Warning: failed to modify Vector class: " + e);
-
 }
 
 /*********************/
