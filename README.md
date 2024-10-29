@@ -126,8 +126,7 @@ The `ppheap` class implements a priority queue data structure using a heap. It s
   local heap = ppheap(10, function(a, b) { return a > b }); // Constructs a max-heap
 ```
 
-#### insert
-Inserts a new element into the heap. Throws an error if the heap is already at its maximum size.
+#### ppheap.insert
 ```squirrel
   heap.insert(5)
   heap.insert(3)
@@ -135,28 +134,28 @@ Inserts a new element into the heap. Throws an error if the heap is already at i
   heap.size // Holds the heap size, which is now 3
 ```
 
-#### gettop
-Retrieves the top element of the heap without removing it. Throws an error if the heap is empty.
+#### ppheap.gettop
+Retrieves the top element of the heap without removing it
 ```squirrel
   heap.insert(10)
   heap.gettop() // Returns 10
+  heap.remove()
+  heap.gettop() // Throws "Heap is empty"
 ```
 
-#### remove
-Removes the top element of the heap and returns it. Throws an error if the heap is empty.
+#### ppheap.remove
 ```squirrel
   heap.insert(10)
   heap.remove() // Returns 10
+  heap.remove() // Throws "Heap is empty"
 ```
 
-#### isempty
-Checks if the heap is empty.
+#### ppheap.isempty
 ```squirrel
   heap.isempty() // Returns true if heap is empty, false otherwise
 ```
 
-#### bubbledown
-Sifts down the element at the given index to its correct position in the heap
+#### ppheap.bubbledown
 ```squirrel
   heap.insert(5)
   heap.insert(3)
