@@ -1049,21 +1049,23 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 }
 
+// Works around script timeouts by catching the exception they throw
 ::ppmod.detach <- function (scr, args, stack = null) {
 
+  // Validate the callback argument
+  if (typeof scr != "function") throw "detach: Invalid callback argument";
+  // Retrieve a stack trace to the line on which ppmod.detach was called
   if (stack == null) stack = getstackinfos(2);
 
-  try {
+  // Run the input function in a try/catch block
+  try { scr(args) }
+  catch (e) {
 
-    scr(args);
-
-  } catch (e) {
-
+    // If the exception is caused by SQQuerySuspend, recurse
     if (e == "Script terminated by SQQuerySuspend") {
-      ppmod.detach(scr, args, stack);
-      return;
+      return ppmod.detach(scr, args, stack);
     }
-
+    // Otherwise, mimic error output using the stack trace
     printl("\nAN ERROR HAS OCCURED [" + e + "]");
     printl("Caught within ppmod.detach in file " + stack.src + " on line " + stack.line + "\n");
 
