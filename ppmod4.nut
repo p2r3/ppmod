@@ -685,71 +685,91 @@ try {
 
 }
 
+// Creates an output to fire on the specified target with optional default arguments
 ::ppmod.addoutput <- function (ent, output, target, input = "Use", value = "", delay = 0, max = -1) {
 
+  // If the target is not a string, wrap a ppmod.fire call inside of
+  // ppmod.addscript to simulate an output whose target is a ppmod.forent argument.
   if (typeof target != "string") {
-
-    ppmod.addscript(ent, output, function ():(target, input, value) {
+    return ppmod.addscript(ent, output, function ():(target, input, value) {
       ppmod.fire(target, input, value, 0.0, activator, caller);
     }, delay, max, false);
-
-    return;
-
   }
-
+  // Otherwise, assign the output as a keyvalue separated by x1B characters.
+  // This seems to be how entity outputs are represented internally, and
+  // should in theory be faster and safer than using the AddOutput input.
   ppmod.keyval(ent, output, target+"\x1B"+input+"\x1B"+value+"\x1B"+delay+"\x1B"+max);
 
 }
 
+// Keep track of a "script queue" for inline functions
+// This is used to keep global references to functions for use as callbacks
 ::ppmod.scrq <- [];
 
+// Adds a function to the script queue, returns its script queue index
 ::ppmod.scrq_add <- function (scr, max = -1) {
 
-  if (typeof scr == "string") {
-    scr = compilestring(scr);
-  }
+  // If the input is a string, compile it into a function
+  if (typeof scr == "string") scr = compilestring(scr);
+  // Validate the input script argument
+  if (typeof scr != "function") throw "scrq_add: Invalid script argument";
 
+  // Look for an free space in the script queue array
   for (local i = 0; i < ppmod.scrq.len(); i ++) {
-    if (!ppmod.scrq[i]) {
+    if (ppmod.scrq[i] = null) {
       ppmod.scrq[i] = [scr, max];
       return i;
     }
   }
-
+  // If no free space was found, push it to the end of the array
   ppmod.scrq.push([scr, max]);
   return ppmod.scrq.len() - 1;
 
 }
 
+// Retrieves a function from the script queue, deleting it if needed
 ::ppmod.scrq_get <- function (idx) {
 
+  // Validate the input script index
+  if (!(idx in ppmod.scrq)) throw "scrq_get: Invalid script index";
+  if (ppmod.scrq[idx] == null) throw "scrq_get: Invalid script index";
+
+  // Retrieve the function from the queue
   local scr = ppmod.scrq[idx][0];
 
+  // Clear the script queue index if the max amount of retrievals has been reached
   if (ppmod.scrq[idx][1] > 0 && --ppmod.scrq[idx][1] == 0) {
     ppmod.scrq[idx] = null;
   }
 
+  // Return the script queue function
   return scr;
 
 }
 
+// Adds a script as an output to an entity with optional default arguments
 ::ppmod.addscript <- function (ent, output, scr = "", delay = 0, max = -1, passthrough = false) {
 
+  // If a function was provided, add it to the script queue
   if (typeof scr == "function") {
+    // Pass the activator and caller handles to the function if necessary
     if (passthrough) scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr, max) + ")(activator, caller)";
     else scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr, max) + ")()";
   }
-
+  // Attach the output as a keyvalue, similar to how ppmod.addoutput does it
+  // The script is targeted to worldspawn, as that makes activator and caller available
   ppmod.keyval(ent, output, "worldspawn\x001BRunScriptCode\x1B"+scr+"\x1B"+delay+"\x1B"+max);
 
 }
 
+// Runs the specified script in the entity's script scope
 ::ppmod.runscript <- function (ent, scr) {
 
+  // If a function was provided, add it to the script queue
   if (typeof scr == "function") {
     scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr, 1) + ")()";
   }
-
+  // Fire the RunScriptCode output on the input entity
   ppmod.fire(ent, "RunScriptCode", scr);
 
 }
