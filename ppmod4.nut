@@ -644,6 +644,9 @@ try {
 // Sets an entity keyvalue by automatically determining input type
 ::ppmod.keyval <- function (ent, key, val) {
 
+  // Validate the key argument
+  if (typeof key != "string") throw "keyval: Invalid key argument";
+
   // If not provided with an entity handle, use ppmod.forent to search for handles
   if (!(typeof ent == "instance" && ent instanceof CBaseEntity)) {
     return ppmod.forent(ent, function (curr):(key, val) {
