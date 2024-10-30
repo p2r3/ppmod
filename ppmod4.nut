@@ -777,10 +777,17 @@ try {
 
 }
 
+// Assigns or clears the movement parent of an entity
 ::ppmod.setparent <- function (child, _parent) {
 
-  if (_parent) ppmod.fire(child, "SetParent", "!activator", 0, _parent);
-  else ppmod.fire(child, "ClearParent");
+  // If the new parent value is falsy, clear the parent
+  if (!_parent) return ppmod.fire(child, "ClearParent");
+  // If a valid parent handle was provided, assign the parent
+  if (typeof ent == "instance" && ent instanceof CBaseEntity) {
+    return ppmod.fire(child, "SetParent", "!activator", 0, _parent);
+  }
+  // Otherwise, throw exception about invalid handle
+  throw "setparent: Invalid parent handle";
 
 }
 
