@@ -308,7 +308,7 @@ Runs a callback function for every valid entity that matches the search. First a
 ### ppmod.prev
 Performs a `ppmod.get` search in reverse. Useful for finding the last entity of a sequence.
 ```squirrel
-  ppmod.prev("prop_testchamber_door") // Gets the last door in the map
+  ppmod.prev("prop_testchamber_door"); // Gets the last door in the map (as indexed by the engine)
 ```
 
 ### ppmod.fire

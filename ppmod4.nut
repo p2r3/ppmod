@@ -595,25 +595,30 @@ try {
 
 }
 
+// Iterates over entities backwards using ppmod.get
 ::ppmod.prev <- function (...) {
 
+  // Set up entity iterators
   local start = null, curr = null, prev = null;
 
-  if (vargc > 1) {
+  // If the last argument is a valid starting entity, assign it
+  if (typeof args[vargc - 1] == "instance" && args[vargc - 1] instanceof CBaseEntity) {
     start = vargv[vargc - 1];
     curr = start;
   }
 
-  while (true) {
-
+  do {
+    // Keep track of the entity from the previous iteration
+    prev = curr;
+    // Because vargv isn't a typical array, we can't use acall() here
     if (vargc < 3) curr = ppmod.get(vargv[0], curr);
     else if (vargc == 3) curr = ppmod.get(vargv[0], vargv[1], curr);
     else curr = ppmod.get(vargv[0], vargv[1], vargv[2], curr);
+    // Run until we end up where we started
+  } while (curr != start);
 
-    if (curr == start) return prev;
-    prev = curr;
-
-  }
+  // Return the entity from the last iteration
+  return prev;
 
 }
 
