@@ -936,25 +936,33 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 }
 
+// Time the execution of the input script using console ticks
 ::ppmod.ontick <- function (scr, pause = true, timeout = -1) {
 
-  if (typeof scr == "function") {
-    if (timeout == -1) scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr, -1) + ")()";
-    else scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr, 1) + ")()";
-  }
+  // If the input is a string, compile it into a function
+  if (typeof scr == "string") scr = compilestring(scr);
+  // Validate the input script argument
+  if (typeof scr != "function") throw "ontick: Invalid script argument";
 
+  // Add the input to the script queue
+  if (timeout == -1) scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr, -1) + ")()";
+  else scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr, 1) + ")()";
+
+  // If the game is paused and pause == true, recurse on the next tick and exit
   if (pause && FrameTime() == 0.0) {
     SendToConsole("script ppmod.ontick(\"" + scr + "\", true, " + timeout + ")");
     return;
   }
 
+  // A timeout of -1 indicates that the script should run on every tick, indefinitely
   if (timeout == -1) {
     SendToConsole("script " + scr + ";script ppmod.ontick(\"" + scr + "\", " + pause + ")");
     return;
   }
-
-  if (timeout == 0) SendToConsole("script " + scr);
-  else SendToConsole("script ppmod.ontick(\"" + scr + "\", " + pause + ", " + (timeout - 1) + ")");
+  // If timeout has reached 0, call the attached script and exit
+  if (timeout == 0) return SendToConsole("script " + scr);
+  // Otherwise, recurse on the next tick with a decremented timeout
+  SendToConsole("script ppmod.ontick(\"" + scr + "\", " + pause + ", " + (timeout - 1) + ")");
 
 }
 
