@@ -622,21 +622,22 @@ try {
 
 }
 
+// Calls an input on an entity with optional default arguments
 ::ppmod.fire <- function (ent, action = "Use", value = "", delay = 0.0, activator = null, caller = null) {
 
+  // If a string was provided, use DoEntFire
   if (typeof ent == "string") {
-    DoEntFire(ent, action, value.tostring(), delay, activator, caller);
-    return;
+    return DoEntFire(ent, action, value.tostring(), delay, activator, caller);
   }
-
-  if (!(typeof ent == "instance" && ent instanceof CBaseEntity)) {
-    ppmod.forent(ent, function (curr):(action, value, delay, activator, caller) {
-      ppmod.fire(curr, action, value, delay, activator, caller);
-    });
-    return;
+  // If an entity handle was provided, use EntFireByHandle
+  if (typeof ent == "instance" && ent instanceof CBaseEntity) {
+    if (!ent.IsValid()) throw "fire: Invalid entity handle";
+    return EntFireByHandle(ent, action, value.tostring(), delay, activator, caller);
   }
-
-  EntFireByHandle(ent, action, value.tostring(), delay, activator, caller);
+  // If any other argument was provided, use ppmod.forent to search for handles
+  ppmod.forent(ent, function (curr):(action, value, delay, activator, caller) {
+    ppmod.fire(curr, action, value, delay, activator, caller);
+  });
 
 }
 

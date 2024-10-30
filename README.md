@@ -312,7 +312,7 @@ Performs a `ppmod.get` search in reverse. Useful for finding the last entity of 
 ```
 
 ### ppmod.fire
-Fires an input to an entity, either by classname, targetname or entity handle.
+Fires an input to an entity, either by classname, targetname, entity handle, or ppmod.forent query.
 ```squirrel
   ppmod.fire(target, action, value, delay, activator, caller)
 ```
