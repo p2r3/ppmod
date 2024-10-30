@@ -297,10 +297,10 @@ You can also apply a filter containing any of the previously mentioned search cr
   ppmod.get(playerPos, radius, "prop_testchamber_door");
 ```
 
-### ppmod.getall
-Runs a callback function for every entity that matches the search. Mostly intended for use internally. First argument is an array of `ppmod.get` arguments, the second argument is the callback function, which is provided each iteration's respective entity.
+### ppmod.forent
+Runs a callback function for every valid entity that matches the search. First argument is an array of `ppmod.get` arguments, the second argument is the callback function, which is provided each iteration's respective entity.
 ```squirrel
-  ppmod.getall(["prop_weighted_cube"], function (cube) {
+  ppmod.forent(["prop_weighted_cube"], function (cube) {
     printl("Cube found at: " + cube.GetOrigin());
   });
 ```
@@ -763,7 +763,7 @@ Here is an example of projecting a red arrow on a wall in the `sp_a2_triple_lase
   SendToConsole("r_shadows 1");
 
   // Prevent any other lights from turning on (explained in docs)
-  ppmod.getall(["env_projectedtexture"], function (light) {
+  ppmod.forent(["env_projectedtexture"], function (light) {
     ppmod.hook(light, "TurnOn", function () { return false });
   });
 

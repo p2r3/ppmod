@@ -573,25 +573,26 @@ try {
 
 }
 
-::ppmod.getall <- function (args, callback) {
+// Iterates through all entities that match the given criteria
+::ppmod.forent <- function (args, callback) {
 
-  if (typeof args != "array") {
-    args = [args];
+  // Convert the input to an array if it isn't already
+  if (typeof args != "array") args = [args];
+  // If the last argument is not a valid starting entity, push null
+  local last = args.len() - 1;
+  if (args[last] != null && !(typeof args[last] == "instance" && args[last] instanceof CBaseEntity)) {
+    args.push(null);
+    last ++;
   }
-  args.push(null);
+  // Prepare args for use with acall()
   args.insert(0, this);
 
+  // Iterate through entities, running the callback on each valid one
   local curr = null;
-
-  while (true) {
-
-    curr = ppmod.get.acall(args);
-
-    if (!curr) return;
+  while (curr = ppmod.get.acall(args)) {
+    if (!curr.IsValid()) continue;
     callback(curr);
-
-    args[args.len() - 1] = curr;
-
+    args[last] = curr;
   }
 
 }
@@ -626,7 +627,7 @@ try {
   }
 
   if (!(typeof ent == "instance" && ent instanceof CBaseEntity)) {
-    ppmod.getall(ent, function (curr):(action, value, delay, activator, caller) {
+    ppmod.forent(ent, function (curr):(action, value, delay, activator, caller) {
       ppmod.fire(curr, action, value, delay, activator, caller);
     });
     return;
@@ -639,7 +640,7 @@ try {
 ::ppmod.keyval <- function (ent, key, val) {
 
   if (!(typeof ent == "instance" && ent instanceof CBaseEntity)) {
-    ppmod.getall(ent, function (curr):(key, val) {
+    ppmod.forent(ent, function (curr):(key, val) {
       ppmod.keyval(curr, key, val);
     });
     return;
@@ -754,7 +755,7 @@ try {
 ::ppmod.hook <- function (ent, input, scr, max = -1) {
 
   if (!(typeof ent == "instance" && ent instanceof CBaseEntity)) {
-    ppmod.getall(ent, function (curr):(input, scr, max) {
+    ppmod.forent(ent, function (curr):(input, scr, max) {
       ppmod.hook(curr, input, scr, max);
     });
     return;
@@ -2180,7 +2181,7 @@ ppmod.onauto(function () {
 ::ppmod.catapult <- function (ent, vec) {
 
   if (!(typeof ent == "instance" && ent instanceof CBaseEntity)) {
-    ppmod.getall(ent, function (curr):(vec) {
+    ppmod.forent(ent, function (curr):(vec) {
       ppmod.catapult(curr, vec);
     });
     return;
