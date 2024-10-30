@@ -671,13 +671,16 @@ try {
 
 }
 
+// Sets entity spawn flags from the argument list
 ::ppmod.flags <- function (ent, ...) {
 
+  // Sum up all entries in vargv
   local sum = 0;
   for (local i = 0; i < vargc; i ++) {
     sum += vargv[i];
   }
 
+  // Call ppmod.keyval to apply the SpawnFlags keyvalue
   ppmod.keyval(ent, "SpawnFlags", sum);
 
 }
