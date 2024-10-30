@@ -798,20 +798,22 @@ try {
 
 }
 
+// Hooks an entity input, running a test function each time it's fired
 ::ppmod.hook <- function (ent, input, scr, max = -1) {
 
-  if (!(typeof ent == "instance" && ent instanceof CBaseEntity)) {
-    ppmod.forent(ent, function (curr):(input, scr, max) {
+  // If a valid entity handle was not provided, find handles with ppmod.forent
+  if (!ppmod.validate(ent)) {
+    return ppmod.forent(ent, function (curr):(input, scr, max) {
       ppmod.hook(curr, input, scr, max);
     });
-    return;
   }
-
+  // Ensure a script scope exists for the entity
   if (!ent.ValidateScriptScope()) {
-    throw "ppmod.hook: Could not validate entity script scope";
+    throw "hook: Could not validate entity script scope";
   }
-
-  if (scr == null) ent.GetScriptScope()["Input"+input] <- function () return true;
+  // If the new script is null, clear the hook
+  if (scr == null) delete ent.GetScriptScope()["Input"+input];
+  // Otherwise, assign a new hook function
   else ent.GetScriptScope()["Input"+input] <- ppmod.scrq_get(ppmod.scrq_add(scr, max));
 
 }
