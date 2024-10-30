@@ -501,60 +501,71 @@ try {
 // Entity management //
 /*********************/
 
+// Finds an entity which matches the given parameters
 ::ppmod.get <- function (arg1, arg2 = null, arg3 = null, arg4 = null) {
 
+  // Entity iterator
   local curr = null;
 
-  if (typeof arg1 == "string") {
+  // The type of the first argument determines the operation
+  switch (typeof arg1) {
 
-    if (curr = Entities.FindByName(arg2, arg1)) return curr;
-    if (curr = Entities.FindByClassname(arg2, arg1)) return curr;
-    return Entities.FindByModel(arg2, arg1);
-
-  }
-
-  if (typeof arg1 == "Vector") {
-
-    if (arg2 == null) arg2 = 32.0;
-
-    if (typeof arg3 == "string") {
-      local filter = arg3;
-      arg3 = arg4;
-      arg4 = filter;
+    case "string": {
+      // Try to first find a match by targetname
+      if (curr = Entities.FindByName(arg2, arg1)) return curr;
+      // Fall back to a match by classname
+      if (curr = Entities.FindByClassname(arg2, arg1)) return curr;
+      // Fall back to a match by model name
+      return Entities.FindByModel(arg2, arg1);
     }
 
-    if (typeof arg4 == "string") {
+    case "Vector": {
+      // The second argument is the radius, 32u by default
+      if (arg2 == null) arg2 = 32.0;
 
+      // The third or fourth argument may be a filter string
+      // This swaps around the arguments to ensure arg4 is the filter
+      if (typeof arg3 == "string") {
+        local filter = arg3;
+        arg3 = arg4;
+        arg4 = filter;
+      }
+
+      // If no filter was provided, get the first entity in the radius
+      if (typeof arg4 != "string") {
+        return Entities.FindInSphere(arg3, arg1, arg2);
+      }
+
+      // If a filter was provided, find an entity in the radius that matches it
       while (arg3 = Entities.FindInSphere(arg3, arg1, arg2)) {
         if (!arg3.IsValid()) continue;
         if (arg3.GetName() == arg4 || arg3.GetClassname() == arg4 || arg3.GetModelName() == arg4) {
           return arg3;
         }
       }
-
+      // Return null if nothing was found
       return null;
-
-    } else {
-      return Entities.FindInSphere(arg3, arg1, arg2);
     }
 
-  }
-
-  if (typeof arg1 == "integer") {
-
-    while (curr = Entities.Next(curr)) {
-      if (!curr.IsValid()) continue;
-      if (curr.entindex() == arg1) return curr;
+    case "integer": {
+      // Iterate through all entities to find a matching entindex
+      while (curr = Entities.Next(curr)) {
+        if (!curr.IsValid()) continue;
+        if (curr.entindex() == arg1) return curr;
+      }
+      // Return null if no such entity exists
+      return null;
     }
 
-    return null;
+    case "instance": {
+      // If provided an entity, echo it back
+      if (arg1 instanceof CBaseEntity) return ent;
+    }
+
+    default:
+      throw "get: Invalid first argument";
 
   }
-
-  if (typeof arg1 == "instance" && arg1 instanceof CBaseEntity) {
-    return ent;
-  }
-  return null;
 
 }
 
