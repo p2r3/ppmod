@@ -524,23 +524,28 @@ try {
       if (arg2 == null) arg2 = 32.0;
 
       // The third or fourth argument may be a filter string
-      // This swaps around the arguments to ensure arg4 is the filter
-      if (typeof arg3 == "string") {
-        local filter = arg3;
-        arg3 = arg4;
-        arg4 = filter;
+      // This swaps around the arguments to ensure arg3 is the filter
+      if (typeof arg4 == "string") {
+        local filter = arg4;
+        arg4 = arg3;
+        arg3 = filter;
+      }
+
+      // Validate the starting entity (fourth argument)
+      if (arg4 != null && !(typeof arg4 == "instance" && arg4 instanceof CBaseEntity)) {
+        throw "get: Invalid starting entity";
       }
 
       // If no filter was provided, get the first entity in the radius
-      if (typeof arg4 != "string") {
-        return Entities.FindInSphere(arg3, arg1, arg2);
+      if (typeof arg3 != "string") {
+        return Entities.FindInSphere(arg4, arg1, arg2);
       }
 
       // If a filter was provided, find an entity in the radius that matches it
-      while (arg3 = Entities.FindInSphere(arg3, arg1, arg2)) {
-        if (!arg3.IsValid()) continue;
-        if (arg3.GetName() == arg4 || arg3.GetClassname() == arg4 || arg3.GetModelName() == arg4) {
-          return arg3;
+      while (arg4 = Entities.FindInSphere(arg4, arg1, arg2)) {
+        if (!arg4.IsValid()) continue;
+        if (arg4.GetName() == arg3 || arg4.GetClassname() == arg3 || arg4.GetModelName() == arg3) {
+          return arg4;
         }
       }
       // Return null if nothing was found
