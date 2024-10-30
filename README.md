@@ -374,7 +374,7 @@ Similar to its sister function `ppmod.addoutput`, but instead of firing an input
   ppmod.addscript(entity, output, script, delay, max, passthrough)
 ```
 The arguments here are similar to those in `ppmod.addoutput`, except:
-- The `script` may be either a string of single-line Squirrel code, or a function.
+- The `script` may be either a string of Squirrel code, or a function.
 - Setting `passthrough` to `true` provides the given function with the output's `activator` and `caller` as arguments.
 
 ### ppmod.runscript
@@ -456,7 +456,7 @@ Runs the given script after the specified time.
 ```squirrel
   ppmod.wait(script, seconds, name)
 ```
-The script may be provided as either a string of single-line VScript or a function. The time is to be provided in seconds, and can be either an integer or a float. The `name` argument is optional. If set, it names the underlying `logic_relay` entity, which can then be found and destroyed, aborting the timer.
+The script may be provided as either a string of VScript or a function. The time is to be provided in seconds, and can be either an integer or a float. The `name` argument is optional. If set, it names the underlying `logic_relay` entity, which can then be found and destroyed, aborting the timer.
 
 Here is an example of using this function to fizzle a cube in 2 seconds, unless the player picks it up before then:
 ```squirrel
@@ -502,7 +502,7 @@ Runs the given script for every console tick, or waits the specified amount of t
 ```squirrel
   ppmod.ontick(script, pause, timeout)
 ```
-The `script` may be provided as either a string of single-line VScript, or a function. If `pause` is set to `true` (default), the loop will not run while the game is paused. If `timeout` is set to `-1` (default), the loop will run indefinitely for every tick. Otherwise, this function acts as a timer, and will wait for the specified amount of ticks to pass before running the script once.
+The `script` may be provided as either a string of VScript, or a function. If `pause` is set to `true` (default), the loop will not run while the game is paused. If `timeout` is set to `-1` (default), the loop will run indefinitely for every tick. Otherwise, this function acts as a timer, and will wait for the specified amount of ticks to pass before running the script once.
 
 Here is a simple example that will print "Hello Portal 2!" to the console every tick, even when the game is paused.
 ```squirrel
@@ -517,7 +517,7 @@ Ensures that a script is called only once on the current map.
 ```squirrel
   ppmod.once(script, name)
 ```
-The `script` may be provided as either a string of single-line VScript, or a function. The `name` argument is optional, and can be used to rename and later remove the underlying dummy entity, which allows the script to be run again. Note that this function also returns a handle for said entity. If a name is not provided, the entity is instead named after the given script or reference to the given function. Because of this, functions created inline can't be governed with this function.
+The `script` may be provided as either a string of VScript, or a function. The `name` argument is optional, and can be used to rename and later remove the underlying dummy entity, which allows the script to be run again. Note that this function also returns a handle for said entity. If a name is not provided, the entity is instead named after the given script or reference to the given function. Because of this, functions created inline can't be governed with this function.
 
 It is hard to find a use for this function nowadays, and it is generally considered deprecated. It used to be helpful in older versions of ppmod, before callback functions were supported.
 
@@ -526,7 +526,7 @@ Runs the given script once the map has fully loaded.
 ```squirrel
   ppmod.onauto(script, onload)
 ```
-The `script` may be provided as either a string of single-line VScript, or a function. The `onload` argument is optional (`false` by default), and when set to `true`, calls the provided script on not only the initial map load, but also any save file loads.
+The `script` may be provided as either a string of VScript, or a function. The `onload` argument is optional (`false` by default), and when set to `true`, calls the provided script on not only the initial map load, but also any save file loads.
 
 This function is essential for almost any gameplay modding, and will often appear at the top of many ppmod scripts, as most entities are not accessible until the map has fully loaded. In single-player, this means waiting for the `logic_auto` entity to fire. In networked co-op games, this function also waits for the remote player (P-body) to fully connect before calling the script.
 
@@ -609,7 +609,7 @@ Allows for listening to player inputs.
 ```squirrel
   pplayer.input(input, script)
 ```
-The `input` argument expects a string specifying the input command to listen for. The `script` argument can be either a function, or a string of single-line VScript code. Note that only the inputs provided by `game_ui` are supported, namely:
+The `input` argument expects a string specifying the input command to listen for. The `script` argument can be either a function, or a string of VScript code. Note that only the inputs provided by `game_ui` are supported, namely:
 - `+moveleft` and `-moveleft`
 - `+moveright` and `-moveright`
 - `+forward` and `-forward`
