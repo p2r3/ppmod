@@ -821,10 +821,12 @@ try {
 // Implement shorthands of the above functions into the entities as methods
 local entclasses = [CBaseEntity, CBaseAnimating, CBaseFlex, CBasePlayer, CEnvEntityMaker, CLinkedPortalDoor, CPortal_Player, CPropLinkedPortalDoor, CSceneEntity, CTriggerCamera];
 for (local i = 0; i < entclasses.len(); i ++) {
-
   try {
-
+    // Allows for setting keyvalues as if they were object properties
     entclasses[i]._set <- function (key, val) {
+      // This is mostly identical to ppmod.keyval
+      // However, having this be separate is slightly more performant
+      if (typeof key != "string") throw "Invalid slot name";
       switch (typeof val) {
         case "integer":
         case "bool":
@@ -841,12 +843,13 @@ for (local i = 0; i < entclasses.len(); i ++) {
       }
       return val;
     }
+    // Allows for firing inputs as if they were object methods
     entclasses[i]._get <- function (key) {
       return function (value = "", delay = 0.0, activator = null, caller = null):(key) {
         return ::EntFireByHandle(this, key, value.tostring(), delay, activator, caller);
       }
     }
-
+    // Self-explanatory wrappers for ppmod functions
     entclasses[i].Fire <- function (action = "Use", value = "", delay = 0.0, activator = null, caller = null) {
       return ::EntFireByHandle(this, action, value.tostring(), delay, activator, caller);
     }
@@ -865,9 +868,16 @@ for (local i = 0; i < entclasses.len(); i ++) {
     entclasses[i].SetHook <- function (input, scr, max = -1) {
       return ::ppmod.hook(this, input, scr, max);
     }
-
+    // Overwrite GetScriptScope to first create/validate the scope
+    // This makes it safer and more comfortable to to access script scopes
+    entclasses[i].DoGetScriptScope <- entclasses[i].GetScriptScope;
+    entclasses[i].GetScriptScope <- function () {
+      if (!this.ValidateScriptScope()) throw "Could not validate entity script scope";
+      return this.DoGetScriptScope();
+    }
   } catch (e) {
-
+    // Classes may fail to be modified if they've already been instantiated
+    // First, obtain the name of the class as a string
     local classname;
     switch (entclasses[i]) {
       case CBaseEntity: classname = "CBaseEntity"; break;
@@ -881,11 +891,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
       case CSceneEntity: classname = "CSceneEntity"; break;
       case CTriggerCamera: classname = "CTriggerCamera"; break;
     }
-
+    // Then, print a warning to the console
     printl("[ppmod] Warning: failed to modify " + classname + " class: " + e);
-
   }
-
 }
 
 /****************/
