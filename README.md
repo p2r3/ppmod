@@ -297,6 +297,15 @@ You can also apply a filter containing any of the previously mentioned search cr
   ppmod.get(playerPos, radius, "prop_testchamber_door");
 ```
 
+### ppmod.validate
+Checks whether the input argument is a valid entity handle. Performs a type check, class check, and calls the IsValid() method.
+```squirrel
+  local cube = ppmod.get("prop_weighted_cube");
+  ppmod.validate(cube); // Returns true
+  cube.Destroy();
+  ppmod.validate(cube); // Returns false
+```
+
 ### ppmod.forent
 Runs a callback function for every valid entity that matches the search. First argument is an array of `ppmod.get` arguments, the second argument is the callback function, which is provided each iteration's respective entity.
 ```squirrel

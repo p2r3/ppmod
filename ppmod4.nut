@@ -573,6 +573,15 @@ try {
 
 }
 
+// Returns true if the input is a valid entity handle, false otherwise
+::ppmod.validate <- function (ent) {
+  // Entity handles must be of type "instance"
+  if (typeof ent != "instance") return false;
+  // Entity handles must be instances of CBaseEntity
+  if (ent instanceof CBaseEntity) return ent.IsValid();
+  return false;
+}
+
 // Iterates through all entities that match the given criteria
 ::ppmod.forent <- function (args, callback) {
 
@@ -580,7 +589,7 @@ try {
   if (typeof args != "array") args = [args];
   // If the last argument is not a valid starting entity, push null
   local last = args.len() - 1;
-  if (args[last] != null && !(typeof args[last] == "instance" && args[last] instanceof CBaseEntity)) {
+  if (!ppmod.validate(args[last]) && args[last] != null) {
     args.push(null);
     last ++;
   }
@@ -602,7 +611,7 @@ try {
   local start = null, curr = null, prev = null;
 
   // If the last argument is a valid starting entity, assign it
-  if (typeof args[vargc - 1] == "instance" && args[vargc - 1] instanceof CBaseEntity) {
+  if (ppmod.validate(args[vargc - 1])) {
     start = vargv[vargc - 1];
     curr = start;
   }
@@ -648,7 +657,7 @@ try {
   if (typeof key != "string") throw "keyval: Invalid key argument";
 
   // If not provided with an entity handle, use ppmod.forent to search for handles
-  if (!(typeof ent == "instance" && ent instanceof CBaseEntity)) {
+  if (!ppmod.validate(ent)) {
     return ppmod.forent(ent, function (curr):(key, val) {
       ppmod.keyval(curr, key, val);
     });
@@ -782,12 +791,10 @@ try {
 
   // If the new parent value is falsy, clear the parent
   if (!_parent) return ppmod.fire(child, "ClearParent");
+  // Validate the parent handle
+  if (!ppmod.validate(_parent)) throw "setparent: Invalid parent handle";
   // If a valid parent handle was provided, assign the parent
-  if (typeof ent == "instance" && ent instanceof CBaseEntity) {
-    return ppmod.fire(child, "SetParent", "!activator", 0, _parent);
-  }
-  // Otherwise, throw exception about invalid handle
-  throw "setparent: Invalid parent handle";
+  return ppmod.fire(child, "SetParent", "!activator", 0, _parent);
 
 }
 
