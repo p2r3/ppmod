@@ -966,75 +966,85 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 }
 
+// Runs the input script on map start or save load
 ::ppmod.onauto <- function (scr, onload = false) {
 
+  // Create a logic_auto for listening to events on which to run the script
   local auto = Entities.CreateByClassname("logic_auto");
 
   // In online multiplayer games, we delay spawning until both players are ready
   if (IsMultiplayer()) scr = function ():(scr) {
 
-    local outerinterval = UniqueString("ppmod_auto_outerinterval");
+    // Create a table to allow for accessing the interval from within itself
+    local ref = { interval = null };
 
-    ppmod.interval(function ():(scr, outerinterval) {
+    // Set up an interval to wait for blue (the host) to spawn
+    ref.interval = ppmod.interval(function ():(scr, ref) {
 
-      // Find the host player, typically the first player named "blue"
+      // Find the host player, typically the first entity named "blue"
       local blue = Entities.FindByName(null, "blue");
+      // Fall back to the first player handle if "blue" wasn't found
       if (!blue || !blue.IsValid() || blue.GetClassname() != "player") {
         blue = Entities.FindByClassname(null, "player");
       }
+      // If no host player was found, continue
       if (!blue || !blue.IsValid()) return;
 
-      Entities.FindByName(null, outerinterval).Destroy();
+      // Host was found, stop the interval
+      ref.interval.Destroy();
 
+      // If on split-screen, we're done, run the script
       if (IsLocalSplitScreen()) {
-        if (typeof scr == "string") compilestring(scr)();
-        else scr();
-        return;
+        if (typeof scr == "string") return compilestring(scr)();
+        return scr();
       }
 
       // Find the lowest significant point of the world's bounding box estimate
       local ent = null, lowest = 0, curr;
       while (ent = Entities.Next(ent)) {
-
+        // Skip invalid handles
         if (!ent.IsValid()) continue;
-
+        // Keep track of the lowest point in the map
         curr = ent.GetOrigin().z + ent.GetBoundingMins().z;
         if (curr < lowest) lowest = curr;
-
       }
-
       // Additional decrement just to make sure we're below anything significant
       lowest -= 1024.0;
 
       // We move the host below the map and wait until they are teleported back up
-      // This happens once both players finish connecting in network games
+      // This happens once both players finish connecting in networked games
       blue.SetOrigin(Vector(0, 0, lowest));
 
-      local intervalname = UniqueString("ppmod_auto_interval");
-      ppmod.interval(function ():(blue, lowest, scr, intervalname) {
+      // Set up an interval to wait for orange (the second player) to spawn
+      ref.interval = ppmod.interval(function ():(blue, lowest, scr, ref) {
 
+        // Find the second player, typically the first entity named "red"
         local red = Entities.FindByClassname(null, "red");
+        // Fall back to the player handle after the host's if "red" wasn't found
         if (!red || !red.IsValid() || red.GetClassname() != "player") {
           red = Entities.FindByClassname(blue, "player");
         }
-
+        // If red was not found, or blue is still under the map, continue
         if (!red || !red.IsValid() || blue.GetOrigin().z <= lowest) return;
 
+        // Run the input script
         if (typeof scr == "string") compilestring(scr)();
         else scr();
+        // Red was found, stop the interval
+        ref.interval.Destroy();
 
-        Entities.FindByName(null, intervalname).Destroy();
+      }, 0.0);
 
-      }, 0.0, intervalname);
-
-    }, 0.0, outerinterval);
+    }, 0.0);
 
   };
 
+  // Attach the script to map start events
   ppmod.addscript(auto, "OnNewGame", scr);
   ppmod.addscript(auto, "OnMapTransition", scr);
+  // Optionally, attach to save load events
   if (onload) ppmod.addscript(auto, "OnLoadGame", scr);
-
+  // Return the logic_auto
   return auto;
 
 }
