@@ -523,12 +523,11 @@ try {
       // The second argument is the radius, 32u by default
       if (arg2 == null) arg2 = 32.0;
 
-      // The third or fourth argument may be a filter string
-      // This swaps around the arguments to ensure arg3 is the filter
-      if (typeof arg4 == "string") {
-        local filter = arg4;
+      // The filter argument is optional, and thus the starting entity
+      // may be in either the third or fourth position. This makes sure
+      // that it is always in arg4.
+      if (typeof arg3 == "instance" && arg3 instanceof CBaseEntity) {
         arg4 = arg3;
-        arg3 = filter;
       }
 
       // Validate the starting entity (fourth argument)
@@ -536,7 +535,7 @@ try {
         throw "get: Invalid starting entity";
       }
 
-      // If no filter was provided, get the first entity in the radius
+      // If no valid filter was provided, get the first entity in the radius
       if (typeof arg3 != "string") {
         return Entities.FindInSphere(arg4, arg1, arg2);
       }
