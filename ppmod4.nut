@@ -966,21 +966,6 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 }
 
-::ppmod.once <- function (scr, name = null) {
-
-  if (!name) name = scr.tostring();
-  if (Entities.FindByName(null, name)) return;
-
-  local relay = Entities.CreateByClassname("logic_relay");
-  relay.__KeyValueFromString("Targetname", name);
-
-  ppmod.addscript(relay, "OnTrigger", scr, 0, 1);
-  EntFireByHandle(relay, "Trigger", "", 0.0, null, null);
-
-  return relay;
-
-}
-
 ::ppmod.onauto <- function (scr, onload = false) {
 
   local auto = Entities.CreateByClassname("logic_auto");

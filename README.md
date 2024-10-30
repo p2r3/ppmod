@@ -512,15 +512,6 @@ Here is a simple example that will print "Hello Portal 2!" to the console every 
 ```
 Note that it is generally recommended to use `ppmod.interval` or `ppmod.wait` instead, where applicable. This function will not preserve its ticks through save files, and large scale use of `ppmod.ontick` loops can theoretically cause console buffer overruns. The only recommended usecase for this function is for keeping time during game pauses.
 
-### ppmod.once
-Ensures that a script is called only once on the current map.
-```squirrel
-  ppmod.once(script, name)
-```
-The `script` may be provided as either a string of VScript, or a function. The `name` argument is optional, and can be used to rename and later remove the underlying dummy entity, which allows the script to be run again. Note that this function also returns a handle for said entity. If a name is not provided, the entity is instead named after the given script or reference to the given function. Because of this, functions created inline can't be governed with this function.
-
-It is hard to find a use for this function nowadays, and it is generally considered deprecated. It used to be helpful in older versions of ppmod, before callback functions were supported.
-
 ### ppmod.onauto
 Runs the given script once the map has fully loaded.
 ```squirrel
