@@ -900,28 +900,38 @@ for (local i = 0; i < entclasses.len(); i ++) {
 // Control flow //
 /****************/
 
+// Creates a logic_relay to use as a timer for calling the input script
 ::ppmod.wait <- function (scr, sec, name = "") {
 
+  // Create an optionally named logic_relay
   local relay = Entities.CreateByClassname("logic_relay");
-  relay.__KeyValueFromString("Targetname", name);
+  if (name) relay.__KeyValueFromString("Targetname", name);
 
+  // Use ppmod.addscript to attach the callback script
   ppmod.addscript(relay, "OnTrigger", scr, 0, 1);
+  // Trigger and destroy the relay after the specified amount of seconds
   EntFireByHandle(relay, "Trigger", "", sec, null, null);
   relay.__KeyValueFromInt("SpawnFlags", 1);
 
+  // Return the relay handle
   return relay;
 
 }
 
+// Creates a logic_timer to use as a loop for the input script
 ::ppmod.interval <- function (scr, sec = 0.0, name = "") {
 
+  // Create an optionally named logic_timer
   local timer = Entities.CreateByClassname("logic_timer");
-  timer.__KeyValueFromString("Targetname", name);
+  if (name) timer.__KeyValueFromString("Targetname", name);
 
+  // Use ppmod.addscript to attach the callback script
   ppmod.addscript(timer, "OnTimer", scr);
+  // Configure the timer to run on the specified interval
   EntFireByHandle(timer, "RefireTime", sec.tostring(), 0.0, null, null);
   EntFireByHandle(timer, "Enable", "", 0.0, null, null);
 
+  // Return the timer handle
   return timer;
 
 }
