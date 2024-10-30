@@ -588,11 +588,9 @@ try {
   args.insert(0, this);
 
   // Iterate through entities, running the callback on each valid one
-  local curr = null;
-  while (curr = ppmod.get.acall(args)) {
-    if (!curr.IsValid()) continue;
-    callback(curr);
-    args[last] = curr;
+  while (args[last] = ppmod.get.acall(args)) {
+    if (!args[last].IsValid()) continue;
+    callback(args[last]);
   }
 
 }
