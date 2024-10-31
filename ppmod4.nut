@@ -1752,41 +1752,52 @@ local onportalfunc <- [];
 // World interface //
 /*******************/
 
+// Creates an entity using a console command, returns a promise that resolves to its handle
 ::ppmod.create <- function (cmd, key = null) {
 
   // The key is the string used to look for the entity after spawning
   // If no key is provided, we guess it from the input command
-  if (!key) {
-
+  if (key == null) {
+    // Get the first 17 characters (or less) of the command
     switch (cmd.slice(0, min(cmd.len(), 17))) {
 
+      // These commands need to be handled separately
       case "ent_create_portal": key = "cube"; break;
       case "ent_create_paint_": key = "prop_paint_bomb"; break;
 
       default:
-        if (cmd.find(" ")) { // In most cases, a space means the command argument is a valid key
+        // If the command has an argument, use that as the key
+        if (cmd.find(" ") != null) {
           key = cmd.slice(cmd.find(" ") + 1);
+          // If the argument is a model, prefix key with "models/"
           if (key.slice(-4) == ".mdl") key = "models/" + key;
-        } else if (cmd.slice(-4) == ".mdl") { // If provided only a model, assume we're using 'prop_dynamic_create'
+          break;
+        }
+        // If provided only a model, assume we're using prop_dynamic_create
+        if (cmd.slice(-4) == ".mdl") {
           key = "models/" + cmd;
           cmd = "prop_dynamic_create " + cmd;
-        } else { // If all else fails, assume we're given an entity classname, therefore use 'ent_create'
-          key = cmd;
-          cmd = "ent_create " + cmd;
+          break;
         }
+        // If all else fails, assume we're provided a classname, use ent_create
+        key = cmd;
+        cmd = "ent_create " + cmd;
+        break;
 
     }
   }
 
+  // Send the console command to create the entity
   SendToConsole(cmd);
 
+  /**
+   * Find the entity by passing the key to ppmod.prev. We send this as a
+   * console command to take advantage of how console commands are executed
+   * synchronously. This lets us make sure that the entity has spawned and
+   * that we start looking for it as soon as we can.
+   */
   return ppromise(function (resolve, reject):(cmd, key) {
-
-    // Find the entity by passing key to ppmod.prev
-    // We send this as a console command to take advantage of how console commands are executed synchronously
-    // This lets us make sure that the entity has spawned and that we're looking for it right away
-    SendToConsole("script ppmod.scrq_get(" + ppmod.scrq_add(resolve, 1) + ")(ppmod.prev(\"" + key + "\"))");
-
+    SendToConsole("script ppmod.scrq_get("+ ppmod.scrq_add(resolve, 1) +")(ppmod.prev(\""+ key +"\"))");
   });
 
 }
