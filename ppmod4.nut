@@ -1210,61 +1210,19 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
   });
 
-  // List of all known holdable props, used as the default for pplayer.holding
-  local holdable = pparray([
-    "prop_weighted_cube",
-    "prop_monster_box",
-    "prop_physics",
-    "prop_physics_override",
-    "prop_physics_paintable",
-    "npc_personality_core",
-    "npc_portal_turret_floor",
-    "npc_security_camera",
-    "prop_glass_futbol"
-  ]);
-
   // Checks if the player is holding a physics prop
-  pplayer.holding <- function (classes = holdable):(player) {
+  pplayer.holding <- function ():(player) {
 
-    // Validate the input array of entity classes
-    if (typeof classes != "array") throw "pplayer.holding: Invalid classes argument";
-    // Convert the array to a pparray if necessary
-    if (!(classes instanceof pparray)) classes = pparray(classes);
-
-    // This procedure takes time, so return a ppromise
-    return ppromise(function (resolve, reject):(classes) {
-
-      // Add the resolve callback to the script queue
-      local scrqid = ppmod.scrq_add(resolve, 1);
-
-      // Create a filter_player_held for detecting held props
-      local filter = Entities.CreateByClassname("filter_player_held");
-      // OnPass will call resolve(true), OnUser1 will call resolve(false), both will delete the filter
-      filter.__KeyValueFromString("OnPass", "!self\x001BRunScriptCode\x001Bppmod.scrq_get("+ scrqid +")(true);self.Destroy()\x001B0\x001B1");
-      filter.__KeyValueFromString("OnUser1", "!self\x001BRunScriptCode\x001Bppmod.scrq_get("+ scrqid +")(false);self.Destroy()\x001B0\x001B1");
-
-      // Due to filter_player_held not differentiating between players,
-      // co-op checks only a 128u radius from the player, assuming VM grab controller.
-      local next;
-      if (IsMultiplayer()) next = Entities.FindInSphere(c, player.GetCenter(), 128.0);
-      else next = function (c) return Entities.Next(c);
-
-      // Iterate through all testable entities
-      local curr = null;
-      while (curr = next(curr)) {
-        // Skip those whose handles are invalid or classes don't match
-        if (!curr.IsValid()) continue;
-        if (classes.find(curr.GetClassname()) == -1) continue;
-        // Run TestActivator with each testable entity's handle
-        // This will resolve with true as soon as one entity passes
-        EntFireByHandle(filter, "TestActivator", "", 0.0, curr, null);
-      }
-
-      // Once all entities have been tested, call FireUser1
-      // This will resolve with false unless the filter has already been deleted
-      EntFireByHandle(filter, "FireUser1", "", 0.0, null, null);
-
-    });
+    /**
+     * When a player picks up a prop, a player_pickup entity is created
+     * and attached to the player. If we can find such an entity, that
+     * means the player is holding something.
+     */
+    local ent = null;
+    while (ent = Entities.FindByClassname(ent, "player_pickup")) {
+      if (ent.GetMoveParent() == player) return true;
+    }
+    return false;
 
   };
 

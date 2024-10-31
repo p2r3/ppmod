@@ -578,19 +578,10 @@ Holds the handle of the `game_ui` entity used for listening to player movement i
 ```
 
 ### pplayer.holding
-Determines whether the player is holding a prop.
+Returns `true` if the player is holding a prop, `false` otherwise.
 ```squirrel
-  pplayer.holding().then(function (state) {
-
-    if (state) {
-      // ... is holding a prop
-    } else {
-      // ... is not holding a prop
-    }
-
-  });
+  pplayer.holding() // Returns true or false
 ```
-This function returns a `ppromise` that resolves to a single boolean for whether or not the player is holding something. Optionally, `pplayer.holding` can be passed one argument - an array of entity classes to check. By default, every entity class that can be picked up in Portal 2 is checked. Checking only for specific classes can improve performance.
 
 ### Event listeners
 Allows for listening to player actions. Each of these functions expects one argument - a function to attach. Multiple functions can be attached to one event.
