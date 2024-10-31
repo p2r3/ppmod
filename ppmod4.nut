@@ -1863,62 +1863,74 @@ local onportalfunc <- [];
 
 }
 
+// Creates a brush entity
 ::ppmod.brush <- function (pos, size, type = "func_brush", ang = Vector(), create = false) {
 
-  if (!create) {
+  // Validate input arguments
+  if (typeof pos != "Vector") throw "brush: Invalid position argument";
+  if (typeof size != "Vector") throw "brush: Invalid size argument";
+  if (size.x < 0.0 || size.y < 0.0 || size.z < 0.0) throw "brush: Size must be positive on all axis";
+  // The type argument may be either an entity handle or a string
+  if (!ppmod.validate(type) && typeof type != "string") throw "brush: Invalid brush type argument";
 
-    local brush = type;
-    if (typeof type == "string") brush = Entities.CreateByClassname(type);
+  // If the create flag is set, use ppmod.create instead of CreateByClassname,
+  // then call this same function again with the new brush and resolve with that.
+  if (create) return ppromise(function (resolve, reject):(type, pos, size, ang) {
+    ppmod.create(type).then(function (ent):(pos, size, ang, resolve) {
+      resolve(ppmod.brush(pos, size, ent, ang));
+    });
+  });
 
-    brush.__KeyValueFromInt("Solid", 3);
-    brush.SetAbsOrigin(pos);
-    brush.SetAngles(ang.x, ang.y, ang.z);
-    brush.SetSize(Vector() - size, size);
-
-    return brush;
-
+  // If brush type was provided as a string, create a new brush
+  // Otherwise, this will continue using `type` as a brush entity
+  if (typeof type == "string") {
+    type = Entities.CreateByClassname(type);
   }
 
-  return ppromise(function (resolve, reject):(type, pos, size, ang) {
+  // Make the brush solid and rotatable
+  type.__KeyValueFromInt("Solid", 3);
+  // Set the position and angles of the brush
+  type.SetAbsOrigin(pos);
+  type.SetAngles(ang.x, ang.y, ang.z);
+  // Scale the bounding box of the brush, centered on its origin
+  type.SetSize(Vector() - size, size);
 
-    ppmod.create(type).then(function (ent):(pos, size, ang, resolve) {
-
-      resolve(ppmod.brush(pos, size, ent, ang));
-
-    });
-
-  });
+  // Return the entity handle of the new brush
+  return type;
 
 }
 
+// Creates a brush entity with trigger properties
 ::ppmod.trigger <- function (pos, size, type = "trigger_once", ang = Vector(), create = false) {
 
-  if (!create) {
+  // If the create flag is set, call ppmod.brush with the create flag set
+  // and await a response, then call this function again.
+  if (create) return ppromise(function (resolve, reject):(pos, size, type, ang) {
+    ppmod.brush(pos, size, type, ang, true).then(function (ent):(pos, size, ang, resolve) {
+      resolve(ppmod.trigger(pos, size, ent, ang));
+    });
+  });
 
-    local trigger = type;
-    if (typeof type == "string") trigger = ppmod.brush(pos, size, type, ang);
-
-    trigger.__KeyValueFromInt("CollisionGroup", 10);
-    trigger.__KeyValueFromInt("SpawnFlags", 1);
-    EntFireByHandle(trigger, "Enable", "", 0.0, null, null);
-
-    if (type == "trigger_once") {
-      trigger.__KeyValueFromString("OnStartTouch", "!self\x001BKill\x1B\x001B0\x001B1");
-    }
-
-    return trigger;
-
+  // If trigger type was provided as a string, create a new brush
+  // Otherwise, this will continue using `type` as a brush entity
+  if (typeof type == "string") {
+    type = ppmod.brush(pos, size, type, ang);
   }
 
-  return ppromise(function (resolve, reject):(pos, size, type, ang) {
+  // Make the trigger non-solid
+  type.__KeyValueFromInt("CollisionGroup", 10);
+  // Turn on activation by clients by default
+  type.__KeyValueFromInt("SpawnFlags", 1);
+  // Enable the trigger
+  EntFireByHandle(type, "Enable", "", 0.0, null, null);
 
-    ppmod.brush(pos, size, type, ang, true).then(function (ent):(pos, size, ang, resolve) {
+  // If this is a trigger_once, make it disappear upon activation
+  if (type.GetClassname() == "trigger_once") {
+    type.__KeyValueFromString("OnStartTouch", "!self\x001BKill\x1B\x001B0\x001B1");
+  }
 
-      resolve(ppmod.trigger(pos, size, ent, ang));
-
-    });
-
-  });
+  // Return the entity handle of the new trigger
+  return type;
 
 }
 
