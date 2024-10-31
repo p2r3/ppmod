@@ -1633,82 +1633,114 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 }
 
-::ppmod.onportal_func <- [];
-::ppmod.onportal <- function (func) {
+// Stores all attached ppmod.onportal callback functions
+local onportalfunc <- [];
+// Attaches a function to be called on every portal shot
+::ppmod.onportal <- function (scr):(onportalfunc) {
 
-  ppmod.onportal_func.push(func);
-  if (ppmod.onportal_func.len() != 1) return;
+  // If the input is a string, compile it into a function
+  if (typeof scr == "string") scr = compilestring(scr);
+  // Validate the input script argument
+  if (typeof scr != "function") throw "onportal: Invalid script argument";
 
-  ::ppmod.onportal_check <- function (portal, first) {
+  // Push the function to the attached function array
+  onportalfunc.push(scr);
 
-    ppmod.runscript("worldspawn", function ():(portal, first) {
+  // Return if the setup has already been run before
+  if (onportalfunc.len() != 1) return;
+
+  // Handles portal OnPlacedSuccessfully outputs
+  local scrq_idx = ppmod.scrq_add(function (portal, first):(onportalfunc) {
+    // Using runscript lets us push this to the end of the entity I/O queue
+    ppmod.runscript("worldspawn", function ():(portal, first):(onportalfunc) {
 
       local pgun = null;
       local color = null;
 
+      // Iterate through all weapon_portalgun entities
       while (pgun = Entities.FindByClassname(pgun, "weapon_portalgun")) {
 
+        // Validate the entity and its script scope
+        if (!pgun.IsValid()) continue;
+        if (!pgun.ValidateScriptScope()) continue;
+        // Retrieve the script scope
         local scope = pgun.GetScriptScope();
 
-        if (scope["ppmod_onportal_attack_time"] == Time()) {
+        /**
+         * Determine the color of the portal by finding a portalgun which
+         * fired one of its two portals at the same time as this check was
+         * called. The input which matches the time marks the color index.
+         */
+        if (scope.ppmod_onportal_time1 == Time()) {
           color = 1;
           break;
         }
-
-        if (scope["ppmod_onportal_attack2_time"] == Time()) {
+        if (scope.ppmod_onportal_time2 == Time()) {
           color = 2;
           break;
         }
 
       }
 
-      if (color == null) pgun = null;
+      // Construct a table with information about the portal placement
+      local info = {
+        portal = portal, // Portal entity handle
+        weapon = pgun, // Portal gun handle (null if none)
+        color = color, // Portal color index (1 or 2)
+        first = first // Whether this is the first appearance of the portal
+      };
 
-      for (local i = 0; i < ppmod.onportal_func.len(); i ++) {
-        ppmod.onportal_func[i]({
-          portal = portal,
-          weapon = pgun,
-          color = color,
-          first = first
-        });
+      // Call each attached function, passing the table constructed above
+      for (local i = 0; i < onportalfunc.len(); i ++) {
+        onportalfunc[i](info);
       }
 
     });
+  }, -1);
 
-  };
+  // Check for new portals and portalguns on an interval
+  ppmod.interval(function ():(scrq_idx) {
 
-  ppmod.interval(function () {
+    // Entity iterator
+    local curr = null;
 
-    local pgun = null;
-    while (pgun = Entities.FindByClassname(pgun, "weapon_portalgun")) {
+    // Iterate through all new weapon_portalgun entities
+    while (curr = Entities.FindByClassname(curr, "weapon_portalgun")) {
+      // Validate the entity and its script scope
+      if (!curr.IsValid()) continue;
+      if (!curr.ValidateScriptScope()) continue;
 
-      if (!pgun.IsValid()) continue;
-      if (!pgun.ValidateScriptScope()) continue;
+      // Retrieve the script scope, continue if setup already performed
+      local scope = curr.GetScriptScope();
+      if ("ppmod_onportal_time1" in scope) continue;
 
-      local scope = pgun.GetScriptScope();
-      if ("ppmod_onportal_attack_time" in scope) continue;
+      // Keep track of the time when each portal is fired
+      scope.ppmod_onportal_time1 <- 0.0;
+      scope.ppmod_onportal_time2 <- 0.0;
 
-      scope.ppmod_onportal_attack_time <- 0.0;
-      scope.ppmod_onportal_attack2_time <- 0.0;
-
-      pgun.__KeyValueFromString("OnFiredPortal1", "!self\x001BRunScriptCode\x001Bself.GetScriptScope().ppmod_onportal_attack_time<-Time()\x001B0\x001B-1");
-      pgun.__KeyValueFromString("OnFiredPortal2", "!self\x001BRunScriptCode\x001Bself.GetScriptScope().ppmod_onportal_attack2_time<-Time()\x001B0\x001B-1");
+      // Attach the OnFiredPortalX functions for updating the time variables
+      curr.__KeyValueFromString("OnFiredPortal1", "!self\x001BRunScriptCode\x001Bself.GetScriptScope().ppmod_onportal_time1<-Time()\x001B0\x001B-1");
+      curr.__KeyValueFromString("OnFiredPortal2", "!self\x001BRunScriptCode\x001Bself.GetScriptScope().ppmod_onportal_time2<-Time()\x001B0\x001B-1");
 
     }
 
-    local portal = null;
-    while (portal = Entities.FindByClassname(portal, "prop_portal")) {
+    // Iterate through all new prop_portal entities
+    while (curr = Entities.FindByClassname(curr, "prop_portal")) {
+      // Validate the entity and its script scope
+      if (!curr.IsValid()) continue;
+      if (!curr.ValidateScriptScope()) continue;
 
-      if (!portal.IsValid()) continue;
-      if (!portal.ValidateScriptScope()) continue;
-
-      local scope = portal.GetScriptScope();
+      // Retrieve the script scope, continue if setup already performed
+      local scope = curr.GetScriptScope();
       if ("ppmod_onportal_flag" in scope) continue;
 
-      scope["ppmod_onportal_flag"] <- true;
+      // Call the check function each time this portal is placed
+      curr.__KeyValueFromString("OnPlacedSuccessfully", "!self\x001BRunScriptCode\x001Bppmod.scrq_get("+ scrq_idx +")(self,false)\x001B0\x001B-1");
+      // Call the check function now, indicating that this is the first encounter
+      ppmod.scrq_get(scrq_idx)(curr, true);
 
-      portal.__KeyValueFromString("OnPlacedSuccessfully", "!self\x001BRunScriptCode\x001Bppmod.onportal_check(self,false)\x001B0\x001B-1");
-      ppmod.onportal_check(portal, true);
+      // Mark setup as complete
+      scope.ppmod_onportal_flag <- true;
 
     }
 
