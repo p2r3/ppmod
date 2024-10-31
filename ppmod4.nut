@@ -1755,6 +1755,10 @@ local onportalfunc <- [];
 // Creates an entity using a console command, returns a promise that resolves to its handle
 ::ppmod.create <- function (cmd, key = null) {
 
+  // Validate the input arguments
+  if (typeof cmd != "string") throw "create: Invalid command argument";
+  if (key != null && typeof key != "string") throw "create: Invalid key argument";
+
   // The key is the string used to look for the entity after spawning
   // If no key is provided, we guess it from the input command
   if (key == null) {
