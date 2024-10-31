@@ -1429,35 +1429,57 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 }
 
+// Constructor for the ppmod.portal prototypal class
+// Provides utilities for working with portals
 ::ppmod.portal <- function (portal) {
 
-  if (!portal.ValidateScriptScope()) {
-    throw "[ppmod] Error: Could not validate entity script scope in ppmod.portal";
-  }
-
+  // Most properties are stored in the portal entity's script scope
+  if (!portal.ValidateScriptScope()) throw "portal: Could not validate script scope";
   local scope = portal.GetScriptScope();
+  // If an instance already exists in the script scope, return that
   if ("ppmod_portal" in scope) return scope.ppmod_portal;
 
+  // Create a trigger for detecting collisions with the portal
   local trigger = Entities.CreateByClassname("trigger_multiple");
 
-  trigger.__KeyValueFromInt("Solid", 3);
+  // Position and scale the trigger to submerge the portal
   trigger.SetAbsOrigin(portal.GetOrigin());
   trigger.SetForwardVector(portal.GetForwardVector());
   trigger.SetSize(Vector(-8, -32, -56), Vector(0, 32, 56));
-
+  // Parent the trigger to the portal
+  EntFireByHandle(trigger, "SetParent", "!activator", 0.0, portal, null);
+  // Make the trigger non-solid and activated by clients, NPCs, and props
+  trigger.__KeyValueFromInt("Solid", 3);
   trigger.__KeyValueFromInt("CollisionGroup", 10);
   trigger.__KeyValueFromInt("SpawnFlags", 11);
+  // Enable the trigger
   EntFireByHandle(trigger, "Enable", "", 0.0, null, null);
 
+  // Keeps track of when the last teleport occurred
+  scope.ppmod_portal.tptime <- 0.0;
+  // Stores all attached OnTeleport functions
+  scope.ppmod_portal.tpfunc <- [];
+
+  // Manages trigger OnEndTouch events (something leaving the trigger volume)
   local scrq_idx = ppmod.scrq_add(function (ent):(scope) {
+    // Using runscript lets us push this to the end of the entity I/O queue
     ppmod.runscript("worldspawn", function ():(ent, scope) {
 
+      /**
+       * Whenever an entity teleports through a portal, the
+       * OnEntityTeleportFromMe output updates tptime with the current
+       * server time. We can compare this to when the trigger fires
+       * OnEndTouch, and if they're the same, we must be looking at the
+       * same entity. This lets us retrieve it as the activator.
+       */
       local ticks_now = (Time() / FrameTime()).tointeger();
       local ticks_tp = (scope.ppmod_portal.tptime / FrameTime()).tointeger();
 
-      // 1 tick tolerance, ideally 0 one day
+      // Check if the two time reports match
+      // Currently allows for a 1 tick tolerance, ideally 0 one day
       if (ticks_now - ticks_tp > 1) return;
 
+      // If it did, something must've teleported - call attached functions
       for (local i = 0; i < scope.ppmod_portal.tpfunc.len(); i ++) {
         scope.ppmod_portal.tpfunc[i](ent);
       }
@@ -1465,107 +1487,132 @@ for (local i = 0; i < entclasses.len(); i ++) {
     });
   }, -1);
 
+  // Attach OnEndTouch and OnEntityTeleportFromMe outputs to the trigger and portal, respectively
   trigger.__KeyValueFromString("OnEndTouch", "worldspawn\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrq_idx + ")(activator)\x001B0\x001B-1");
   portal.__KeyValueFromString("OnEntityTeleportFromMe", "!self\x001BRunScriptCode\x001Bself.GetScriptScope().ppmod_portal.tptime<-Time()\x001B0\x001B-1");
 
-  EntFireByHandle(trigger, "SetParent", "!activator", 0.0, portal, null);
-
-  local OnTeleport = function (func):(scope) {
+  // Attaches a function to the event of a portal teleporting something
+  scope.ppmod_portal.OnTeleport <- function (func):(scope) {
     scope.ppmod_portal.tpfunc.push(func);
   };
 
+  // Internal utility function - sets up a new func_portal_detector
   local new_detector = function (allids):(portal) {
 
+    // Create the func_portal_detector entity
     local detector = Entities.CreateByClassname("func_portal_detector");
 
+    // Place it at the portal's origin with a minimal bounding box
     detector.__KeyValueFromInt("Solid", 3);
+    detector.__KeyValueFromInt("CollisionGroup", 10);
     detector.SetAbsOrigin(portal.GetOrigin());
     detector.SetSize(Vector(-0.1, -0.1, -0.1), Vector(0.1, 0.1, 0.1));
-
-    detector.__KeyValueFromInt("CollisionGroup", 10);
+    // Whether to match for all portal linkage IDs
     detector.__KeyValueFromInt("CheckAllIDs", allids);
 
+    // Enable and return the detector entity
     EntFireByHandle(detector, "Enable", "", 0.0, null, null);
-
     return detector;
 
   };
 
-  local GetColor = function ():(new_detector) {
+  // Returns a ppromise that resolves to the portal's color index
+  scope.ppmod_portal.GetColor <- function ():(new_detector) {
     return ppromise(function (resolve, reject):(new_detector) {
-
+      // Add the resolve callback to the script queue
       local scrq_idx = ppmod.scrq_add(resolve, 1);
-
+      // Create a detector and listen for its OnStartTouchPortalX inputs
       local detector = new_detector(1);
       detector.__KeyValueFromString("OnStartTouchPortal1", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrq_idx + ")(1);self.Destroy()\x001B0\x001B1");
       detector.__KeyValueFromString("OnStartTouchPortal2", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrq_idx + ")(2);self.Destroy()\x001B0\x001B1");
-
     });
   };
 
-  local GetActivatedState = function ():(new_detector) {
+  // Returns a ppromise that resolves to true if the portal is active, false otherwise
+  scope.ppmod_portal.GetActivatedState <- function ():(new_detector) {
     return ppromise(function (resolve, reject):(new_detector) {
-
+      // Add the resolve callback to the script queue
       local scrq_idx = ppmod.scrq_add(resolve, 1);
-
+      // Create a detector and listen for its OnStartTouchLinkedPortal output
       local detector = new_detector(1);
       detector.__KeyValueFromString("OnStartTouchLinkedPortal", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrq_idx + ")(true);self.Destroy()\x001B0\x001B1");
+      // Connect OnUser1 to resolve(false)
       detector.__KeyValueFromString("OnUser1", "!self\x001BRunScriptCode\x001Bif(self.IsValid())ppmod.scrq_get(" + scrq_idx + ")(false)\x001B0\x001B1");
       detector.__KeyValueFromString("OnUser1", "!self\x001BKill\x001B\x001B0\x001B1");
+      // Call FireUser1, which sets up a sort of race condition
+      // If OnStartTouchLinkedPortal gets there first, this won't do anything
       EntFireByHandle(detector, "FireUser1", "", 0.0, null, null);
-
     });
   };
 
-  local GetLinkageGroupID = function ():(new_detector, portal) {
-    return ppromise(function (resolve, reject):(new_detector, portal) {
+  // Returns a ppromise that resolves to the linkage group ID of the portal
+  scope.ppmod_portal.GetLinkageGroupID <- function ():(new_detector) {
+    return ppromise(function (resolve, reject):(new_detector) {
 
+      // Create a detector that activates only for a specific linkage group
       local detector = new_detector(0);
+      // Keep track of the currently observed linkage group
       local params = { id = 0 };
 
-      local check = function ():(detector, params, portal) {
-
+      // Checks whether the portal is of the currently observed linkage group
+      local check = function ():(detector, params) {
+        // If the detector has been deleted, we're done
         if (!detector.IsValid()) return;
-        params.id ++;
-
-        detector.__KeyValueFromInt("LinkageGroupID", params.id);
-        detector.SetAbsOrigin(portal.GetOrigin());
+        // Update the detector's target linkage group ID
+        detector.__KeyValueFromInt("LinkageGroupID", ++params.id);
+        // Update the detector's position and re-enable it to get outputs to refire
+        detector.SetAbsOrigin(detector.GetOrigin());
         EntFireByHandle(detector, "Enable", "", 0.0, null, null);
-
+        // Call FireUser1 to recurse this check
         EntFireByHandle(detector, "FireUser1", "", 0.0, null, null);
-
       };
 
+      // Store all relevant parameters in the script queue
       local scrq_idx_resolve = ppmod.scrq_add(resolve, 1);
       local scrq_idx_params = ppmod.scrq_add(params, 1);
       local scrq_idx_check = ppmod.scrq_add(check, -1);
 
+      /**
+       * If the detector outputs OnStartTouchPortal, we resolve with the
+       * currently observed linkage ID, clean up the script queue, and kill
+       * the detector. Otherwise, if OnUser1 is outputted first, we
+       * continue iterating until the right linkage ID is found.
+       */
       detector.__KeyValueFromString("OnStartTouchPortal", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + scrq_idx_resolve + ")(ppmod.scrq_get(" + scrq_idx_params + ").id);ppmod.scrq[" + scrq_idx_check + "] = null;self.Destroy()\x001B0\x001B1");
       detector.__KeyValueFromString("OnUser1", "!self\x001BRunScriptCode\x001Bif(self.IsValid())ppmod.scrq_get(" + scrq_idx_check + ")()\x001B0\x001B-1");
 
+      // Call FireUser1 to start iterating through linkage IDs
       EntFireByHandle(detector, "FireUser1", "", 0.0, null, null);
 
     });
   };
 
-  local GetPartnerInstance = function ():(portal, GetLinkageGroupID) {
+  // Returns a ppromise that resolves to a handle of this portal's active linked partner
+  scope.ppmod_portal.GetPartnerInstance <- function ():(portal, GetLinkageGroupID) {
     return ppromise(function (resolve, reject):(portal, GetLinkageGroupID) {
-
+      // First, obtain the linkage group ID of this portal
       GetLinkageGroupID().then(function (id):(resolve, portal) {
 
-        local param = {};
-        param.next <- function (curr):(id, resolve, portal, param) {
+        // Create a recursive function for finding the other portal
+        local param = { next = null };
+        param.next = function (curr):(id, resolve, portal, param) {
 
+          // Get the handle of the next portal
           curr = Entities.FindByClassname(curr, "prop_portal");
+          // If we've wrapped around to null, no partner was found
           if (curr == null) return resolve(null);
-
+          // If we've encountered the same portal we started with, continue
           if (curr == portal) return param.next(curr);
-          local pportal = ppmod.portal(curr);
 
+          // Obtain a ppmod.portal instance of the current portal
+          local pportal = ppmod.portal(curr);
+          // Obtain the linkage group ID of the current portal
           pportal.GetLinkageGroupID().then(function (currid):(resolve, param, curr, pportal, id) {
 
+            // If the linkage IDs do not match, continue
             if (currid != id) return param.next(curr);
 
+            // If the current portal is active, we've found it. Otherwise, continue.
             pportal.GetActivatedState().then(function (state):(resolve, param, curr) {
               if (state) return resolve(curr);
               return param.next(curr);
@@ -1574,24 +1621,14 @@ for (local i = 0; i < entclasses.len(); i ++) {
           });
 
         };
-
+        // Start the recursion
         param.next(null);
 
       });
-
     });
   };
 
-  scope.ppmod_portal <- {
-    tptime = 0.0,
-    tpfunc = [],
-    OnTeleport = OnTeleport,
-    GetColor = GetColor,
-    GetActivatedState = GetActivatedState,
-    GetLinkageGroupID = GetLinkageGroupID,
-    GetPartnerInstance = GetPartnerInstance
-  };
-
+  // Return the ppmod.portal prototypal class instance
   return scope.ppmod_portal;
 
 }
