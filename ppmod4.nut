@@ -1033,9 +1033,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
         // Red was found, stop the interval
         ref.interval.Destroy();
 
-      }, 0.0);
+      });
 
-    }, 0.0);
+    });
 
   };
 
