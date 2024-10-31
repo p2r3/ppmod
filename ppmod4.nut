@@ -1634,7 +1634,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
 }
 
 // Stores all attached ppmod.onportal callback functions
-local onportalfunc <- [];
+local onportalfunc = [];
 // Attaches a function to be called on every portal shot
 ::ppmod.onportal <- function (scr):(onportalfunc) {
 
@@ -1652,7 +1652,7 @@ local onportalfunc <- [];
   // Handles portal OnPlacedSuccessfully outputs
   local scrq_idx = ppmod.scrq_add(function (portal, first):(onportalfunc) {
     // Using runscript lets us push this to the end of the entity I/O queue
-    ppmod.runscript("worldspawn", function ():(portal, first):(onportalfunc) {
+    ppmod.runscript("worldspawn", function ():(portal, first, onportalfunc) {
 
       local pgun = null;
       local color = null;
