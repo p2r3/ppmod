@@ -370,7 +370,7 @@ local ppromise_methods = {
     ppromise_methods.resolve(inst, val);
   };
   inst.reject = function (err = null):(ppromise_methods, inst) {
-    ppromise_methods.reject(inst, val);
+    ppromise_methods.reject(inst, err);
   };
 
   // Run the input function
