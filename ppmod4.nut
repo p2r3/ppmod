@@ -343,7 +343,7 @@ local ppromise_methods = {
 
 }
 
-// Constructor for the ppromise prototypical class
+// Constructor for the ppromise prototypal class
 ::ppromise <- function (func):(ppromise_methods) {
 
   // Create a table to act as the class instance
@@ -1090,7 +1090,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
   local scope = player.GetScriptScope();
   if ("pplayer" in scope) return scope.pplayer;
 
-  // Create the prototypical ppmod.player instance
+  // Create the prototypal ppmod.player instance
   local pplayer = {
     // Keep track of the underlying player handle
     ent = player,
