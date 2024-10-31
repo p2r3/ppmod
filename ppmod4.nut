@@ -728,7 +728,7 @@ try {
 
   // Look for an free space in the script queue array
   for (local i = 0; i < ppmod.scrq.len(); i ++) {
-    if (ppmod.scrq[i] = null) {
+    if (ppmod.scrq[i] == null) {
       ppmod.scrq[i] = [scr, max];
       return i;
     }
