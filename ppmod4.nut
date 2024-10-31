@@ -611,7 +611,7 @@ try {
   local start = null, curr = null, prev = null;
 
   // If the last argument is a valid starting entity, assign it
-  if (ppmod.validate(args[vargc - 1])) {
+  if (ppmod.validate(vargv[vargc - 1])) {
     start = vargv[vargc - 1];
     curr = start;
   }
