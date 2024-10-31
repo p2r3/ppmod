@@ -711,16 +711,16 @@ Note that excessive back-to-back use of `ppmod.create` can cause the wrong handl
 ### ppmod.give
 Creates a variable amount of entities under the player's feet.
 ```squirrel
-  ppmod.give(classname, amount)
+  ppmod.give(entities)
 ```
-The `classname` argument expects the classname of the entity to spawn as a string. The `amount` argument is optional (1 by default) and denotes the amount of entities of the given classname to spawn at once. This function returns a `ppromise` which resolves to an array of entities created by this function.
+The `entities` argument expects a table, where the slots are entity classnames, and each slot's value represents the amount of that entity to spawn. This function returns a `ppromise` which resolves to an array of entities created by this function.
 
-While this functions a lot like the `give` console command, no console commands are actually used. Instead, the `game_player_equip` entity is spawned temporarily. However, due to a bug in Portal 2, this entity seems to cause crashes when used in co-op.
+While this functions a lot like the `give` console command, no console commands are actually used. Instead, the `game_player_equip` entity is spawned temporarily. This function is a great way to spawn many entities in bulk.
 
-Here is an example of spawning a cube at the player's feet with this function:
+Here is an example of spawning a single cube at the player's feet with this function:
 ```squirrel
-  ppmod.give("prop_weighted_cube").then(function (arr) {
-    local cube = arr[0];
+  ppmod.give({ prop_weighted_cube = 1 }).then(function (ents) {
+    local cube = ents.prop_weighted_cube[0];
     // ... do something with cube
   });
 ```

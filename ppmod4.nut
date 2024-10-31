@@ -1806,35 +1806,59 @@ local onportalfunc <- [];
 
 }
 
-::ppmod.give <- function (classname, amount = 1) {
+// Creates entities in bulk using game_player_equip
+// Returns a ppromise which resolves to a table of arrays with the created entities
+::ppmod.give <- function (ents) {
 
+  // Validate input table
+  if (typeof ents != "table") throw "give: Invalid entity table";
+
+  // This procedure requires a player handle, get the first available one
   local player = Entities.FindByClassname(null, "player");
+  // Validate the player instance found to prevent game crashes
+  if (!ppmod.validate(player)) throw "give: Failed to find valid player instance";
+  // Create a temporary game_player_equip instance
   local equip = Entities.CreateByClassname("game_player_equip");
 
-  // The keyvalue sets the entity classname and amount
-  equip.__KeyValueFromInt(classname, amount);
+  // Assign keyvalues from the input table
+  // game_player_equip uses keyvalue pairs to determine spawn quantities
+  foreach (classname in ents) {
+    equip.__KeyValueFromInt(classname, ents[clasname]);
+  }
+
+  // Spawn the items, then kill the entity
   EntFireByHandle(equip, "Use", "", 0.0, player, null);
+  EntFireByHandle(equip, "Kill", "", 0.0, null, null);
 
-  return ppromise(function (resolve, reject):(classname, amount, equip) {
+  return ppromise(function (resolve, reject):(ents, amount) {
+    // Use runscript to ensure we're retrieving the entities after creating them
+    ppmod.runscript("worldspawn", function ():(resolve, ents, amount) {
 
-    local scrq_id = ppmod.scrq_add(function ():(resolve, classname, amount) {
-
-      local arr = array(amount);
-      local curridx = 0;
-
+      // Create an output table
+      local output = {};
+      // Entity iterator
       local ent = null;
-      while (ent = Entities.FindByClassname(ent, classname)) {
-        arr[curridx] = ent;
-        if (++curridx == amount) curridx = 0;
+
+      // Iterate over each spawned class to fetch the entities into an array
+      foreach (classname in ents) {
+        // Allocate an array for the entities
+        output[classname] <- array(ents[classname]);
+        // Iterate through all entities with a matching classname
+        local i = 0;
+        while (ent = Entities.FindByClassname(ent, classname)) {
+          arr[i] = ent;
+          /**
+           * Overflow the pointer once we've reached the desired spawn amount.
+           * This effectively makes it so that only the last entities of this
+           * search remain in the array, albeit in no specific order.
+           */
+          if (++i == ents[classname]) i = 0;
+        }
       }
+      // Resolve the ppromise with the output table
+      resolve(output);
 
-      resolve(arr);
-
-    }, 1);
-
-    EntFireByHandle(equip, "RunScriptCode", "ppmod.scrq_get(" + scrq_id + ")()", 0.0, null, null);
-    EntFireByHandle(equip, "Kill", "", 0.0, null, null);
-
+    });
   });
 
 }
