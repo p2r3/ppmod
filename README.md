@@ -546,6 +546,14 @@ Provides more information about and ways to interact with a player.
 ```
 This function acts as a constructor and expects one argument - the entity handle of a player. It returns a `ppromise` which resolves to a `pplayer` instance (in reality just a table) which contains methods that allow for more control over the player than vanilla VScript provides.
 
+### pplayer.ent
+Holds the entity handle that was used to instantiate this `pplayer` instance.
+```squirrel
+  ppmod.player(GetPlayer()).then(function (pplayer) {
+    pplayer.ent == GetPlayer() // true
+  });
+```
+
 ### pplayer.eyes
 Provides accurate eye position and angles.
 ```squirrel
@@ -553,7 +561,21 @@ Provides accurate eye position and angles.
   pplayer.eyes.GetAngles() // Eye angles
   pplayer.eyes.GetForwardVector() // Eye facing vector
 ```
-In Portal 2, retrieving the player's angles directly will return the rotation of the player model, which differs significantly from the player's view angles. Instead, `pplayer.eyes` creates and returns a `logic_measure_movement` entity, which can be referenced for accurate eye position.
+In Portal 2, retrieving the player's angles directly will return the rotation of the player model, which differs significantly from the player's view angles. Instead, `pplayer.eyes` uses a `logic_measure_movement` entity, which can be referenced for accurate eye position.
+
+### pplayer.proxy
+Holds the handle of the `logic_playerproxy` used for listening to jumping/ducking
+```squirrel
+  // Changes the portalgun bodygroup to show PotatOS
+  ppmod.fire(pplayer.proxy, "AddPotatosToPortalgun");
+```
+
+### pplayer.gameui
+Holds the handle of the `game_ui` entity used for listening to player movement inputs
+```squirrel
+  // Enable the Freeze Player spawnflag
+  ppmod.flags(pplayer.proxy, 32);
+```
 
 ### pplayer.holding
 Determines whether the player is holding a prop.
@@ -582,11 +604,18 @@ Here is an example of using `pplayer.jump` to listen for jumps:
   ppmod.player(GetPlayer()).then(function (pplayer) {
 
     // Note: this will fire for every jump input, including those issued mid-air
+    // To listen only for initial jumps, check that pplayer.grounded is true
     pplayer.jump(function () {
       printl("The player has jumped!");
     });
 
   });
+```
+
+### pplayer.ducking
+Returns `true` if the player is in the process of ducking/unducking, `false` otherwise.
+```squirrel
+  pplayer.ducking() // Returns true or false
 ```
 
 ### pplayer.grounded
@@ -646,14 +675,6 @@ Here is an example of setting the player's friction to 2, which is half of the d
   });
 ```
 Note that the calculations performed expect the value of `sv_friction` to be `4`, which it is by default, and typically cannot be changed without unlocking the console variable via a plugin.
-
-### pplayer.ent
-Holds the entity handle that was used to instantiate this `pplayer` instance.
-```squirrel
-  ppmod.player(GetPlayer()).then(function (pplayer) {
-    pplayer.ent == GetPlayer() // true
-  });
-```
 
 ## World interface
 These functions provide ways to interact with the world and physical entities.
