@@ -1922,10 +1922,10 @@ local onportalfunc = [];
 ::ppmod.decal <- function (material, pos, ang = Vector(90, 0, 0), far = 8.0) {
 
   // Validate input arguments
-  if (typeof material != "string") throw "project: Invalid material argument";
-  if (typeof pos != "Vector") throw "project: Invalid position argument";
-  if (typeof ang != "Vector") throw "project: Invalid angles argument";
-  if (typeof far != "integer" && typeof far != "float") throw "project: Invalid projection distance";
+  if (typeof material != "string") throw "decal: Invalid material argument";
+  if (typeof pos != "Vector") throw "decal: Invalid position argument";
+  if (typeof ang != "Vector") throw "decal: Invalid angles argument";
+  if (typeof far != "integer" && typeof far != "float") throw "decal: Invalid projection distance";
 
   // Create the info_projecteddecal entity, used for applying the decal
   local decal = Entities.CreateByClassname("info_projecteddecal");
