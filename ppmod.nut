@@ -1,7 +1,7 @@
-/*
-  ppmod version 4
-  author: PortalRunner
-*/
+/**
+ * ppmod version 4
+ * author: PortalRunner
+ */
 
 if (!("Entities" in this)) {
   throw "ppmod: Tried to run in a scope without CEntities!";

@@ -4,14 +4,14 @@ VScript library for rapid prototyping of Portal 2 mods.
 The focus of this project is to provide tools that assist in developing Portal 2 VScript mods faster and much more comfortably than through vanilla VScript. This involves employing various hacks and adding missing features or fixing broken ones through entities often specific to Portal 2. While ppmod strives to be performant, this does not come at the cost of ease of use.
 
 ## Installation
-Since ppmod4, the environment is expected to be as clean as possible, without any instantiated entities or vectors. This can be achieved by placing the script file in `scripts/vscripts` and calling it at the very top of `mapspawn.nut`, after making sure that the current scope has server-side control:
+Since ppmod version 4, the environment is expected to be as clean as possible, without any instantiated entities or vectors. This can be achieved by placing the script file in `scripts/vscripts` and calling it at the very top of `mapspawn.nut`, after making sure that the current scope has server-side control:
 ```squirrel
   // File: "scripts/vscripts/mapspawn.nut"
 
   if (!("Entities" in this)) return; // Quit if the script is being loaded client-side
-  IncludeScript("ppmod4"); // Include ppmod4 as early as possible
+  IncludeScript("ppmod"); // Include ppmod as early as possible
 ```
-Including ppmod4 in an already populated environment will still work at the cost of additional vector metamethods and entity method abstractions. This will get logged to the console as a warning, but is technically harmless if these features are unused.
+Including ppmod in an already populated environment will still work at the cost of additional vector metamethods and entity method abstractions. This will get logged to the console as a warning, but is technically harmless if these features are unused.
 
 ## Getting started
 Setting up and working with an environment like this for the first time can be overwhelming, so here's some boilerplate to help you get started. This script will spawn a red cube in front of the player's head, and make it print to the console once it gets fizzled. This should provide a solid example that you can then play around with to get an idea of what it's like to work with ppmod.
@@ -19,7 +19,7 @@ Setting up and working with an environment like this for the first time can be o
   // File: "scripts/vscripts/mapspawn.nut"
 
   if (!("Entities" in this)) return;
-  IncludeScript("ppmod4");
+  IncludeScript("ppmod");
 
   // This function is called whenever a map is fully loaded
   // We wrap it in async() to make it more comfortable to use asynchronous functions inline
