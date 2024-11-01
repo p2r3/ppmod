@@ -1945,6 +1945,7 @@ local onportalfunc = [];
 }
 
 // Set up some dummy entites for simplifying ray-through-portal calculations
+// This needs to happen exactly once, else it breaks, thus we use ppmod.onauto
 ppmod.onauto(function () {
   local p_anchor = Entities.CreateByClassname("info_target");
   local r_anchor = Entities.CreateByClassname("info_target");
@@ -1955,215 +1956,297 @@ ppmod.onauto(function () {
   EntFireByHandle(r_anchor, "SetParent", "ppmod_portals_p_anchor", 0.0, null, null);
 });
 
-::ppmod.ray <- function (start, end, ent = null, world = true, portals = null, ray = null) {
+// Casts a ray with options for collision with entities, the world, and portals
+::ppmod.ray <- class {
 
-  local formatreturn = function (fraction, ray, hitent = null):(start, end, ent, world, portals) {
+  // Output attributes
+  fraction = null;
+  point = null;
+  entity = null;
 
-    if (world) fraction = min(fraction, TraceLine(start, end, null));
-    local dirvec = end - start;
+  // Fractions along the ray for intersections with entities/world
+  efrac = 1.0;
+  wfrac = 1.0;
 
-    local output = {
-      fraction = fraction,
-      point = start + dirvec * fraction,
-      entity = hitent
-    };
+  // Used for describing the ray
+  start = null;
+  end = null;
+  dir = null;
+  len = null;
+  div = null;
 
-    if (!portals) return output;
-    if (typeof portals != "array") return output;
-    if (portals.len() < 2) return output;
+  // Vector components, for simpler iteration through vectors
+  static vc = ["x", "y", "z"];
+  // Used for converting angles in degrees to radians
+  static deg2rad = PI / 180.0;
+  // Used for converting angles in radians to degrees
+  static rad2deg = 180.0 / PI;
+  // Used to combat floating point calculation errors
+  static epsilon = 0.000001;
 
-    // Check if we're intersecting the bounding box of one of the provided portals
-    local portal = Entities.FindByClassnameWithin(null, "prop_portal", output.point, 1.0);
-    if (portal != portals[0] && portal != portals[1]) return output;
+  // Casts a ray which collides with the given axis-aligned bounding box
+  // Returns a fraction along the ray where an intersection occurred
+  function cast_aabb (bmin, bmax) {
 
-    // Determine which portal is the other portal
-    local other = (portal == portals[0]) ? portals[1] : portals[0];
+    // If the starting point is inside the box, don't proceed
+    if (
+      start.x > bmin[0] && start.x < bmax[0] &&
+      start.y > bmin[1] && start.y < bmax[1] &&
+      start.z > bmin[2] && start.z < bmax[2]
+    ) return 0.0;
 
-    local p_anchor = Entities.FindByName(null, "ppmod_portals_p_anchor");
-    local r_anchor = Entities.FindByName(null, "ppmod_portals_r_anchor");
+    // Calculate the distance between the start point and the hit point
+    local tmin = [0.0, 0.0, 0.0];
+    local tmax = [0.0, 0.0, 0.0];
 
-    // Set portal anchor facing the entry portal
-    p_anchor.SetForwardVector(Vector() - portal.GetForwardVector());
-
-    // Set positions of anchors to entry portal origin and ray endpoint, respectively
-    p_anchor.SetAbsOrigin(portal.GetOrigin());
-    r_anchor.SetAbsOrigin(output.point);
-
-    // Translate both anchor points to exit portal (r_anchor is parented to p_anchor)
-    p_anchor.SetAbsOrigin(other.GetOrigin());
-
-    // Calculate angles from vector of ray direction
-    // First, normalize the vector to get a unit vector
-    local len = dirvec.Norm();
-
-    // Then, calculate yaw, pitch and roll in degrees
-    local yaw = atan2(dirvec.y, dirvec.x) / PI * 180;
-    local pitch = asin(-dirvec.z) / PI * 180;
-    local roll = atan2(dirvec.z, sqrt(dirvec.x * dirvec.x + dirvec.y * dirvec.y)) / PI * 180;
-
-    // Due to being parented, r_anchor's angles are usually relative to p_anchor
-    // The "angles" keyvalue, however, is absolute
-    r_anchor.__KeyValueFromString("angles", pitch + " " + yaw + " " + roll);
-    // Finally, rotate the portal anchor to get ray starting position and direction
-    p_anchor.SetForwardVector(other.GetForwardVector());
-
-    local newstart = r_anchor.GetOrigin();
-
-    // Check if the new starting point is behind the exit portal
-    local offset = newstart - other.GetOrigin();
-    local epsilon = 0.000001; // Some flat walls are not flat...
-
-    if (other.GetForwardVector().x > epsilon && offset.x < -epsilon) return output;
-    if (other.GetForwardVector().x < -epsilon && offset.x > epsilon) return output;
-
-    if (other.GetForwardVector().y > epsilon && offset.y < -epsilon) return output;
-    if (other.GetForwardVector().y < -epsilon && offset.y > epsilon) return output;
-
-    if (other.GetForwardVector().z > epsilon && offset.z < -epsilon) return output;
-    if (other.GetForwardVector().z < -epsilon && offset.z > epsilon) return output;
-
-    local newend = r_anchor.GetOrigin() + r_anchor.GetForwardVector() * (len * (1.0 - fraction));
-
-    return ppmod.ray(newstart, newend, ent, world, portals);
-
-  };
-
-  if (!ent) return formatreturn( 1.0, ray );
-
-  local len, div;
-  if (!ray) {
-    local dir = end - start;
-    len = dir.Norm();
-    div = [1.0 / dir.x, 1.0 / dir.y, 1.0 / dir.z];
-  } else {
-    len = ray[0];
-    div = ray[1];
-  }
-
-  // Defines behavior when multiple valid entries are provided - returns the lowest fraction among them
-  if (typeof ent == "array") {
-
-    // If an array contains only two Vectors, treat those instead as the origin point and half-widths of an entity, respectively
-    local isbbox = false;
-    if (ent.len() == 2) if (typeof ent[0] == "Vector" && typeof ent[1] == "Vector") {
-
-      local pos = ent[0], size = ent[1];
-
-      ent = {
-        GetOrigin = function ():(pos) { return pos },
-        GetAngles = function () { return Vector() },
-        GetBoundingMaxs = function ():(size) { return size },
-        GetBoundingMins = function ():(size) { return Vector() - size },
-      };
-
-      isbbox = true;
-
-    }
-
-    // Squirrel sucks, we can't just have an 'else' here
-    if (!isbbox) {
-
-      local closest = ppmod.ray(start, end, ent[0], false, portals, [len, div]);
-      for (local i = 1; i < ent.len(); i ++) {
-        local curr = ppmod.ray(start, end, ent[i], false, portals, [len, div]);
-        if (curr.fraction < closest.fraction) closest = curr;
-      }
-      return formatreturn( closest.fraction, [len, div], closest.entity );
-
-    }
-
-  } else if (typeof ent == "string") {
-
-    local next = ppmod.get(ent);
-    local closest = ppmod.ray(start, end, next, false, portals, [len, div]);
-    while (next = ppmod.get(ent, next)) {
-      local curr = ppmod.ray(start, end, next, false, portals, [len, div]);
-      if (curr.fraction < closest.fraction) closest = curr;
-    }
-    return formatreturn( closest.fraction, [len, div], closest.entity );
-
-  }
-
-  local pos = ent.GetOrigin();
-
-  local mins = ent.GetBoundingMins();
-  local maxs = ent.GetBoundingMaxs();
-
-  local minmin = min(mins.x, min(mins.y, mins.z));
-  local maxmax = max(maxs.x, max(maxs.y, maxs.z));
-
-  if (pos.x + minmin > max(start.x, end.x)) return formatreturn( 1.0, [len, div] );
-  if (pos.x + maxmax < min(start.x, end.x)) return formatreturn( 1.0, [len, div] );
-
-  if (pos.y + minmin > max(start.y, end.y)) return formatreturn( 1.0, [len, div] );
-  if (pos.y + maxmax < min(start.y, end.y)) return formatreturn( 1.0, [len, div] );
-
-  if (pos.z + minmin > max(start.z, end.z)) return formatreturn( 1.0, [len, div] );
-  if (pos.z + maxmax < min(start.z, end.z)) return formatreturn( 1.0, [len, div] );
-
-  local ang = ent.GetAngles() * (PI / 180.0);
-  local c1 = cos(ang.z);
-  local s1 = sin(ang.z);
-  local c2 = cos(ang.x);
-  local s2 = sin(ang.x);
-  local c3 = cos(ang.y);
-  local s3 = sin(ang.y);
-
-  local matrix = [
-    [c2 * c3, c3 * s1 * s2 - c1 * s3, s1 * s3 + c1 * c3 * s2],
-    [c2 * s3, c1 * c3 + s1 * s2 * s3, c1 * s2 * s3 - c3 * s1],
-    [-s2, c2 * s1, c1 * c2]
-  ];
-
-  mins = [mins.x, mins.y, mins.z];
-  maxs = [maxs.x, maxs.y, maxs.z];
-
-  local bmin = [pos.x, pos.y, pos.z];
-  local bmax = [pos.x, pos.y, pos.z];
-  local a, b;
-
-  for (local i = 0; i < 3; i ++) {
-    for (local j = 0; j < 3; j ++) {
-      a = (matrix[i][j] * mins[j]);
-      b = (matrix[i][j] * maxs[j]);
-      if(a < b) {
-        bmin[i] += a;
-        bmax[i] += b;
+    for (local i = 0; i < 3; i ++) {
+      if (div[i] >= 0) {
+        tmin[i] = (bmin[i] - start[vc[i]]) * div[i];
+        tmax[i] = (bmax[i] - start[vc[i]]) * div[i];
       } else {
-        bmin[i] += b;
-        bmax[i] += a;
+        tmin[i] = (bmax[i] - start[vc[i]]) * div[i];
+        tmax[i] = (bmin[i] - start[vc[i]]) * div[i];
+      }
+      if (tmin[0] > tmax[i] || tmin[i] > tmax[0]) return 1.0;
+      if (tmin[i] > tmin[0]) tmin[0] = tmin[i];
+      if (tmax[i] < tmax[0]) tmax[0] = tmax[i];
+    }
+
+    if (tmin[0] < 0) return 1.0;
+    return tmin[0] / len;
+
+  }
+
+  // Converts the input bbox to an AABB and casts a ray that collides with it
+  // Returns a fraction along the ray where an intersection occurred
+  function cast_bbox (pos, ang, mins, maxs) {
+
+    // Get the farthest coordinate of each bound, effectively obtaining a cube
+    local minmin = min(mins.x, min(mins.y, mins.z));
+    local maxmax = max(maxs.x, max(maxs.y, maxs.z));
+
+    // Cheap preemptive check to avoid casting rays if we're far away
+    if (pos.x + minmin > max(start.x, end.x)) return 1.0;
+    if (pos.x + maxmax < min(start.x, end.x)) return 1.0;
+
+    if (pos.y + minmin > max(start.y, end.y)) return 1.0;
+    if (pos.y + maxmax < min(start.y, end.y)) return 1.0;
+
+    if (pos.z + minmin > max(start.z, end.z)) return 1.0;
+    if (pos.z + maxmax < min(start.z, end.z)) return 1.0;
+
+    // Precalculate sin/cos functions for the transformation matrix
+    local c1 = cos(ang.z);
+    local s1 = sin(ang.z);
+    local c2 = cos(ang.x);
+    local s2 = sin(ang.x);
+    local c3 = cos(ang.y);
+    local s3 = sin(ang.y);
+
+    // Calculate the transformation matrix for resizing the axis-aligned
+    // bounding box to cover a rotated object.
+    local matrix = [
+      [c2 * c3, c3 * s1 * s2 - c1 * s3, s1 * s3 + c1 * c3 * s2],
+      [c2 * s3, c1 * c3 + s1 * s2 * s3, c1 * s2 * s3 - c3 * s1],
+      [-s2, c2 * s1, c1 * c2]
+    ];
+
+    // These will hold the scaled bounding box with absolute coordinats
+    local bmin = [pos.x, pos.y, pos.z];
+    local bmax = [pos.x, pos.y, pos.z];
+    local a, b;
+
+    // Perform the matrix transformation
+    for (local i = 0; i < 3; i ++) {
+      for (local j = 0; j < 3; j ++) {
+        a = matrix[i][j] * mins[vc[j]];
+        b = matrix[i][j] * maxs[vc[j]];
+        if (a < b) {
+          bmin[i] += a;
+          bmax[i] += b;
+        } else {
+          bmin[i] += b;
+          bmax[i] += a;
+        }
       }
     }
+
+    // Perform the actual raycast
+    return cast_aabb(bmin, bmax);
+
   }
 
-  if (
-    start.x > bmin[0] && start.x < bmax[0] &&
-    start.y > bmin[1] && start.y < bmax[1] &&
-    start.z > bmin[2] && start.z < bmax[2]
-  ) return formatreturn( 0.0, [len, div], ent );
+  // Casts a ray which collides with the AABB of the given entity
+  // Returns a fraction along the ray where an intersection occurred
+  function cast_ent (ent) {
 
-  start = [start.x, start.y, start.z];
+    // Obtain the required parameters and forward the call to cast_bbox
+    local frac = cast_bbox(
+      ent.GetOrigin(),
+      ent.GetAngles() * deg2rad,
+      ent.GetBoundingMins(),
+      ent.GetBoundingMaxs()
+    );
 
-  local tmin = [0.0, 0.0, 0.0];
-  local tmax = [0.0, 0.0, 0.0];
-
-  for (local i = 0; i < 3; i ++) {
-    if (div[i] >= 0) {
-      tmin[i] = (bmin[i] - start[i]) * div[i];
-      tmax[i] = (bmax[i] - start[i]) * div[i];
-    } else {
-      tmin[i] = (bmax[i] - start[i]) * div[i];
-      tmax[i] = (bmin[i] - start[i]) * div[i];
+    // If this is the closest hit yet, update the hit entity fraction and handle
+    if (frac < efrac) {
+      efrac = frac;
+      entity = ent;
     }
-    if (tmin[0] > tmax[i] || tmin[i] > tmax[0]) return formatreturn( 1.0, [len, div] );
-    if (tmin[i] > tmin[0]) tmin[0] = tmin[i];
-    if (tmax[i] < tmax[0]) tmax[0] = tmax[i];
+
   }
 
-  if (tmin[0] < 0) tmin[0] = 1.0;
-  else tmin[0] /= len;
+  // Handles cases where the entity input field is an array
+  function cast_array (arr) {
 
-  return formatreturn( tmin[0], [len, div], ent );
+    // Iterate through and handle all array elements
+    for (local i = 0; i < arr.len(); i ++) {
+
+      // If the start point is inside of a box, no need to continue
+      if (efrac == 0.0) break;
+
+      // If a valid entity handle was provided, use cast_ent
+      if (ppmod.validate(arr[i])) {
+        cast_ent(arr[i]);
+        continue;
+      }
+      // If a vector was provided, treat it as a position/size pair
+      if (typeof arr[i] == "Vector") {
+        local frac = cast_aabb(arr[i] - arr[i+1], arr[i] + arr[i+1]);
+        // If this is the closest hit yet, clear the hit entity handle
+        if (frac < efrac) {
+          efrac = frac;
+          entity = null;
+        }
+        i ++;
+        continue;
+      }
+      // If all else fails, try passing this to ppmod.forent
+      ppmod.forent(arr[i], cast_ent.bindenv(this));
+
+    }
+
+  }
+
+  constructor (start, end, ent = null, world = true, portals = null, ray = null) {
+
+    // Validate input arguments
+    if (typeof start != "Vector") throw "ray: Invalid start point";
+    if (typeof end != "Vector") throw "ray: Invalid end point";
+
+    // Assign the start/end vectors to the instance
+    this.start = start;
+    this.end = end;
+
+    // Calculate the len and div parameters if not provided
+    // These are used for AABB intersection calculations
+    if (!ray) {
+      dir = this.end - this.start;
+      len = dir.Norm();
+      div = [1.0 / dir.x, 1.0 / dir.y, 1.0 / dir.z];
+    } else {
+      len = ray[0];
+      div = ray[1];
+    }
+
+    do {
+
+      // Calculate intersection with the world, if needed
+      if (world) wfrac = TraceLine(this.start, this.end, null);
+
+      if (ent) {
+        // If a valid entity handle was provided, use cast_ent
+        if (ppmod.validate(ent)) cast_ent(ent);
+        // If an array was provided, use cast_array
+        else if (typeof ent == "array") cast_array(ent);
+        // If no valid handle was provided, find handles using ppmod.forent
+        else ppmod.forent(ent, cast_ent.bindenv(this));
+      }
+
+      // Get the fraction of whichever was closest, the entity or world
+      fraction = min(efrac, wfrac);
+      // Get the point of intersection as a vector
+      point = this.start + (this.end - this.start) * fraction;
+      // If no entity was hit, clear the handle
+      if (wfrac < efrac || efrac == 1.0) entity = null;
+
+      // Handle intersections with portals if needed
+      if (portals) {
+
+        // Validate the portal array
+        if (typeof portals != "array") throw "ray: Invalid portals argument";
+        if (portals.len() % 2 != 0) throw "ray: Portals must be provided in sequential pairs";
+        // Convert the array to a pparray if it isn't already
+        if (!("indexof" in portals)) portals = pparray(portals);
+
+        // Check if we're intersecting the bounding box of one of the provided portals
+        local portal = Entities.FindByClassnameWithin(null, "prop_portal", point, 1.0);
+        local index = portals.indexof(portal);
+        // If this is not in the input portal list, we're done
+        if (index == -1) break;
+        // Otherwise, find the other linked portal
+        local other = portals[index + (index % 2 == 0 ? 1 : -1)];
+        // Validate both portal handles
+        if (!ppmod.validate(portal)) throw "ray: Invalid portal handle provided";
+        if (!ppmod.validate(other)) throw "ray: Invalid portal handle provided";
+
+        // Prefetch some vectors
+        local otherpos = other.GetOrigin();
+        local othervec = other.GetForwardVector();
+
+        // Obtain anchor entities
+        local p_anchor = Entities.FindByName(null, "ppmod_portals_p_anchor");
+        local r_anchor = Entities.FindByName(null, "ppmod_portals_r_anchor");
+
+        // Set portal anchor facing the entry portal
+        p_anchor.SetForwardVector(Vector() - portal.GetForwardVector());
+
+        // Set positions of anchors to entry portal origin and ray endpoint, respectively
+        p_anchor.SetAbsOrigin(portal.GetOrigin());
+        r_anchor.SetAbsOrigin(point);
+
+        // Translate both anchor points to exit portal (r_anchor is parented to p_anchor)
+        p_anchor.SetAbsOrigin(otherpos);
+
+        // Calculate ray yaw, pitch and roll in degrees
+        local yaw = atan2(dir.y, dir.x) * rad2deg;
+        local pitch = asin(-dir.z) * rad2deg;
+        local roll = atan2(dir.z, dir.Length2D()) * rad2deg;
+
+        // Due to being parented, r_anchor's angles are usually relative to p_anchor
+        // The "angles" keyvalue, however, is absolute
+        r_anchor.__KeyValueFromString("angles", pitch + " " + yaw + " " + roll);
+        // Finally, rotate the portal anchor to get ray starting position and direction
+        p_anchor.SetForwardVector(othervec);
+
+        // The ray anchor now defines the new ray's parameters
+        this.start = r_anchor.GetOrigin();
+        dir = r_anchor.GetForwardVector();
+
+        // Check if the new starting point is behind the exit portal
+        // If so, a portal intersection has not occurred, we're done
+        local offset = this.start - otherpos;
+
+        if (othervec.x > epsilon && offset.x < -epsilon) break;
+        if (othervec.x < -epsilon && offset.x > epsilon) break;
+
+        if (othervec.y > epsilon && offset.y < -epsilon) break;
+        if (othervec.y < -epsilon && offset.y > epsilon) break;
+
+        if (othervec.z > epsilon && offset.z < -epsilon) break;
+        if (othervec.z < -epsilon && offset.z > epsilon) break;
+
+        // Apply the new ray parameters and cast the rays again
+        len *= 1.0 - fraction;
+        this.end = this.start + dir * len;
+        div = [1.0 / dir.x, 1.0 / dir.y, 1.0 / dir.z];
+
+      }
+
+      // Repeat the loop as long as portal intersections remain relevant
+    } while (portals != null);
+
+  }
 
 }
 
