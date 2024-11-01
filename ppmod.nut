@@ -2270,23 +2270,35 @@ ppmod.onauto(function () {
 
 }
 
+// Returns true if the given point is within line of sight, false otherwise
 ::ppmod.visible <- function (eyes, dest, fov = 90.0) {
 
+  // Validate input arguments
+  if (!ppmod.validate(eyes)) throw "visible: Invalid entity handle";
+  if (typeof dest != "Vector") throw "visible: Invalid destination point";
+  if (typeof fov != "float" && typeof fov != "integer") throw "visible: Invalid FOV argument";
+
+  // Obtain the starting point and ray forward vector
   local start = eyes.GetOrigin();
   local fvec = (dest - start).Normalize();
 
   // Check if the destination is within the field of view
   if (eyes.GetForwardVector().Dot(fvec) < cos(fov * PI / 360)) return false;
 
+  // Casts a ray which passes through thin walls (glass, grates, etc.)
   local frac, point;
-  do { // Casts a ray which passes through thin walls (glass, grates, etc.)
+  do {
 
+    // Cast a ray that collides with the world
     frac = TraceLine(start, dest, null);
+    // If the ray didn't hit anything, we're done
     if (frac == 1.0) break;
 
+    // Set the starting point to the intersection point, with a 16 unit offset
     point = start + (dest - start) * frac;
     start = point + fvec * 16.0;
 
+    // Cast a ray 8 units backwards, which only succeeds if the wall is thin
   } while (TraceLine(point + fvec * 16.0, point + fvec * 8.0, null) != 0.0);
 
   // True if the ray didn't hit anything

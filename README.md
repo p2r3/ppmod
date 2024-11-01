@@ -873,6 +873,15 @@ Checks whether a point is inbounds.
 ```
 This function accepts one argument - a Vector to the point which the check is to be performed on. It returns a boolean - `true` if the point is inbounds, and `false` if it isn't. Note that this function can return false positives in super specific cases, but is generally safe to use for any of the campaign maps.
 
+### ppmod.visible
+Checks whether a point is within line of sight.
+```squirrel
+  ppmod.inbounds(eyes, point, fov)
+```
+The `eyes` argument expects an entity handle to use as the subject for the check. A `ppmod.player` instance's `eyes` handle works well for this if the subject is a player. The `point` argument expects a Vector with absolute coordinates to the target point. If your line-of-sight check needs a range limit, you'll need to enforce that manually. The `fov` argument expects a number - the field-of-view in which the target is considered visible.
+
+Note that this check performs no ray collision checks with dynamic entities. Additionally, very thin walls like the ones seen in the puzzles in act 3 of the singleplayer campaign may be considered see-through. Limiting the visible range may be a solution.
+
 ### ppmod.button
 Creates a button prop and fixes common issues associated with spawning buttons dynamically.
 ```squirrel
