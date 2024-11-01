@@ -43,7 +43,7 @@ class pparray {
   function _get (idx) return arr[idx];
   function _set (idx, val) return arr[idx] = val;
   function _nexti (previdx) {
-    if (orevidx < 0 || previdx >= this.len()) return null;
+    if (previdx < 0 || previdx >= this.len()) return null;
     if (previdx == null) return 0;
     return previdx + 1;
   }
