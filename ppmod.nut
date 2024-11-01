@@ -2250,8 +2250,14 @@ ppmod.onauto(function () {
 
 }
 
+// Returns true if the given point is inbounds, false otherwise
 ::ppmod.inbounds <- function (point) {
 
+  // Validate input argument
+  if (typeof point != "Vector") throw "inbounds: Invalid point argument";
+
+  // Cast long rays in all cardinal directions
+  // If the point is out of bounds, at least one of these very likely won't collide
   if (TraceLine(point, point + Vector(65536, 0, 0), null) == 1.0) return false;
   if (TraceLine(point, point - Vector(65536, 0, 0), null) == 1.0) return false;
   if (TraceLine(point, point + Vector(0, 65536, 0), null) == 1.0) return false;
@@ -2259,6 +2265,7 @@ ppmod.onauto(function () {
   if (TraceLine(point, point + Vector(0, 0, 65536), null) == 1.0) return false;
   if (TraceLine(point, point - Vector(0, 0, 65536), null) == 1.0) return false;
 
+  // If all of the rays collided, the point is likely inbounds
   return true;
 
 }
