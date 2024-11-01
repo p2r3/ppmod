@@ -293,7 +293,7 @@ You can also apply a filter containing any of the previously mentioned search cr
 ```
 
 ### ppmod.validate
-Checks whether the input argument is a valid entity handle. Performs a type check, class check, and calls the IsValid() method.
+Checks whether the input argument is a valid entity handle. Performs a type check, class check, and calls the `IsValid()` method.
 ```squirrel
   local cube = ppmod.get("prop_weighted_cube");
   ppmod.validate(cube); // Returns true
