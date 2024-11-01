@@ -563,7 +563,7 @@ try {
 
     case "instance": {
       // If provided an entity, echo it back
-      if (arg1 instanceof CBaseEntity) return ent;
+      if (arg1 instanceof CBaseEntity) return arg1;
     }
 
     default:
