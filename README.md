@@ -782,9 +782,9 @@ Note that by default, Portal 2 only allows one projected texture to exist at a t
 ### ppmod.decal
 Applies decals on world brushes.
 ```squirrel
-  ppmod.decal(material, position, angles)
+  ppmod.decal(material, position, angles, far)
 ```
-The `material` argument expects a path to the material (texture) for the decal. The `position` argument is a Vector to some point on the brush where the decal should be applied. The `angles` argument (optional) expects a Vector containing the orientation of the projection with the properties being pitch, yaw, and roll for X, Y, and Z, respectively. If not provided, the entity will point directly downward (pitch 90). However, in practice, the angle seems to affect very little.
+The `material` argument expects a path to the material (texture) for the decal. The `position` argument is a Vector to some point on the brush where the decal should be applied. The `angles` argument (optional) expects a Vector containing the orientation of the projection with the properties being pitch, yaw, and roll for X, Y, and Z, respectively. If not provided, the entity will point directly downward (pitch 90). However, in practice, the angle seems to affect very little. The `far` argument (optional) limits how far away the decal can be cast. If not provided, set to 8 units by default.
 
 While projected textures are best used for dynamically overlaying light projections on surfaces, decals can be useful for either their intended purpose (i.e. bullet holes, explosion dust), or for essentially changing the textures of entire brushes. Here is an example of making the back wall of the `sp_a2_triple_laser` chamber non-portalable:
 ```squirrel

@@ -1892,30 +1892,52 @@ local onportalfunc = [];
 
 }
 
-::ppmod.project <- function (material, pos, ang = Vector(90, 0, 0), simple = 0, far = 128) {
+// Creates and sets up an env_projectedtexture
+::ppmod.project <- function (material, pos, ang = Vector(90, 0, 0), simple = 0, far = 128.0) {
 
+  // Validate input arguments
+  if (typeof material != "string") throw "project: Invalid material argument";
+  if (typeof pos != "Vector") throw "project: Invalid position argument";
+  if (typeof ang != "Vector") throw "project: Invalid angles argument";
+  if (typeof simple != "integer" && typeof simple != "boolean") throw "project: Invalid projection type";
+  if (typeof far != "integer" && typeof far != "float") throw "project: Invalid projection distance";
+
+  // Create the env_projectedtexture entity
   local texture = Entities.CreateByClassname("env_projectedtexture");
 
+  // Set the texture position and projection angles
   texture.SetAbsOrigin(pos);
   texture.SetAngles(ang.x, ang.y, ang.z);
-  texture.__KeyValueFromInt("FarZ", far);
+  // Set projection distance, projection type, and material name
+  texture.__KeyValueFromFloat("FarZ", far);
   texture.__KeyValueFromInt("SimpleProjection", simple.tointeger());
   texture.__KeyValueFromString("TextureName", material);
 
+  // Return a handle to the env_projectedtexture entity
   return texture;
 
 }
 
-::ppmod.decal <- function (material, pos, ang = Vector(90, 0, 0)) {
+// Creates and applies a static decal on a nearby surface
+::ppmod.decal <- function (material, pos, ang = Vector(90, 0, 0), far = 8.0) {
 
-  local decal = Entities.CreateByClassname("infodecal");
+  // Validate input arguments
+  if (typeof material != "string") throw "project: Invalid material argument";
+  if (typeof pos != "Vector") throw "project: Invalid position argument";
+  if (typeof ang != "Vector") throw "project: Invalid angles argument";
+  if (typeof far != "integer" && typeof far != "float") throw "project: Invalid projection distance";
 
+  // Create the info_projecteddecal entity, used for applying the decal
+  local decal = Entities.CreateByClassname("info_projecteddecal");
+
+  // Set the decal position and projection angles
   decal.SetAbsOrigin(pos);
   decal.SetAngles(ang.x, ang.y, ang.z);
+  // Set the name of the texture to be applied, and the projection distance
   decal.__KeyValueFromString("Texture", material);
+  decal.__KeyValueFromFloat("Distance", far);
+  // Activate the entity, applying the decal and removing itself
   EntFireByHandle(decal, "Activate", "", 0.0, null, null);
-
-  return decal;
 
 }
 
