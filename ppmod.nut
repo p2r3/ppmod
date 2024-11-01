@@ -587,14 +587,15 @@ try {
 
   // Convert the input to an array if it isn't already
   if (typeof args != "array") args = [args];
+  // Prepare args for use with acall()
+  args.insert(0, this);
+
   // If the last argument is not a valid starting entity, push null
   local last = args.len() - 1;
   if (!ppmod.validate(args[last]) && args[last] != null) {
     args.push(null);
     last ++;
   }
-  // Prepare args for use with acall()
-  args.insert(0, this);
 
   // Iterate through entities, running the callback on each valid one
   while (args[last] = ppmod.get.acall(args)) {
