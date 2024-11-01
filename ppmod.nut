@@ -1088,7 +1088,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
   // If the given player already has a pplayer instance, return that
   local scope = player.GetScriptScope();
-  if ("pplayer" in scope) return scope.pplayer;
+  if ("pplayer" in scope) return ppromise(function (resolve, reject) {
+    resolve(scope.pplayer);
+  });
 
   // Create the prototypal ppmod.player instance
   local pplayer = {
