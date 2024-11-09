@@ -1243,7 +1243,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
     internal.landscr.push(scr);
   };
   // Attaches a function to the event of the player finishing the crouching animation
-  pplayer.ducked <- function (scr):(pplayer) {
+  pplayer.duck <- function (scr):(pplayer) {
     local scrqstr = "ppmod.scrq_get(" + ppmod.scrq_add(scr) + ")()";
     ppmod.addoutput(pplayer.proxy, "OnDuck", pplayer.ent, "RunScriptCode", "if(self==activator)" + scrqstr);
   };

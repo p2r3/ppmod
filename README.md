@@ -587,7 +587,7 @@ Returns `true` if the player is holding a prop, `false` otherwise.
 Allows for listening to player actions. Each of these functions expects one argument - a function to attach. Multiple functions can be attached to one event.
 - `pplayer.jump` - Fired when the player issues a jump input.
 - `pplayer.land` - Fired when the player lands from a jump or fall.
-- `pplayer.duck` - Fired when the player finishes the crouching animation.
+- `pplayer.duck` - Fired when the player starts the crouching animation.
 - `pplayer.unduck` - Fired when the player finishes the uncrouching animation.
 
 Here is an example of using `pplayer.jump` to listen for jumps:
