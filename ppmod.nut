@@ -1115,8 +1115,8 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
   // If the given player already has a pplayer instance, return that
   local scope = player.GetScriptScope();
-  if ("pplayer" in scope) return ppromise(function (resolve, reject) {
-    resolve(scope.pplayer);
+  if ("__pplayer_inst" in scope) return ppromise(function (resolve, reject):(scope) {
+    resolve(scope.__pplayer_inst);
   });
 
   // Create the prototypal ppmod.player instance
@@ -1133,7 +1133,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
     groundstate = false
   };
   // Assign this new instance to the player's script scope
-  scope.pplayer <- pplayer;
+  scope.__pplayer_inst <- pplayer;
 
   // One logic_playerproxy is required for registering jumping and ducking
   // This breaks if more than one is created, so we use an existing one if available
