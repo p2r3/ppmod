@@ -1050,6 +1050,32 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
 }
 
+// Pauses the game until the specified ppromise resolves
+::ppmod.preload <- function (promise):(ppromise_methods) {
+
+  // Validate the promise
+  if (promise.then != ppromise_methods.then) throw "preload: Invalid promise argument";
+
+  // Run inside a ppromise to allow for awaiting preload completion
+  return ppromise(function (resolve, reject):(promise) {
+
+    // Pause the game
+    SendToConsole("setpause");
+
+    local scrq_idx = ppmod.scrq_add(function ():(promise, resolve) {
+      // Unpause the game once the promise resolves
+      promise.then(function (_):(resolve) {
+        SendToConsole("unpause");
+        resolve();
+      });
+    }, 1);
+    // Run the promise as a command to ensure it's in sync with the pause
+    SendToConsole("script ppmod.scrq_get("+ scrq_idx +")()");
+
+  });
+
+};
+
 // Works around script timeouts by catching the exception they throw
 ::ppmod.detach <- function (scr, args, stack = null) {
 
