@@ -1425,6 +1425,8 @@ for (local i = 0; i < entclasses.len(); i ++) {
   local scope = portal.GetScriptScope();
   // If an instance already exists in the script scope, return that
   if ("ppmod_portal" in scope) return scope.ppmod_portal;
+  // Otherwise, create a blank table for the prototypal instance
+  scope.ppmod_portal <- {};
 
   // Create a trigger for detecting collisions with the portal
   local trigger = Entities.CreateByClassname("trigger_multiple");
@@ -1575,10 +1577,10 @@ for (local i = 0; i < entclasses.len(); i ++) {
   };
 
   // Returns a ppromise that resolves to a handle of this portal's active linked partner
-  scope.ppmod_portal.GetPartnerInstance <- function ():(portal, GetLinkageGroupID) {
-    return ppromise(function (resolve, reject):(portal, GetLinkageGroupID) {
+  scope.ppmod_portal.GetPartnerInstance <- function ():(portal, scope) {
+    return ppromise(function (resolve, reject):(portal, scope) {
       // First, obtain the linkage group ID of this portal
-      GetLinkageGroupID().then(function (id):(resolve, portal) {
+      scope.ppmod_portal.GetLinkageGroupID().then(function (id):(resolve, portal) {
 
         // Create a recursive function for finding the other portal
         local param = { next = null };
