@@ -1811,17 +1811,17 @@ local onportalfunc = [];
 
   // Assign keyvalues from the input table
   // game_player_equip uses keyvalue pairs to determine spawn quantities
-  foreach (classname in ents) {
-    equip.__KeyValueFromInt(classname, ents[clasname]);
+  foreach (classname,idx in ents) {
+    equip.__KeyValueFromInt(classname, ents[classname]);
   }
 
   // Spawn the items, then kill the entity
   EntFireByHandle(equip, "Use", "", 0.0, player, null);
   EntFireByHandle(equip, "Kill", "", 0.0, null, null);
 
-  return ppromise(function (resolve, reject):(ents, amount) {
+  return ppromise(function (resolve, reject):(ents) {
     // Use runscript to ensure we're retrieving the entities after creating them
-    ppmod.runscript("worldspawn", function ():(resolve, ents, amount) {
+    ppmod.runscript("worldspawn", function ():(resolve, ents) {
 
       // Create an output table
       local output = {};
@@ -1829,13 +1829,13 @@ local onportalfunc = [];
       local ent = null;
 
       // Iterate over each spawned class to fetch the entities into an array
-      foreach (classname in ents) {
+      foreach (classname,idx in ents) {
         // Allocate an array for the entities
         output[classname] <- array(ents[classname]);
         // Iterate through all entities with a matching classname
         local i = 0;
         while (ent = Entities.FindByClassname(ent, classname)) {
-          arr[i] = ent;
+          output[classname][i] = ent;
           /**
            * Overflow the pointer once we've reached the desired spawn amount.
            * This effectively makes it so that only the last entities of this
