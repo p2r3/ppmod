@@ -1975,8 +1975,8 @@ local onportalfunc = [];
 // Set up some dummy entites for simplifying ray-through-portal calculations
 // This needs to happen exactly once, else it breaks, thus we use ppmod.onauto
 ppmod.onauto(function () {
-  local p_anchor = Entities.CreateByClassname("info_target");
-  local r_anchor = Entities.CreateByClassname("info_target");
+  local p_anchor = Entities.CreateByClassname("info_teleport_destination");
+  local r_anchor = Entities.CreateByClassname("info_teleport_destination");
 
   p_anchor.__KeyValueFromString("Targetname", "ppmod_portals_p_anchor");
   r_anchor.__KeyValueFromString("Targetname", "ppmod_portals_r_anchor");
