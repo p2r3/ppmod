@@ -2604,3 +2604,17 @@ ppmod.onauto(function () {
   }
 
 }
+
+// Creates a console command alias for calling a script function
+::ppmod.alias <- function (cmd, scr) {
+
+  // Validate input argument
+  if (typeof cmd != "string") throw "alias: Invalid command argument";
+
+  // Add the input script to the script queue
+  // This additionally validates the argument
+  local scrq_idx = ppmod.scrq_add(scr, -1);
+  // Set up a console alias to call the input script
+  SendToConsole("alias \""+ cmd +"\" \"script ppmod.scrq_get("+ scrq_idx +")()\"");
+
+};
