@@ -483,15 +483,68 @@ try {
     return this.x + " " + this.y + " " + this.z;
   }
   // Normalizes the vector and returns it
-  function Vector::Normalize() {
+  function Vector::Normalize () {
     this.Norm();
     return this;
   }
   // Normalizes the vector along just the X/Y axis and returns it
-  function Vector::Normalize2D() {
+  function Vector::Normalize2D () {
     this.z = 0.0;
     this.Norm();
     return this;
+  }
+  // Creates a deep copy of the vector and returns it
+  function Vector::Copy () {
+    return Vector(this.x, this.y, this.z);
+  }
+  // Converts the direction vector(s) to a vector of pitch/yaw/roll angles
+  function Vector::ToAngles (uvec = null, rad = false) {
+    // Copy and normalize the forward vector (`this`)
+    local fvec = this.Copy();
+    fvec.Norm();
+    // Calculate yaw/pitch angles
+    local yaw = atan2(fvec.y, fvec.x);
+    local pitch = asin(-fvec.z);
+    local roll = 0.0;
+    // If an up vector is given, calculate roll
+    // Reference: https://www.jldoty.com/code/DirectX/YPRfromUF/YPRfromUF.html
+    if (typeof uvec == "Vector") {
+      // Copy and normalize the input up vector
+      uvec = uvec.Copy();
+      uvec.Norm();
+      // Calculate the current right vector
+      local rvec = uvec.Cross(fvec).Normalize();
+      // Ensure the up vector is orthonormal
+      uvec = fvec.Cross(rvec).Normalize();
+      // Calculate right/up vectors at zero roll
+      local x0 = Vector(0, 0, 1).Cross(fvec).Normalize();
+      local y0 = fvec.Cross(x0);
+      // Choose a denominator that won't divide by zero
+      local s = Vector(fabs(x0.x), fabs(x0.y), fabs(x0.z));
+      local c = (s.x > s.y) ? (s.x > s.z ? "x" : "z") : (s.y > s.z ? "y" : "z");
+      // Calculate the signed roll angle
+      local rollcos = y0.Dot(uvec);
+      local rollsin = (y0[c] * rollcos - uvec[c]) / x0[c];
+      roll = atan2(rollsin, rollcos);
+    }
+    // Return angles as a pitch/yaw/roll vector
+    if (rad) return Vector(pitch, yaw, roll);
+    return Vector(pitch, yaw, roll) * (180.0 / PI);
+  }
+  // Given a vector of pitch/yaw/roll angles, returns forward and up vectors
+  function Vector::FromAngles (rad = false) {
+    // Convert degrees to radians if necessary
+    local ang = this;
+    if (!rad) ang = this.Copy() * PI / 180.0;
+    // Precompute sines and cosines of angles
+    local cy = cos(ang.y), sy = sin(ang.y);
+    local cp = cos(ang.x), sp = sin(ang.x);
+    local cr = cos(ang.z), sr = sin(ang.z);
+    // Calculate the forward and up vectors
+    return {
+      fvec = Vector(cy * cp, sy * cp, -sp),
+      uvec = Vector(cy * sp * sr - sy * cr, sy * sp * sr + cy * cr, cp * sr)
+    };
   }
 } catch (e) {
   printl("[ppmod] Warning: failed to modify Vector class: " + e);
