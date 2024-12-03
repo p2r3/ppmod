@@ -940,6 +940,50 @@ for (local i = 0; i < entclasses.len(); i ++) {
       if (!this.ValidateScriptScope()) throw "Could not validate entity script scope";
       return this.DoGetScriptScope();
     }
+    // Overwrite SetAngles to sanitize angles and support Vector input
+    entclasses[i].DoSetAngles <- entclasses[i].SetAngles;
+    entclasses[i].SetAngles <- function (pitch, yaw = 0.0, roll = 0.0) {
+      // Support input of a PYR Vector
+      if (typeof pitch == "Vector") {
+        yaw = pitch.y;
+        roll = pitch.z;
+        pitch = pitch.x;
+      }
+      // Ensure the input angles are valid
+      if (fabs(pitch) == nan || fabs(pitch) == inf) throw "Invalid pitch angle - got nan or inf";
+      if (fabs(yaw) == nan || fabs(yaw) == inf) throw "Invalid yaw angle - got nan or inf";
+      if (fabs(roll) == nan || fabs(roll) == inf) throw "Invalid roll angle - got nan or inf";
+      // Update the entity's angles
+      this.DoSetAngles(pitch, yaw, roll);
+    }
+    // Overwrite SetOrigin to sanitize coordinates and allow component input
+    entclasses[i].DoSetOrigin <- entclasses[i].SetOrigin;
+    entclasses[i].SetOrigin <- function (pos, y = 0.0, z = 0.0) {
+      // Support input of individual components
+      if (typeof pos == "float" || typeof pos == "integer") {
+        pos = Vector(pos, y, z);
+      }
+      // Ensure the input coordinates are valid
+      if (fabs(pos.x) == nan || fabs(pos.x) == inf) throw "Invalid X coordinate - got nan or inf";
+      if (fabs(pos.y) == nan || fabs(pos.y) == inf) throw "Invalid Y coordinate - got nan or inf";
+      if (fabs(pos.z) == nan || fabs(pos.z) == inf) throw "Invalid Z coordinate - got nan or inf";
+      // Update the entity's local origin
+      this.DoSetOrigin(pos);
+    }
+    // Overwrite SetAbsOrigin to sanitize coordinates and allow component input
+    entclasses[i].DoSetAbsOrigin <- entclasses[i].SetAbsOrigin;
+    entclasses[i].SetAbsOrigin <- function (pos, y = 0.0, z = 0.0) {
+      // Support input of individual components
+      if (typeof pos == "float" || typeof pos == "integer") {
+        pos = Vector(pos, y, z);
+      }
+      // Ensure the input coordinates are valid
+      if (fabs(pos.x) == nan || fabs(pos.x) == inf) throw "Invalid X coordinate - got nan or inf";
+      if (fabs(pos.y) == nan || fabs(pos.y) == inf) throw "Invalid Y coordinate - got nan or inf";
+      if (fabs(pos.z) == nan || fabs(pos.z) == inf) throw "Invalid Z coordinate - got nan or inf";
+      // Update the entity's local origin
+      this.DoSetAbsOrigin(pos);
+    }
   } catch (e) {
     // Classes may fail to be modified if they've already been instantiated
     // First, obtain the name of the class as a string
