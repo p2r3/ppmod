@@ -519,12 +519,20 @@ try {
       // Calculate right/up vectors at zero roll
       local x0 = Vector(0, 0, 1).Cross(fvec).Normalize();
       local y0 = fvec.Cross(x0);
+      // Calculate the sine and cosine of the roll angle
+      local rollcos = y0.Dot(uvec);
+      local rollsin;
+      if (fabs(fabs(fvec.z) - 1.0) < 0.000001) {
+        // Edge case for the fvec.z +/- 1.0 singularity
+        rollsin = -uvec.x;
+      } else {
       // Choose a denominator that won't divide by zero
       local s = Vector(fabs(x0.x), fabs(x0.y), fabs(x0.z));
       local c = (s.x > s.y) ? (s.x > s.z ? "x" : "z") : (s.y > s.z ? "y" : "z");
+        // Calculate the roll angle sine
+        rollsin = (y0[c] * rollcos - uvec[c]) / x0[c];
+      }
       // Calculate the signed roll angle
-      local rollcos = y0.Dot(uvec);
-      local rollsin = (y0[c] * rollcos - uvec[c]) / x0[c];
       roll = atan2(rollsin, rollcos);
     }
     // Return angles as a pitch/yaw/roll vector
