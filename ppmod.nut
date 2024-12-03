@@ -27,6 +27,9 @@ if ("ppmod" in this) {
   if (b == 0) return floor(a + 0.5);
   return floor(a * (b = pow(10, b)) + 0.5) / b;
 }
+// Holds the "not a number" and "infinity" constants for comparison
+::nan <- fabs(0.0 / 0.0);
+::inf <- 1.0 / 0.0;
 
 // Extends the functionality of Squirrel arrays
 class pparray {
