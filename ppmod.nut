@@ -1153,7 +1153,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
   catch (e) {
 
     // If the exception is caused by SQQuerySuspend, recurse
-    if (e == "Script terminated by SQQuerySuspend") {
+    if (e.find("Script terminated by SQQuerySuspend") != null) {
       return ppmod.detach(scr, args, stack);
     }
     // Otherwise, mimic error output using the stack trace
