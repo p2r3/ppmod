@@ -529,9 +529,9 @@ try {
         // Edge case for the fvec.z +/- 1.0 singularity
         rollsin = -uvec.x;
       } else {
-      // Choose a denominator that won't divide by zero
-      local s = Vector(fabs(x0.x), fabs(x0.y), fabs(x0.z));
-      local c = (s.x > s.y) ? (s.x > s.z ? "x" : "z") : (s.y > s.z ? "y" : "z");
+        // Choose a denominator that won't divide by zero
+        local s = Vector(fabs(x0.x), fabs(x0.y), fabs(x0.z));
+        local c = (s.x > s.y) ? (s.x > s.z ? "x" : "z") : (s.y > s.z ? "y" : "z");
         // Calculate the roll angle sine
         rollsin = (y0[c] * rollcos - uvec[c]) / x0[c];
       }
