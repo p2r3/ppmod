@@ -950,9 +950,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
         pitch = pitch.x;
       }
       // Ensure the input angles are valid
-      if (fabs(pitch) == nan || fabs(pitch) == inf) throw "Invalid pitch angle - got nan or inf";
-      if (fabs(yaw) == nan || fabs(yaw) == inf) throw "Invalid yaw angle - got nan or inf";
-      if (fabs(roll) == nan || fabs(roll) == inf) throw "Invalid roll angle - got nan or inf";
+      if (::fabs(pitch) == nan || ::fabs(pitch) == inf) throw "Invalid pitch angle - got nan or inf";
+      if (::fabs(yaw) == nan || ::fabs(yaw) == inf) throw "Invalid yaw angle - got nan or inf";
+      if (::fabs(roll) == nan || ::fabs(roll) == inf) throw "Invalid roll angle - got nan or inf";
       // Update the entity's angles
       this.DoSetAngles(pitch, yaw, roll);
     }
@@ -964,9 +964,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
         pos = Vector(pos, y, z);
       }
       // Ensure the input coordinates are valid
-      if (fabs(pos.x) == nan || fabs(pos.x) == inf) throw "Invalid X coordinate - got nan or inf";
-      if (fabs(pos.y) == nan || fabs(pos.y) == inf) throw "Invalid Y coordinate - got nan or inf";
-      if (fabs(pos.z) == nan || fabs(pos.z) == inf) throw "Invalid Z coordinate - got nan or inf";
+      if (::fabs(pos.x) == nan || ::fabs(pos.x) == inf) throw "Invalid X coordinate - got nan or inf";
+      if (::fabs(pos.y) == nan || ::fabs(pos.y) == inf) throw "Invalid Y coordinate - got nan or inf";
+      if (::fabs(pos.z) == nan || ::fabs(pos.z) == inf) throw "Invalid Z coordinate - got nan or inf";
       // Update the entity's local origin
       this.DoSetOrigin(pos);
     }
@@ -978,9 +978,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
         pos = Vector(pos, y, z);
       }
       // Ensure the input coordinates are valid
-      if (fabs(pos.x) == nan || fabs(pos.x) == inf) throw "Invalid X coordinate - got nan or inf";
-      if (fabs(pos.y) == nan || fabs(pos.y) == inf) throw "Invalid Y coordinate - got nan or inf";
-      if (fabs(pos.z) == nan || fabs(pos.z) == inf) throw "Invalid Z coordinate - got nan or inf";
+      if (::fabs(pos.x) == nan || ::fabs(pos.x) == inf) throw "Invalid X coordinate - got nan or inf";
+      if (::fabs(pos.y) == nan || ::fabs(pos.y) == inf) throw "Invalid Y coordinate - got nan or inf";
+      if (::fabs(pos.z) == nan || ::fabs(pos.z) == inf) throw "Invalid Z coordinate - got nan or inf";
       // Update the entity's local origin
       this.DoSetAbsOrigin(pos);
     }
