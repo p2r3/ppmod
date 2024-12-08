@@ -984,6 +984,38 @@ for (local i = 0; i < entclasses.len(); i ++) {
       // Update the entity's local origin
       this.DoSetAbsOrigin(pos);
     }
+    // Implement destructor functions
+    entclasses[i].AttachDestructor <- function (func) {
+      // Create and retrieve this entity's script scope
+      local scope = this.GetScriptScope();
+      if (!("__destructors" in scope)) {
+        // If this is the first destructor, initialize an array
+        scope.__destructors <- [];
+        // Hook the "Kill" and "KillHierarchy" inputs to call destructors
+        scope.InputKill <- this.CallDestructors.bindenv(this);
+        scope.InputKillHierarchy <- this.CallDestructors.bindenv(this);
+      }
+      // Push the new destructor to this entity's destructors array
+      scope.__destructors.push(func);
+    }
+    entclasses[i].CallDestructors <- function () {
+      // Check if the entity has a script scope with destructors attached
+      local scope = this.DoGetScriptScope();
+      if (scope == null) return true;
+      if (!("__destructors" in scope)) return true;
+      // Call all attached destructor functions in succession
+      for (local i = 0; i < scope.__destructors.len(); i ++) {
+        scope.__destructors[i]();
+      }
+      // Return true to allow inputs to pass through hooks
+      return true;
+    }
+    // Overwrite Destroy to call destructor functions
+    entclasses[i].DoDestroy <- entclasses[i].Destroy;
+    entclasses[i].Destroy <- function () {
+      this.CallDestructors();
+      return this.DoDestroy();
+    }
   } catch (e) {
     // Classes may fail to be modified if they've already been instantiated
     // First, obtain the name of the class as a string
