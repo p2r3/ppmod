@@ -827,11 +827,19 @@ try {
 // Adds a script as an output to an entity with optional default arguments
 ::ppmod.addscript <- function (ent, output, scr = "", delay = 0, max = -1, passthrough = false) {
 
-  // If a function was provided, add it to the script queue
   if (typeof scr == "function") {
+    // If a function was provided, add it to the script queue
+    local scrq_idx = ppmod.scrq_add(scr, max);
+    local scrq_arr = ppmod.scrq[scrq_idx];
+    // Attach a destructor to clear the scrq entry when the entity dies
+    ppmod.onkill(ent, function ():(scrq_idx, scrq_arr) {
+      if (ppmod.scrq[scrq_idx] != scrq_arr) return;
+      ppmod.scrq[scrq_idx] = null;
+    });
+    // Convert the argument to a scrq_get call string
     // Pass the activator and caller handles to the function if necessary
-    if (passthrough) scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr, max) + ")(activator, caller)";
-    else scr = "ppmod.scrq_get(" + ppmod.scrq_add(scr, max) + ")()";
+    if (passthrough) scr = "ppmod.scrq_get(" + scrq_idx + ")(activator, caller)";
+    else scr = "ppmod.scrq_get(" + scrq_idx + ")()";
   }
   // Attach the output as a keyvalue, similar to how ppmod.addoutput does it
   // The script is targeted to worldspawn, as that makes activator and caller available
