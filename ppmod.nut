@@ -883,6 +883,36 @@ try {
 
 }
 
+// Attaches a function to be called when the entity is Kill-ed
+::ppmod.onkill <- function (ent, scr) {
+
+  // Validate arguments
+  if (!ppmod.validate(ent)) throw "onkill: Invalid entity handle";
+  if (typeof scr == "string") scr = compilestring(scr);
+  if (typeof scr != "function") throw "onkill: Invalid script argument";
+
+  // Create and retrieve the entity's script scope
+  if (!ent.ValidateScriptScope()) throw "onkill: Failed to create entity script scope";
+  local scope = ent.GetScriptScope();
+
+  if (!("__destructors" in scope)) {
+    // If this is the first destructor, initialize an array
+    scope.__destructors <- [];
+    // Hook the "Kill" and "KillHierarchy" inputs to call destructors
+    scope.InputKill <- function ():(scope) {
+      for (local i = 0; i < scope.__destructors.len(); i ++) {
+        scope.__destructors[i]();
+      }
+      return true;
+    };
+    scope.InputKillHierarchy <- scope.InputKill;
+  }
+
+  // Push the new destructor to the entity's destructors array
+  scope.__destructors.push(scr);
+
+}
+
 // Implement shorthands of the above functions into the entities as methods
 local entclasses = [CBaseEntity, CBaseAnimating, CBaseFlex, CBasePlayer, CEnvEntityMaker, CLinkedPortalDoor, CPortal_Player, CPropLinkedPortalDoor, CSceneEntity, CTriggerCamera];
 for (local i = 0; i < entclasses.len(); i ++) {
@@ -932,6 +962,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
     }
     entclasses[i].SetHook <- function (input, scr, max = -1) {
       return ::ppmod.hook(this, input, scr, max);
+    }
+    entclasses[i].OnKill <- function (scr) {
+      return ::ppmod.onkill(this, scr);
     }
     // Overwrite GetScriptScope to first create/validate the scope
     // This makes it safer and more comfortable to to access script scopes
@@ -984,36 +1017,15 @@ for (local i = 0; i < entclasses.len(); i ++) {
       // Update the entity's local origin
       this.DoSetAbsOrigin(pos);
     }
-    // Implement destructor functions
-    entclasses[i].AttachDestructor <- function (func) {
-      // Create and retrieve this entity's script scope
-      local scope = this.GetScriptScope();
-      if (!("__destructors" in scope)) {
-        // If this is the first destructor, initialize an array
-        scope.__destructors <- [];
-        // Hook the "Kill" and "KillHierarchy" inputs to call destructors
-        scope.InputKill <- this.CallDestructors.bindenv(this);
-        scope.InputKillHierarchy <- this.CallDestructors.bindenv(this);
-      }
-      // Push the new destructor to this entity's destructors array
-      scope.__destructors.push(func);
-    }
-    entclasses[i].CallDestructors <- function () {
-      // Check if the entity has a script scope with destructors attached
-      local scope = this.DoGetScriptScope();
-      if (scope == null) return true;
-      if (!("__destructors" in scope)) return true;
-      // Call all attached destructor functions in succession
-      for (local i = 0; i < scope.__destructors.len(); i ++) {
-        scope.__destructors[i]();
-      }
-      // Return true to allow inputs to pass through hooks
-      return true;
-    }
-    // Overwrite Destroy to call destructor functions
+    // Overwrite Destroy to call any destructor functions before killing
     entclasses[i].DoDestroy <- entclasses[i].Destroy;
     entclasses[i].Destroy <- function () {
-      this.CallDestructors();
+      // Check if the entity has a script scope
+      local scope = this.DoGetScriptScope();
+      if (scope == null) return this.DoDestroy();
+      // Call the script hook for the Kill input to activate destructors
+      scope.InputKill();
+      // Proceed with destroying the entity
       return this.DoDestroy();
     }
   } catch (e) {
