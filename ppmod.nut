@@ -874,6 +874,9 @@ try {
 // Hooks an entity input, running a test function each time it's fired
 ::ppmod.hook <- function (ent, input, scr, max = -1) {
 
+  // Validate arguments
+  if (typeof input != "string") throw "hook: Invalid input argument";
+  if (typeof max != "integer") throw "hook: Invalid max argument";
   // If a valid entity handle was not provided, find handles with ppmod.forent
   if (!ppmod.validate(ent)) {
     return ppmod.forent(ent, function (curr):(input, scr, max) {
