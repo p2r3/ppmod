@@ -1166,7 +1166,8 @@ for (local i = 0; i < entclasses.len(); i ++) {
       // If on split-screen, we're done, run the script
       if (IsLocalSplitScreen()) {
         if (typeof scr == "string") return compilestring(scr)();
-        return scr();
+        // Wait for players to re-teleport
+        return ppmod.wait(scr, 1.5);
       }
 
       // Find the lowest significant point of the world's bounding box estimate
