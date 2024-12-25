@@ -898,9 +898,15 @@ try {
 ::ppmod.onkill <- function (ent, scr) {
 
   // Validate arguments
-  if (!ppmod.validate(ent)) throw "onkill: Invalid entity handle";
   if (typeof scr == "string") scr = compilestring(scr);
   if (typeof scr != "function") throw "onkill: Invalid script argument";
+
+  // If a valid entity handle was not provided, find handles with ppmod.forent
+  if (!ppmod.validate(ent)) {
+    return ppmod.forent(ent, function (curr):(scr) {
+      ppmod.onkill(curr, scr);
+    });
+  }
 
   // Create and retrieve the entity's script scope
   if (!ent.ValidateScriptScope()) throw "onkill: Failed to create entity script scope";
