@@ -1274,53 +1274,24 @@ for (local i = 0; i < entclasses.len(); i ++) {
 // Player interface //
 /********************/
 
-// Constructor for the pplayer prototypal class
-// This returns a ppromise, which is why it can't be an actual class
-::ppmod.player <- function (player) {
+// Provides more information about and ways to interact with a player
+::ppmod.player <- class {
 
-  // Validate the input entity handle
-  if (!ppmod.validate(player)) throw "player: Invalid entity handle";
-  if (!(player instanceof CBasePlayer)) throw "player: Entity is not a player";
-  if (!player.ValidateScriptScope()) throw "player: Could not validate entity script scope";
+  // Holds the player entity
+  ent = null;
 
-  // If the given player already has a pplayer instance, return that
-  local scope = player.GetScriptScope();
-  if ("__pplayer_inst" in scope) return ppromise(function (resolve, reject):(scope) {
-    resolve(scope.__pplayer_inst);
-  });
+  // Entities used for managing player state
+  eyes = null;
+  gameui = null;
+  proxy = null;
 
-  // Create the prototypal ppmod.player instance
-  local pplayer = {
-    // Keep track of the underlying player handle
-    ent = player,
-    // Store the logic_playerproxy (assigned later)
-    proxy = null,
-    // Create a logic_measure_movement for getting player eye angles
-    eyes = Entities.CreateByClassname("logic_measure_movement"),
-    // Create a game_ui for listening to player movement inputs
-    gameui = Entities.CreateByClassname("game_ui"),
-    // Keep track of whether the player is grounded
-    groundstate = false
-  };
-  // Assign this new instance to the player's script scope
-  scope.__pplayer_inst <- pplayer;
-
-  // One logic_playerproxy is required for registering jumping and ducking
-  // This breaks if more than one is created, so we use an existing one if available
-  pplayer.proxy = Entities.FindByClassname(null, "logic_playerproxy");
-  if (!pplayer.proxy) pplayer.proxy = Entities.CreateByClassname("logic_playerproxy");
-
-  // Set up the logic_measure_movement entity for more accurate view angles
-  // Generate a unique name for the entity
-  local eyename = "pplayer_eyes_" + Time();
-  // Set MeasureType to measure eye position
-  pplayer.eyes.__KeyValueFromInt("MeasureType", 1);
-  // Point the entity back at itself
-  pplayer.eyes.__KeyValueFromString("Targetname", eyename);
-  pplayer.eyes.__KeyValueFromString("TargetReference", eyename);
-  pplayer.eyes.__KeyValueFromString("Target", eyename);
-  // The MeasureReference doesn't update unless set with the input
-  EntFireByHandle(pplayer.eyes, "SetMeasureReference", eyename, 0.0, null, null);
+  // Internal values
+  groundstate = false;
+  velprev = 0;
+  gravtrig = null;
+  landscript = [];
+  initinterval = null;
+  fricfactor = 4.0;
 
   /**
    * The properties of logic_measure_movement seem to search for entities by
@@ -1328,204 +1299,254 @@ for (local i = 0; i < entclasses.len(); i ++) {
    * string for just long enough to update MeasureTarget, and then sets it
    * back to what it was right away.
    */
-  local targeteyes = function ():(pplayer) {
+  static target_eyes = function () {
 
     // Store the current player name and generate a unique temporary name
-    local oldname = pplayer.ent.GetName()
-    local newname = "pplayer_ent_" + Time();
+    local oldname = this.ent.GetName()
+    local newname = "this_ent_" + Time();
 
     /**
      * Push these inputs to the entity I/O queue back to back, one by one.
      * This ensures that we're changing the name for only as long as is
      * necessary, and doesn't let any other inputs get in between these.
      */
-    EntFireByHandle(pplayer.ent, "AddOutput", "Targetname " + newname, 0.0, null, null);
-    EntFireByHandle(pplayer.eyes, "SetMeasureTarget", newname, 0.0, null, null);
+    EntFireByHandle(this.ent, "AddOutput", "Targetname " + newname, 0.0, null, null);
+    EntFireByHandle(this.eyes, "SetMeasureTarget", newname, 0.0, null, null);
     // Use the script queue to reset the player's targetname
     // This retains full accuracy, as to not drop any special characters
     local scrqidx = ppmod.scrq_add(function (self):(oldname) { self.__KeyValueFromString("Targetname", oldname) }, 1);
-    EntFireByHandle(pplayer.ent, "RunScriptCode", "ppmod.scrq_get("+ scrqidx +")(self)", 0.0, null, null);
+    EntFireByHandle(this.ent, "RunScriptCode", "ppmod.scrq_get("+ scrqidx +")(self)", 0.0, null, null);
 
   };
 
-  // The MeasureTarget must be updated on each game load
-  targeteyes();
-  local auto = Entities.CreateByClassname("logic_auto");
-  auto.__KeyValueFromString("OnMapSpawn", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + ppmod.scrq_add(targeteyes, -1) + ")()\x001B0\x001B-1");
+  constructor (player) {
 
-  // Enable the logic_measure_movement entity
-  EntFireByHandle(pplayer.eyes, "Enable", "", 0.0, null, null);
+    // Validate the input entity handle
+    if (!ppmod.validate(player)) throw "player: Invalid entity handle";
+    if (!(player instanceof CBasePlayer)) throw "player: Entity is not a player";
+    // Keep track of the constructing player handle
+    this.ent = player;
 
-  // Set the roll angle of pplayer.eyes to a silly value
-  // This lets us later wait for the entity to be fully initialized
-  pplayer.eyes.SetAngles(0.0, 0.0, 370.0);
+    // Create a game_ui for listening to player movement inputs
+    this.gameui = Entities.CreateByClassname("game_ui");
+    // Set up and activate the game_ui entity
+    this.gameui.__KeyValueFromInt("FieldOfView", -1);
+    EntFireByHandle(this.gameui, "Activate", "", 0.0, player, null);
 
-  // Set up and activate the game_ui entity
-  pplayer.gameui.__KeyValueFromInt("FieldOfView", -1);
-  EntFireByHandle(pplayer.gameui, "Activate", "", 0.0, player, null);
+    // One logic_playerproxy is required for registering jumping and ducking
+    // This breaks if more than one is created, so we use an existing one if available
+    this.proxy = Entities.FindByClassname(null, "logic_playerproxy");
+    if (!this.proxy) this.proxy = Entities.CreateByClassname("logic_playerproxy");
 
-  // Create a table for internal values
-  local internal = {
-    velprev = 0,
-    gravtrig = null,
-    landscr = [],
-    interval = null
-  };
+    // Create a logic_measure_movement for getting player eye angles
+    this.eyes = Entities.CreateByClassname("logic_measure_movement");
+    // Generate a unique name for the entity
+    local eyename = "pplayer_eyes_" + Time();
+    // Set MeasureType to measure eye position
+    this.eyes.__KeyValueFromInt("MeasureType", 1);
+    // Point the entity back at itself
+    this.eyes.__KeyValueFromString("Targetname", eyename);
+    this.eyes.__KeyValueFromString("TargetReference", eyename);
+    this.eyes.__KeyValueFromString("Target", eyename);
+    // The MeasureReference doesn't update unless set with the input
+    EntFireByHandle(this.eyes, "SetMeasureReference", eyename, 0.0, null, null);
+    // Update the MeasureTarget
+    local target_eyes_this = target_eyes.bindenv(this);
+    target_eyes_this();
+    // The MeasureTarget must be updated on each game load
+    local auto = Entities.CreateByClassname("logic_auto");
+    auto.__KeyValueFromString("OnMapSpawn", "!self\x001BRunScriptCode\x001Bppmod.scrq_get(" + ppmod.scrq_add(target_eyes_this, -1) + ")()\x001B0\x001B-1");
+    // Enable the logic_measure_movement entity
+    EntFireByHandle(this.eyes, "Enable", "", 0.0, null, null);
+    // Set the roll angle of this.eyes to a silly value
+    // This lets us later wait for the entity to be fully initialized
+    this.eyes.SetAngles(0.0, 0.0, 370.0);
 
-  // Set up a simple loop for watching if the player is grounded
-  ppmod.interval(function ():(pplayer, internal) {
+    // Some routines have to be performed in a tick loop
+    ppmod.interval((function () {
 
-    // Get the player's velocity along the Z axis
-    local vel = pplayer.ent.GetVelocity().z;
+      /******************************************
+       * Monitor whether the player is grounded *
+       ******************************************/
 
-    // If the velocity has been non-zero for two ticks, consider the player ungrounded
-    if (internal.velprev != 0.0 && vel != 0.0) pplayer.groundstate = false;
-    // If the player was just moving down and has now stopped, consider them grounded
-    else if (internal.velprev <= 0.0 && vel == 0.0 && !pplayer.groundstate) {
-      pplayer.groundstate = true;
-      // Run each attached pplayer.land handler
-      for (local i = 0; i < internal.landscr.len(); i ++) internal.landscr[i]();
-    }
+      // Get the player's velocity along the Z axis
+      local velZ = this.ent.GetVelocity().z;
 
-    // Update the velocity of the previous tick
-    internal.velprev = vel;
+      // If the velocity has been non-zero for two ticks, consider the player ungrounded
+      if (this.velprev != 0.0 && velZ != 0.0) this.groundstate = false;
+      // If the player was just moving down and has now stopped, consider them grounded
+      else if (this.velprev <= 0.0 && velZ == 0.0 && !this.groundstate) {
+        this.groundstate = true;
+        // Run each attached landing handler
+        for (local i = 0; i < this.landscript.len(); i ++) this.landscript[i]();
+      }
 
-  });
+      // Update the velocity of the previous tick
+      this.velprev = velZ;
 
-  // Set up a trigger_gravity for modifying the player's local gravity
-  ppmod.trigger(player.GetOrigin() + Vector(0, 0, 36.5), Vector(16, 16, 36), "trigger_gravity", Vector(), true).then(function (trigger):(player, internal) {
+      /***************************************
+       * Update the gravity trigger position *
+       ***************************************/
 
-    // Disable the trigger by default
-    trigger.__KeyValueFromFloat("Gravity", 1.0);
-    EntFireByHandle(trigger, "Disable", "", 0.0, null, null);
-    // Store the trigger in the internal table for later verification
-    internal.gravtrig = trigger;
+      if (this.gravtrig) {
+        // If simply parented, the trigger won't have any effect
+        this.gravtrig.SetAbsOrigin(this.ent.GetCenter());
+      }
 
-    // Update the trigger position on an interval
-    // If simply parented, the trigger won't have any effect
-    ppmod.interval(function ():(trigger, player) {
-      trigger.SetAbsOrigin(player.GetCenter());
-    });
+      /**********************************************************
+       * Recalculate the player's friction for the current tick *
+       **********************************************************/
 
-  });
+      // Only needed if grounded and friction is not default
+      if (this.groundstate && this.fricfactor != 4.0) {
+
+        // These calculations are time-dependant, obtain the frame time
+        local ftime = FrameTime();
+        // Obtain the player's velocity, its normal vector and amplitude
+        local vel = this.ent.GetVelocity();
+        local veldir = vel + Vector();
+        local absvel = veldir.Norm();
+
+        // Cancel out existing friction calculations
+        if (absvel >= 100.0) {
+          vel *= 1.0 / (1.0 - ftime * 4.0);
+        } else {
+          vel += veldir * (ftime * 400.0);
+        }
+
+        // Simulate our own friction
+        if (absvel >= 100.0) {
+          vel *= 1.0 - ftime * this.fricfactor;
+        } else if (this.fricfactor > 0.0) {
+          if (this.fricfactor / 0.6 < absvel) {
+            vel -= veldir * (ftime * 400.0);
+          } else if (absvel != 0.0) {
+            vel.x = 0.0;
+            vel.y = 0.0;
+          }
+        }
+
+        // Apply calculated velocity
+        this.ent.SetVelocity(vel);
+
+      }
+
+    }).bindenv(this));
+
+    // Set up a trigger_gravity for modifying the player's local gravity
+    ppmod.trigger(this.ent.GetOrigin() + Vector(0, 0, 36.5), Vector(16, 16, 36), "trigger_gravity", Vector(), true).then((function (trigger) {
+      // Disable the trigger by default
+      trigger.__KeyValueFromFloat("Gravity", 1.0);
+      EntFireByHandle(trigger, "Disable", "", 0.0, null, null);
+      // Store the trigger for later use and verification
+      this.gravtrig = trigger;
+    }).bindenv(this));
+
+  }
+
+  /**
+   * Resolves a ppromise once eyes returns a valid roll angle and once a
+   * trigger_gravity has been created. These are the only asynchronous
+   * operations, hence why we're checking for these in particular.
+   */
+  function init () {
+    return ppromise((function (resolve, reject) {
+      this.initinterval = ppmod.interval((function ():(resolve) {
+        // Check for proper setup of eyes and gravtrig
+        if (this.eyes.GetAngles().z == 370.0) return;
+        if (!this.gravtrig) return;
+        // Stop the interval and resolve with the ppmod.player instance
+        this.initinterval.Destroy();
+        resolve(this);
+      }).bindenv(this));
+    }).bindenv(this));
+  }
 
   // Checks if the player is holding a physics prop
-  pplayer.holding <- function ():(player) {
+  function holding () {
 
     /**
      * When a player picks up a prop, a player_pickup entity is created
      * and attached to the player. If we can find such an entity, that
      * means the player is holding something.
      */
-    local ent = null;
-    while (ent = Entities.FindByClassname(ent, "player_pickup")) {
-      if (ent.GetMoveParent() == player) return true;
+    local curr = null;
+    while (curr = Entities.FindByClassname(curr, "player_pickup")) {
+      if (curr.GetMoveParent() == this.ent) return true;
     }
     return false;
 
   };
 
   // Attaches a function to the event of the player using the jump input
-  pplayer.jump <- function (scr):(pplayer) {
+  function onjump (scr) {
     local scrqstr = "ppmod.scrq_get(" + ppmod.scrq_add(scr) + ")()";
-    ppmod.addoutput(pplayer.proxy, "OnJump", pplayer.ent, "RunScriptCode", "if(self==activator)" + scrqstr);
-  };
+    ppmod.addoutput(this.proxy, "OnJump", this.ent, "RunScriptCode", "if(self==activator)" + scrqstr);
+  }
+
   // Attaches a function to the event of the player landing on solid ground
-  pplayer.land <- function (scr):(internal) {
+  function onland (scr) {
     // Validate the input script argument
     if (typeof scr == "string") scr = compilestring(scr);
-    if (typeof scr != "function") throw "pplayer.land: Invalid script argument";
+    if (typeof scr != "function") throw "onland: Invalid script argument";
     // Push the script to the array of landing handlers
-    internal.landscr.push(scr);
-  };
+    this.landscript.push(scr);
+  }
+
   // Attaches a function to the event of the player finishing the crouching animation
-  pplayer.duck <- function (scr):(pplayer) {
+  function onduck (scr) {
     local scrqstr = "ppmod.scrq_get(" + ppmod.scrq_add(scr) + ")()";
-    ppmod.addoutput(pplayer.proxy, "OnDuck", pplayer.ent, "RunScriptCode", "if(self==activator)" + scrqstr);
-  };
+    ppmod.addoutput(this.proxy, "OnDuck", this.ent, "RunScriptCode", "if(self==activator)" + scrqstr);
+  }
+
   // Attaches a function to the event of the player finishing the uncrouching animation
-  pplayer.unduck <- function (scr):(pplayer) {
+  function onunduck (scr) {
     local scrqstr = "ppmod.scrq_get(" + ppmod.scrq_add(scr) + ")()";
-    ppmod.addoutput(pplayer.proxy, "OnUnDuck", pplayer.ent, "RunScriptCode", "if(self==activator)" + scrqstr);
-  };
+    ppmod.addoutput(this.proxy, "OnUnDuck", this.ent, "RunScriptCode", "if(self==activator)" + scrqstr);
+  }
+
   // Returns true if the player is in the process of ducking/unducking, false otherwise
-  pplayer.ducking <- function ():(player) {
-    return player.EyePosition().z - player.GetOrigin().z < 63.999;
-  };
+  function ducking () return this.ent.EyePosition().z - this.ent.GetOrigin().z < 63.999;
   // Returns true if the player is on the ground, false otherwise
-  pplayer.grounded <- function ():(pplayer) {
-    return pplayer.groundstate;
-  };
+  function grounded () return this.ent.groundstate;
+
   // Attaches a function to the event of the player giving a certain action input
-  pplayer.input <- function (str, scr):(pplayer) {
+  function oninput (str, scr) {
+    if (typeof str != "string") throw "oninput: Invalid command string argument";
     if (str[0] == '+') str = "pressed" + str.slice(1);
     else str = "unpressed" + str.slice(1);
-    ppmod.addscript(pplayer.gameui, str, scr);
+    ppmod.addscript(this.gameui, str, scr);
   };
+
   // Sets the player's gravity scale to the given value
-  pplayer.gravity <- function (gravity):(internal) {
-    // Disable the trigger if gravity is 1.0 (default), enable otherwise
-    if (gravity == 1.0) EntFireByHandle(internal.gravtrig, "Disable", "", 0.0, null, null);
-    else EntFireByHandle(internal.gravtrig, "Enable", "", 0.0, null, null);
+  function gravity (factor) {
+    // Ensure the gravity trigger exists
+    if (!ppmod.validate(this.gravtrig)) throw "gravity: No valid gravity trigger";
+    // Disable the trigger if factor is 1.0 (default), enable otherwise
+    if (factor == 1.0) EntFireByHandle(this.gravtrig, "Disable", "", 0.0, null, null);
+    else EntFireByHandle(this.gravtrig, "Enable", "", 0.0, null, null);
     // Zero values have no effect, this is hacky but works well enough
-    if (gravity == 0.0) internal.gravtrig.__KeyValueFromString("Gravity", "0.0000000000000001");
-    else internal.gravtrig.__KeyValueFromFloat("Gravity", gravity);
+    if (factor == 0.0) this.gravtrig.__KeyValueFromString("Gravity", "0.0000000000000001");
+    else this.gravtrig.__KeyValueFromFloat("Gravity", factor);
   };
 
-  // Recalculates the player's friction for the current tick
-  pplayer.friction <- function (fric, ftime = null, grounded = null):(pplayer) {
-
-    // Don't touch velocity if the player isn't grounded
-    if (grounded == false) return;
-    // If no grounded parameter was provided, use pplayer.groundstate
-    if (grounded == null && !pplayer.groundstate) return;
-
-    // If no frame time parameter was provided, use FrameTime()
-    if (ftime == null) ftime = FrameTime();
-
-    // Obtain the player's velocity, its normal vector and amplitude
-    local vel = pplayer.ent.GetVelocity();
-    local veldir = vel + Vector();
-    local absvel = veldir.Norm();
-
-    // Cancel out existing friction calculations
-    if (absvel >= 100.0) {
-      vel *= 1.0 / (1.0 - ftime * 4.0);
-    } else {
-      vel += veldir * (ftime * 400.0);
-    }
-
-    // Simulate our own friction
-    if (absvel >= 100.0) {
-      vel *= 1.0 - ftime * fric;
-    } else if (fric > 0.0) {
-      if (fric / 0.6 < absvel) {
-        vel -= veldir * (ftime * 400.0);
-      } else if (absvel != 0.0) {
-        vel.x = 0.0;
-        vel.y = 0.0;
-      }
-    }
-
-    // Apply calculated velocity
-    pplayer.ent.SetVelocity(vel);
-
-  };
+  // Sets the player's friction to the given value
+  function friction (fric) return this.fricfactor = fric;
 
   // Simulates player movement for one time step using Source engine movement physics
-  pplayer.movesim <- function (move, accel = 10.0, fric = 0.0, sfric = 0.25, grav = null, ftime = null, eyes = null, grounded = null):(player, pplayer) {
+  function movesim (move, accel = 10.0, fric = 0.0, sfric = 0.25, grav = null, ftime = null, eyes = null, grounded = null) {
 
     // Set default values for unset parameters
     if (grav == null) grav = Vector(0, 0, -600);
     if (ftime == null) ftime = FrameTime();
-    if (eyes == null) eyes = pplayer.eyes;
-    if (grounded == null) grounded = pplayer.grounded();
+    if (eyes == null) eyes = this.eyes;
+    if (grounded == null) grounded = this.grounded();
 
     // If in the air, scale down all acceleration by the "surface friction" parameter
     if (!grounded) accel *= sfric;
 
     // Obtain the player velocity in full form and along just the X/Y axis
-    local vel = player.GetVelocity();
+    local vel = this.ent.GetVelocity();
     local horizvel = Vector(vel.x, vel.y);
 
     // If necessary, calculate friction
@@ -1562,27 +1583,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
     if (accelspeed > addspeed) accelspeed = addspeed;
 
     // Calculate and apply the final player velocity
-    player.SetVelocity(vel + wishvel * accelspeed + grav * ftime);
+    this.ent.SetVelocity(vel + wishvel * accelspeed + grav * ftime);
 
-  };
-
-  /**
-   * Resolve the ppromise once pplayer.eyes returns a valid roll angle and
-   * once a trigger_gravity has been created. These are the only asynchronous
-   * operations, hence why we're checking for these in particular.
-   */
-  return ppromise(function (resolve, reject):(pplayer, internal) {
-
-    internal.interval = ppmod.interval(function ():(resolve, pplayer, internal) {
-      // Check for proper setup of pplayer.eyes and gravtrig
-      if (pplayer.eyes.GetAngles().z == 370.0) return;
-      if (!internal.gravtrig) return;
-      // Stop the interval and resolve with the pplayer instance
-      internal.interval.Destroy();
-      resolve(pplayer);
-    });
-
-  });
+  }
 
 }
 
