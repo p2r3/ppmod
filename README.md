@@ -542,16 +542,25 @@ Note that this will most likely take some time to run, during which the game wil
 ## Player interface
 Provides more information about and ways to interact with a player.
 ```squirrel
-  ppmod.player(player)
+  local pplayer = ppmod.player(player)
+  pplayer.init().then(function (pplayer) { ... })
 ```
-This function acts as a constructor and expects one argument - the entity handle of a player. It returns a `ppromise` which resolves to a `pplayer` instance (in reality just a table) which contains methods that allow for more control over the player than vanilla VScript provides.
+The constructor for this class expects one argument - the entity handle of a player. Some of its routines are asynchronous. To test whether the instance has fully initialized, await the `ppromise` returned by `pplayer.init`.
+
+### pplayer.init
+Returns a `ppromise` that resolves once the asynchronous routines have finished running.
+```squirrel
+  local pplayer = ppmod.player(GetPlayer());
+  pplayer.init().then(function (pplayer) {
+    // Interfaces such as `eyes` and `gravity` are guaranteed to work here
+  });
+```
 
 ### pplayer.ent
 Holds the entity handle that was used to instantiate this `pplayer` instance.
 ```squirrel
-  ppmod.player(GetPlayer()).then(function (pplayer) {
-    pplayer.ent == GetPlayer() // true
-  });
+  local pplayer = ppmod.player(GetPlayer());
+  pplayer.ent == GetPlayer() // true
 ```
 
 ### pplayer.eyes
@@ -574,7 +583,7 @@ Holds the handle of the `logic_playerproxy` used for listening to jumping/duckin
 Holds the handle of the `game_ui` entity used for listening to player movement inputs
 ```squirrel
   // Enable the Freeze Player spawnflag
-  ppmod.flags(pplayer.proxy, 32);
+  ppmod.flags(pplayer.gameui, 32);
 ```
 
 ### pplayer.holding
@@ -585,21 +594,19 @@ Returns `true` if the player is holding a prop, `false` otherwise.
 
 ### Event listeners
 Allows for listening to player actions. Each of these functions expects one argument - a function to attach. Multiple functions can be attached to one event.
-- `pplayer.jump` - Fired when the player issues a jump input.
-- `pplayer.land` - Fired when the player lands from a jump or fall.
-- `pplayer.duck` - Fired when the player starts the crouching animation.
-- `pplayer.unduck` - Fired when the player finishes the uncrouching animation.
+- `pplayer.onjump` - Fired when the player issues a jump input.
+- `pplayer.onland` - Fired when the player lands from a jump or fall.
+- `pplayer.onduck` - Fired when the player starts the crouching animation.
+- `pplayer.onunduck` - Fired when the player finishes the uncrouching animation.
 
-Here is an example of using `pplayer.jump` to listen for jumps:
+Here is an example of using `pplayer.onjump` to listen for jumps:
 ```squirrel
-  ppmod.player(GetPlayer()).then(function (pplayer) {
+  local pplayer = ppmod.player(GetPlayer());
 
-    // Note: this will fire for every jump input, including those issued mid-air
-    // To listen only for initial jumps, check that pplayer.grounded is true
-    pplayer.jump(function () {
-      printl("The player has jumped!");
-    });
-
+  // Note: this will fire for every jump input, including those issued mid-air
+  // To listen only for initial jumps, check that pplayer.grounded is true
+  pplayer.onjump(function () {
+    printl("The player has jumped!");
   });
 ```
 
@@ -615,10 +622,10 @@ Returns `true` if the player is on the ground, `false` otherwise.
   pplayer.grounded() // Returns true or false
 ```
 
-### pplayer.input
+### pplayer.oninput
 Allows for listening to player inputs.
 ```squirrel
-  pplayer.input(input, script)
+  pplayer.oninput(input, script)
 ```
 The `input` argument expects a string specifying the input command to listen for. The `script` argument can be either a function, or a string of VScript code. Note that only the inputs provided by `game_ui` are supported, namely:
 - `+moveleft` and `-moveleft`
@@ -628,15 +635,13 @@ The `input` argument expects a string specifying the input command to listen for
 - `+attack` and `-attack`
 - `+attack2` and `-attack2`
 
-Here is an example of using `pplayer.input` to listen for when the player has attempted to shoot a portal:
+Here is an example of using `pplayer.oninput` to listen for when the player has attempted to shoot a portal:
 ```squirrel
-  ppmod.player(GetPlayer()).then(function (pplayer) {
+  local pplayer = ppmod.player(GetPlayer());
 
-    // Note: this will fire for every +attack input, even if the player can't shoot portals
-    pplayer.input("+attack", function () {
-      printl("Portal shot attempted!");
-    });
-
+  // Note: this will fire for every +attack input, even if the player can't shoot portals
+  pplayer.oninput("+attack", function () {
+    printl("Portal shot attempted!");
   });
 ```
 
@@ -647,23 +652,19 @@ Changes the player's gravity without affecting the gravity of other players or e
 ```
 One argument is expected - a multiplier for the strength of the player's gravity. A value of `1` will leave it unchanged, a value of `0` will disable gravity entirely, a value of `2` will make it twice as strong, and so on.
 
+Note: **This will throw if all async routines have not finished.** To ensure this works, wait for `pplayer.init()` to resolve.
+
 ### pplayer.friction
 Changes the player's friction without affecting the friction of other players or entities.
 ```squirrel
-  pplayer.friction(friction, frametime, grounded)
+  pplayer.friction(factor)
 ```
-This function is expected to be run in a tick loop. The `friction` argument holds the same meaning as the `sv_friction` console variable (hidden in Portal 2), the `frametime` argument (optional) specifies the interval at which this function will be called. If set to `null` (default), the value of the internal function `FrameTime()` will be assumed. The `grounded` argument (optional) is a boolean, specifying whether or not the player is on the ground. Setting this to `false` essentially skips running the function entirely. If set to `null` (default), the value of `pplayer.grounded()` is used.
+The `friction` argument holds the same meaning as the `sv_friction` console variable, which is hidden and inaccessible by default in Portal 2.
 
 Here is an example of setting the player's friction to 2, which is half of the default value:
 ```squirrel
-  ppmod.player(GetPlayer()).then(function (pplayer) {
-
-    // Note: this function calculates the friction for one tick at a time, so a tick loop is used
-    ppmod.interval(function ():(pplayer) {
-      pplayer.friction(2.0);
-    });
-
-  });
+  local pplayer = ppmod.player(GetPlayer());
+  pplayer.friction(2.0);
 ```
 Note that the calculations performed expect the value of `sv_friction` to be `4`, which it is by default, and typically cannot be changed without unlocking the console variable via a plugin.
 
