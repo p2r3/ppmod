@@ -770,7 +770,7 @@ try {
   if (typeof target != "string") {
     return ppmod.addscript(ent, output, function ():(target, input, value) {
       ppmod.fire(target, input, value, 0.0, activator, caller);
-    }, delay, max, false);
+    }, delay, max);
   }
   // Otherwise, assign the output as a keyvalue separated by x1B characters.
   // This seems to be how entity outputs are represented internally, and
@@ -825,7 +825,7 @@ try {
 }
 
 // Adds a script as an output to an entity with optional default arguments
-::ppmod.addscript <- function (ent, output, scr = "", delay = 0, max = -1, passthrough = false) {
+::ppmod.addscript <- function (ent, output, scr = "", delay = 0, max = -1) {
 
   if (typeof scr == "function") {
     // If a function was provided, add it to the script queue
@@ -837,9 +837,7 @@ try {
       ppmod.scrq[scrq_idx] = null;
     });
     // Convert the argument to a scrq_get call string
-    // Pass the activator and caller handles to the function if necessary
-    if (passthrough) scr = "ppmod.scrq_get(" + scrq_idx + ")(activator, caller)";
-    else scr = "ppmod.scrq_get(" + scrq_idx + ")()";
+    scr = "ppmod.scrq_get(" + scrq_idx + ")()";
   }
   // Attach the output as a keyvalue, similar to how ppmod.addoutput does it
   // The script is targeted to worldspawn, as that makes activator and caller available
@@ -968,8 +966,8 @@ for (local i = 0; i < entclasses.len(); i ++) {
     entclasses[i].AddOutput <- function (output, target, input = "Use", value = "", delay = 0, max = -1) {
       return ::ppmod.addoutput(this, output, target, input, value, delay, max);
     }
-    entclasses[i].AddScript <- function (output, scr = "", delay = 0, max = -1, passthrough = false) {
-      return ::ppmod.addscript(this, output, scr, delay, max, passthrough);
+    entclasses[i].AddScript <- function (output, scr = "", delay = 0, max = -1) {
+      return ::ppmod.addscript(this, output, scr, delay, max);
     }
     entclasses[i].RunScript <- function (scr) {
       return ::ppmod.runscript(this, scr);

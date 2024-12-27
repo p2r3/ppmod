@@ -371,11 +371,9 @@ The arguments of this function are identical to those used in Hammer or those pa
 ### ppmod.addscript
 Similar to its sister function `ppmod.addoutput`, but instead of firing an input when an output is received, a script function is called.
 ```squirrel
-  ppmod.addscript(entity, output, script, delay, max, passthrough)
+  ppmod.addscript(entity, output, script, delay, max)
 ```
-The arguments here are similar to those in `ppmod.addoutput`, except:
-- The `script` may be either a string of Squirrel code, or a function.
-- Setting `passthrough` to `true` provides the given function with the output's `activator` and `caller` as arguments.
+The arguments here are similar to those in `ppmod.addoutput`, except for `script`, which may be either a string of Squirrel code, or a function. The scope of the attached function is provided with handles to `self`, `activator`, and `caller`.
 
 ### ppmod.runscript
 Runs a script as the specified entity. Nearly identical to `ppmod.fire(entity, "RunScriptCode", script)`, with the exception that the script can be either a string or a script function.
@@ -395,7 +393,7 @@ Sets an entity's [input hook](https://developer.valvesoftware.com/wiki/VScript_F
 ```squirrel
   ppmod.hook(entity, input, script, max)
 ```
-The given script function gets called whenever the entity receives the specified input. If this function returns `false`, the input is discarded. Otherwise, it gets executed as per usual. This can be used to make specific inputs conditional, or to disable them outright. Note that input names are case sensitive, and use the CamelCase format.
+The given script function gets called whenever the entity receives the specified input. If this function returns `false`, the input is discarded. Otherwise, it gets executed as per usual. This can be used to make specific inputs conditional, or to disable them outright. Note that input names are case sensitive, and _typically_ use the CamelCase format, though that depends on how the input is fired. The scope of the attached function is provided with handles to `self`, `activator`, and `caller`.
 
 ## Shorthands for entity management
 Many of the functions documented above are also implemented as methods in most entity classes (assuming that ppmod was included before entities were instantiated). This provides some syntactic sugar that makes entity code shorter and cleaner.
@@ -426,7 +424,7 @@ Outputs can be added via the `AddOutput` method of an entity's handle. Arguments
 ```
 Similarly, scripts can be added via the `AddScript` method.
 ```squirrel
-  ent.AddScript(output, scr, delay, max, passthrough)
+  ent.AddScript(output, scr, delay, max)
 ```
 
 ### Running scripts
