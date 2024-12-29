@@ -2697,17 +2697,24 @@ ppmod.onauto(function () {
 
 }
 
+// Launches a physics prop in the given direction.
 ::ppmod.catapult <- function (ent, vec) {
 
-  if (!(typeof ent == "instance" && ent instanceof CBaseEntity)) {
+  // Validate arguments
+  if (typeof vec != "Vector") throw "catapult: Invalid vector argument";
+
+  // Use ppmod.forent to find entity handles if necessary
+  if (!ppmod.validate(ent)) {
     ppmod.forent(ent, function (curr):(vec) {
       ppmod.catapult(curr, vec);
     });
     return;
   }
 
+  // Normalize the vector to get its length, used as the launch speed
   local speed = vec.Norm();
 
+  // Create a small trigger_catapult to perform the launch
   local trigger = Entities.CreateByClassname("trigger_catapult");
   trigger.__KeyValueFromInt("Solid", 3);
   trigger.SetAbsOrigin(ent.GetOrigin());
@@ -2715,11 +2722,13 @@ ppmod.onauto(function () {
   trigger.SetSize(Vector(-0.2, -0.2, -0.2), Vector(0.2, 0.2, 0.2));
   trigger.__KeyValueFromInt("CollisionGroup", 1);
 
+  // Use the trigger's angles for the launch direction
   local ang = trigger.GetAngles();
   trigger.__KeyValueFromInt("SpawnFlags", 8);
   trigger.__KeyValueFromFloat("PhysicsSpeed", speed);
   trigger.__KeyValueFromString("LaunchDirection", ang.x+" "+ang.y+" "+ang.z);
 
+  // Enable the trigger and kill it right away
   EntFireByHandle(trigger, "Enable", "", 0.0, null, null);
   EntFireByHandle(trigger, "Kill", "", 0.0, null, null);
 
