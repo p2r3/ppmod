@@ -1043,6 +1043,26 @@ for (local i = 0; i < entclasses.len(); i ++) {
       // Proceed with destroying the entity
       return this.DoDestroy();
     }
+    // On non-player entities, override velocity methods
+    if (entclasses[i] != CBasePlayer) {
+      // Override GetVelocity to return a promise for interpolated position
+      entclasses[i].GetVelocity <- function () {
+        // Retrieve the position on the current tick
+        local pos = this.GetOrigin();
+        local cube = this;
+        // Subtract the position on the next tick
+        return ::ppromise(function (resolve, reject):(pos, cube) {
+          ppmod.wait(function ():(pos, resolve, cube) {
+            if (!ppmod.validate(cube)) resolve(Vector());
+            resolve((cube.GetOrigin() - pos) * (1.0 / FrameTime()));
+          }, FrameTime());
+        });
+      }
+      // Override SetVelocity to call ppmod.push instead
+      entclasses[i].SetVelocity <- function (vec) {
+        return ::ppmod.push(this, vec);
+      }
+    }
   } catch (e) {
     // Classes may fail to be modified if they've already been instantiated
     // First, obtain the name of the class as a string
