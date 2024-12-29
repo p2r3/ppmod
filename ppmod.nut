@@ -1044,7 +1044,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
       return this.DoDestroy();
     }
     // On non-player entities, override velocity methods
-    if (entclasses[i] != CBasePlayer) {
+    if (entclasses[i] != CBasePlayer && entclasses[i] != CPortal_Player) {
       // Override GetVelocity to return a promise for interpolated position
       entclasses[i].GetVelocity <- function () {
         // Retrieve the position on the current tick
@@ -1060,7 +1060,12 @@ for (local i = 0; i < entclasses.len(); i ++) {
       }
       // Override SetVelocity to call ppmod.push instead
       entclasses[i].SetVelocity <- function (vec) {
-        return ::ppmod.push(this, vec);
+        // First, obtain the current velocity
+        local cube = this;
+        this.GetVelocity().then(function (vel):(vec, cube) {
+          // Then, compute the difference and use ppmod.push
+          return ::ppmod.push(cube, vec - vel);
+        });
       }
     }
   } catch (e) {
