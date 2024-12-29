@@ -930,6 +930,21 @@ Here is an example of launching every cube on the current map directly upwards:
 ```
 Note that you might first have to ensure that the prop you're launching is not asleep. In most cases, this can be done via the `Wake` input.
 
+### ppmod.push
+Applies a directional force to a prop, similar to what `SetVelocity` does on a player.
+```squirrel
+  ppmod.push(entity, vector)
+```
+The first argument is the entity to push. The second argument is a Vector, the direction of which is used to control the push direction and the length of which is used to set the push force in units per second.
+
+Here is an example of adding a ~400ups upward force to every cube on the current map:
+```squirrel
+  ppmod.push("prop_weighted_cube", Vector(0, 0, 400));
+```
+Note: this function is different from `ppmod.catapult`, as the input vector more accurately represents the force applied, and the magnitude of this force is approximately scaled from units per second. This function also calls `Wake` and `EnableMotion` on the input entity, which ensures that the velocity is applied even if the prop is asleep.
+
+Also note: The console variable `portal_pointpush_think_rate` is modified to increase `point_push` reliability.
+
 ## Game interface
 These functions provide ways to interact with the game and the player's system outside of the world and its physics.
 
