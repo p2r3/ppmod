@@ -947,3 +947,22 @@ All arguments for this constructor are optional. The `string` argument sets the 
 - `SetColor(color1, color2)` - both values are strings of form `"R G B"`, with the second one being optional and used only as the transition color for fading, if fading is used.
 - `SetFade(in, out, fx)` - sets fade in/out time in seconds. The third argument is an optional boolean - if `true`, the text will fade in letter-by-letter instead of all at once.
 - `Display(hold, player)` - displays the text for the specified amount of seconds to the given player. Both arguments are optional - if `hold` is not set, the text will display for one tick, and if `player` is `null` or unset, the text will display for all players simultaneously.
+
+### ppmod.alias
+Creates a console command alias for calling a script function
+```squirrel
+  ppmod.alias(command, script)
+```
+The first argument is the command to alias - this can be any arbitrary string, or an existing command. The second argument is the script function or string to execute whenever the alias is called. Note: **aliases cannot be cleared, only overwritten by other aliases**.
+
+Here is an example that aliases the `+mouse_menu` bind (the F key by default) to toggle between zero/normal player gravity:
+```squirrel
+  local data = {
+    pplayer = ppmod.player(GetPlayer()),
+    factor = 1.0
+  };
+  ppmod.alias("+mouse_menu", function ():(data) {
+    data.factor = fabs(factor - 1.0);
+    data.pplayer.gravity(data.factor);
+  });
+```
