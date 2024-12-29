@@ -26,8 +26,8 @@ Setting up and working with an environment like this for the first time can be o
   ppmod.onauto(async(function () {
 
     // Provides us with additional player info, like eye position and angles
-    yield ppmod.player(GetPlayer());
-    local pplayer = yielded;
+    local pplayer = ppmod.player(GetPlayer());
+    yield pplayer.init();
 
     // Props cannot be created with the CreateByClassname method, so we use ppmod.create instead
     yield ppmod.create("prop_weighted_cube");
@@ -825,7 +825,7 @@ Here is an example of drawing a box at the location where a ray cast 256 units f
   // Allow for drawing the intersection box through portals
   SendToConsole("cl_debugoverlaysthroughportals 1");
 
-  ppmod.player(GetPlayer()).then(function (pplayer) {
+  ppmod.player(GetPlayer()).init().then(function (pplayer) {
     ppmod.interval(function ():(pplayer) {
 
       // Cast a ray 256 units forward from the player's eyes
