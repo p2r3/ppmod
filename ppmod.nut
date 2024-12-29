@@ -2734,6 +2734,47 @@ ppmod.onauto(function () {
 
 }
 
+// Apply a directional force to a prop, scaled to units per second
+::ppmod.push <- function (ent, vec) {
+
+  // Validate arguments
+  if (typeof vec != "Vector") throw "push: Invalid vector argument";
+
+  // Use ppmod.forent to find entity handles if necessary
+  if (!ppmod.validate(ent)) {
+    return ppmod.forent(ent, function (curr):(vec) {
+      ppmod.push(curr, vec);
+    });
+  }
+
+  // Increase the point_push think time to improve consistency
+  // This prevents the pusher from pushing twice when we don't want it to
+  SendToConsole("portal_pointpush_think_rate 0.15");
+
+  // Ensure that the prop is awake and mobile
+  EntFireByHandle(ent, "Wake", "", 0.0, null, null);
+  EntFireByHandle(ent, "EnableMotion", "", 0.0, null, null);
+
+  // Create the point_push entity
+  local pusher = Entities.CreateByClassname("point_push");
+
+  // Normalize the vector and get its length to use as the velocity
+  local speed = vec.Norm();
+  // Position the pusher at the origin of the prop
+  pusher.SetAbsOrigin(ent.GetOrigin());
+  pusher.SetForwardVector(vec);
+  pusher.__KeyValueFromFloat("Radius", 0.1);
+  // Scale the velocity by a constant factor to use as pusher magnitude
+  pusher.__KeyValueFromFloat("Magnitude", speed * 0.3005);
+  pusher.__KeyValueFromInt("SpawnFlags", 22);
+  // Parent the pusher to the entity in case it moves during setup
+  EntFireByHandle(pusher, "SetParent", "!activator", 0.0, ent, null);
+  // Enable the pusher and kill it after one push has occurred
+  EntFireByHandle(pusher, "Enable", "", 0.0, null, null);
+  EntFireByHandle(pusher, "Kill", "", 0.1, null, null);
+
+}
+
 /******************/
 // Game interface //
 /******************/
