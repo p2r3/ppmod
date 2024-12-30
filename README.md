@@ -6,7 +6,7 @@ The focus of this project is to provide tools that assist in developing Portal 2
 In other words, ppmod makes Portal 2's Squirrel feel less like a cheap hack, and more like a native game interface.
 
 ## Installation
-Since ppmod version 4, the environment is expected to be as clean as possible, without any instantiated entities or vectors. This can be achieved by placing the [ppmod.nut](https://github.com/p2r3/ppmod/blob/main/ppmod.nut) into `scripts/vscripts` and calling it at the very top of `mapspawn.nut`, after making sure that the current scope has server-side control:
+Since ppmod version 4, the environment is expected to be as clean as possible, without any instantiated entities or vectors. This can be achieved by placing [ppmod.nut](https://github.com/p2r3/ppmod/blob/main/ppmod.nut) into `scripts/vscripts` and calling it at the very top of `mapspawn.nut`, after making sure that the current scope has server-side control:
 ```squirrel
   // File: "scripts/vscripts/mapspawn.nut"
 
@@ -43,7 +43,7 @@ This script will spawn a red cube in front of the player's head, and make it pri
     // Colors the cube red with the "Color" input
     cube.Color("255 0 0");
     // Connects a script function to the cube's "OnFizzled" output
-    cube.AddScript("OnFizzled", function () {
+    cube.OnFizzled(function () {
       printl("The red cube has been fizzled!");
     });
 
@@ -429,6 +429,10 @@ Outputs can be added via the `AddOutput` method of an entity's handle. Arguments
 Similarly, scripts can be added via the `AddScript` method.
 ```squirrel
   ent.AddScript(output, scr, delay, max)
+```
+Scripts can also be added by calling the output as a method of the entity handle and providing a function as the first argument.
+```squirrel
+  cube.OnFizzled(function, delay, max)
 ```
 
 ### Running scripts
