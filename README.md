@@ -1,20 +1,24 @@
 # ppmod
-VScript library for rapid prototyping of Portal 2 mods.
+VScript library for rapid and comfortable prototyping of Portal 2 mods.
 
-The focus of this project is to provide tools that assist in developing Portal 2 VScript mods faster and much more comfortably than through vanilla VScript. This involves employing various hacks and adding missing features or fixing broken ones through entities often specific to Portal 2. While ppmod strives to be performant, this does not come at the cost of ease of use.
+The focus of this project is to provide tools that assist in developing Portal 2 VScript mods faster and much more comfortably than through vanilla VScript. This involves adding syntactic sugar, new features, employing various workarounds for missing features or fixing broken ones through entities often specific to Portal 2. While ppmod strives to be performant, this does not come at the cost of reduced ease of use.
+
+In other words, ppmod makes Portal 2's Squirrel feel less like a cheap hack, and more like a native game interface.
 
 ## Installation
-Since ppmod version 4, the environment is expected to be as clean as possible, without any instantiated entities or vectors. This can be achieved by placing the script file in `scripts/vscripts` and calling it at the very top of `mapspawn.nut`, after making sure that the current scope has server-side control:
+Since ppmod version 4, the environment is expected to be as clean as possible, without any instantiated entities or vectors. This can be achieved by placing the [ppmod.nut](https://github.com/p2r3/ppmod/blob/main/ppmod.nut) into `scripts/vscripts` and calling it at the very top of `mapspawn.nut`, after making sure that the current scope has server-side control:
 ```squirrel
   // File: "scripts/vscripts/mapspawn.nut"
 
   if (!("Entities" in this)) return; // Quit if the script is being loaded client-side
   IncludeScript("ppmod"); // Include ppmod as early as possible
 ```
-Including ppmod in an already populated environment will still work at the cost of additional vector metamethods and entity method abstractions. This will get logged to the console as a warning, but is technically harmless if these features are unused.
+Including ppmod in an already populated environment will still work at the cost of additional vector metamethods and entity method abstractions - that's the syntactic sugar mentioned earlier. This will get logged to the console as a warning, but is technically harmless if these features are unused.
 
 ## Getting started
-Setting up and working with an environment like this for the first time can be overwhelming, so here's some boilerplate to help you get started. This script will spawn a red cube in front of the player's head, and make it print to the console once it gets fizzled. This should provide a solid example that you can then play around with to get an idea of what it's like to work with ppmod.
+Setting up and working with an environment like this for the first time can be overwhelming, so here's some boilerplate to help you get started.
+
+This script will spawn a red cube in front of the player's head, and make it print to the console once it gets fizzled. This should provide a solid example that you can then play around with to get an idea of what it's like to work with ppmod.
 ```squirrel
   // File: "scripts/vscripts/mapspawn.nut"
 
@@ -25,7 +29,7 @@ Setting up and working with an environment like this for the first time can be o
   // We wrap it in async() to make it more comfortable to use asynchronous functions inline
   ppmod.onauto(async(function () {
 
-    // Provides us with additional player info, like eye position and angles
+    // Retrieve additional player info, like eye position and angles
     local pplayer = ppmod.player(GetPlayer());
     yield pplayer.init();
 
@@ -37,9 +41,9 @@ Setting up and working with an environment like this for the first time can be o
     local pos = pplayer.eyes.GetOrigin() + pplayer.eyes.GetForwardVector() * 64;
     cube.SetOrigin(pos);
     // Colors the cube red with the "Color" input
-    ppmod.fire(cube, "Color", "255 0 0");
+    cube.Color("255 0 0");
     // Connects a script function to the cube's "OnFizzled" output
-    ppmod.addscript(cube, "OnFizzled", function () {
+    cube.AddScript("OnFizzled", function () {
       printl("The red cube has been fizzled!");
     });
 
