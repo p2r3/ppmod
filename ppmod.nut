@@ -2804,11 +2804,13 @@ ppmod.onauto(function () {
 // Game interface //
 /******************/
 
+// Displays text on a player's screen using the game_text entity
 ::ppmod.text <- class {
 
   ent = null;
 
   constructor (text = "", x = -1.0, y = -1.0) {
+    // Create the game_text entity and configure defaults
     this.ent = Entities.CreateByClassname("game_text");
     this.ent.__KeyValueFromString("Message", text);
     this.ent.__KeyValueFromString("Color", "255 255 255");
@@ -2816,24 +2818,30 @@ ppmod.onauto(function () {
     this.ent.__KeyValueFromFloat("Y", y);
   }
 
+  // Returns the internal game_text entity
   function GetEntity () {
     return this.ent;
   }
+  // Sets the position of the text along the X/Y axis
   function SetPosition (x, y) {
     this.ent.__KeyValueFromFloat("X", x);
     this.ent.__KeyValueFromFloat("Y", y);
   }
+  // Changes the displayed string
   function SetText (text) {
     this.ent.__KeyValueFromString("Message", text);
   }
+  // Sets a font size (0 to 5) by adjusting the channel
   function SetSize (size) {
     // Channels sorted from smallest to biggest font size
     this.ent.__KeyValueFromInt("Channel", [2, 1, 4, 0, 5, 3][size]);
   }
+  // Sets primary text color and, optionally, secondary color
   function SetColor (c1, c2 = null) {
     this.ent.__KeyValueFromString("Color", c1);
     if (c2) this.ent.__KeyValueFromString("Color2", c2);
   }
+  // Sets the fade in/out effect, optionally switches between effect type
   function SetFade (fin, fout, fx = false) {
     this.ent.__KeyValueFromFloat("FadeIn", fin);
     this.ent.__KeyValueFromFloat("FXTime", fin);
@@ -2841,6 +2849,7 @@ ppmod.onauto(function () {
     if (fx) this.ent.__KeyValueFromInt("Effect", 2);
     else this.ent.__KeyValueFromInt("Effect", 0);
   }
+  // Displays the text for the given time to the given observer
   function Display (hold = null, player = null) {
     if (hold == null) hold = FrameTime();
     this.ent.__KeyValueFromFloat("HoldTime", hold);
@@ -2863,4 +2872,4 @@ ppmod.onauto(function () {
   // Set up a console alias to call the input script
   SendToConsole("alias \""+ cmd +"\" \"script ppmod.scrq_get("+ scrq_idx +")()\"");
 
-};
+}
