@@ -446,6 +446,35 @@ Hook functions can be added to inputs via the `SetHook` method. Arguments remain
   ent.SetHook(input, script, max)
 ```
 
+### Sanitized SetOrigin and SetAngles methods
+The base `SetOrigin`, `SetAbsOrigin` and `SetAngles` methods are overridden to sanitize input arguments and to allow for seamless switching between component-wise and vector input.
+
+By default, nothing prevents you from accidentally setting a coordinate or angle of an entity to `nan` or `inf`, both of which cause undefined behavior and crashes. These overrides will throw an exception if such values are detected.
+
+Additionally, `SetOrigin` and `SetAbsOrigin` now accept component-wise input, and `SetAngles` now accepts PYR vector input:
+```squirrel
+  ent.SetOrigin(Vector(x, y, z)) // Still valid
+  ent.SetOrigin(x, y, z) // Also valid
+
+  ent.SetAngles(p, y, r) // Still valid
+  ent.SetAngles(Vector(p, y, r)) // Also valid
+```
+
+### SetVelocity and GetVelocity methods for props
+In Portal 2, `GetVelocity` and `SetVelocity` refer to the QPhys velocity values by default. These methods are overridden for props in ppmod to allow for similar behavior to what is expected. These methods remain unchanged for player entities.
+
+The `GetVelocity` method returns a `ppromise` which resolves to a velocity Vector obtained by interpolating the position of the entity over two ticks:
+```squirrel
+  // Prints the velocity of `ent`
+  ent.GetVelocity().then(printl);
+```
+
+The `SetVelocity` method first obtains an estimate of the current velocity using the `GetVelocity` override above, computes the difference between that and the input, and then uses `ppmod.push` to apply the new velocity.
+```squirrel
+  // Sets the velocity of `ent` to 200ups upward
+  ent.SetVelocity(Vector(0, 0, 200));
+```
+
 ## Control flow
 These functions implement additional features to VScript's program control flow, like timers and intervals, essential for game programming.
 
