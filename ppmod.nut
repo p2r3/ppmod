@@ -2530,6 +2530,7 @@ ppmod.onauto(function () {
 
 }
 
+// Creates a button prop and fixes common issues associated with spawning buttons dynamically
 ::ppmod.button <- function (type, pos, ang = Vector()) {
 
   // Ensure that sounds are precached by creating a dummy entity
@@ -2537,47 +2538,59 @@ ppmod.onauto(function () {
     dummy.Destroy();
   });
 
+  // Determine the model for the prop
   local model;
+  switch (type) {
+    case "prop_button": { model = "props/switch001.mdl"; break; }
+    case "prop_under_button": { model = "props_underground/underground_testchamber_button.mdl"; break; }
+    case "prop_floor_button": { model = "props/portal_button.mdl"; break; }
+    case "prop_floor_cube_button":{ model = "props/box_socket.mdl"; break; }
+    case "prop_floor_ball_button":{ model = "props/ball_button.mdl"; break; }
+    case "prop_under_floor_button": { model = "props_underground/underground_floor_button.mdl"; break; }
+    default: throw "button: Invalid button type";
+  }
 
-  if (type == "prop_button") model = "props/switch001.mdl";
-  if (type == "prop_under_button") model = "props_underground/underground_testchamber_button.mdl";
-  if (type == "prop_floor_button") model = "props/portal_button.mdl";
-  if (type == "prop_floor_cube_button") model = "props/box_socket.mdl";
-  if (type == "prop_floor_ball_button") model = "props/ball_button.mdl";
-  if (type == "prop_under_floor_button") model = "props_underground/underground_floor_button.mdl";
+  // Validate position and angle arguments
+  if (typeof pos != "Vector") throw "button: Invalid position argument";
+  if (typeof ang != "Vector") throw "button: Invalid angles argument";
 
+  // Return a promise that resolves to a table of button interface methods
   return ppromise(function (resolve, reject):(type, pos, ang, model) {
 
     // First, create a prop_dynamic with the appropriate model
     ppmod.create(model).then(function (ent):(type, pos, ang, resolve) {
 
+      // Position the new prop
       ent.SetAbsOrigin(pos);
       ent.SetAngles(ang.x, ang.y, ang.z);
 
       // The floor buttons often come with additional phys_bone_followers
+      // Find and position these by iterating through entities backwards
       while (ent.GetClassname() == "phys_bone_follower") {
         ent = ppmod.prev(ent.GetModelName(), ent);
         ent.SetAbsOrigin(pos);
         ent.SetAngles(ang.x, ang.y, ang.z);
       }
 
-      if (type == "prop_button" || type == "prop_under_button") { // Handle pedestal buttons
+      // Handle pedestal buttons
+      if (type == "prop_button" || type == "prop_under_button") {
 
-        // func_button seems to be broken when spawned during runtime, hence the use of func_rot_button
+        // func_button breaks when created dynamically, use func_rot_button instead
         ppmod.brush(pos + (ent.GetUpVector() * 40), Vector(8, 8, 8), "func_rot_button", ang, true).then(function (button):(type, ent, resolve) {
 
           // Make the button box non-solid and activated with +use
           button.__KeyValueFromInt("CollisionGroup", 2);
           button.__KeyValueFromInt("SpawnFlags", 1024);
-          ppmod.setparent(button, ent);
+          EntFireByHandle(button, "SetParent", "!activator", 0.0, ent, null);
 
-          // Properties are stored in the func_rot_button's script scope
-          button.ValidateScriptScope();
-          button.GetScriptScope()["button_delay"] <- 1.0;
-          button.GetScriptScope()["button_timer"] <- false;
-          button.GetScriptScope()["button_permanent"] <- false;
+          // Button properties are stored in a shared table
+          local properties = {
+            delay = 1.0,
+            timer = false,
+            permanent = false
+          };
 
-          ppmod.addscript(button, "OnPressed", function ():(type, ent, button) {
+          ppmod.addscript(button, "OnPressed", function ():(type, ent, button, properties) {
 
             // Underground buttons have different animation names
             // The additional sound effects for those are baked into the animation
@@ -2585,14 +2598,15 @@ ppmod.onauto(function () {
             else EntFireByHandle(ent, "SetAnimation", "press", 0.0, null, null);
             button.EmitSound("Portal.button_down");
 
-            // To disable the button while it's down, we clear its "+use activates" flag
+            // To disable the button while pressed, clear its "+use activates" flag
             button.__KeyValueFromInt("SpawnFlags", 0);
 
-            local timer = null; // Simulate the timer ticks
-            if (button.GetScriptScope()["button_timer"]) {
+            // Simulate the timer ticks
+            local timer = null;
+            if (properties.timer) {
 
+              // Create a logic_timer for repeated ticks
               timer = Entities.CreateByClassname("logic_timer");
-
               ppmod.addscript(timer, "OnTimer", function ():(button) {
                 button.EmitSound("Portal.room1_TickTock");
               });
@@ -2604,7 +2618,7 @@ ppmod.onauto(function () {
             }
 
             // If "permanent", skip the release code
-            if (button.GetScriptScope()["button_permanent"]) return;
+            if (properties.permanent) return;
 
             ppmod.wait(function ():(ent, button, type, timer) {
 
@@ -2615,28 +2629,31 @@ ppmod.onauto(function () {
               button.__KeyValueFromInt("SpawnFlags", 1024);
               if (timer) timer.Destroy();
 
-            }, button.GetScriptScope()["button_delay"]);
+            }, properties.delay);
 
           });
 
+          // Resolve the promise with a table of interface methods
           resolve({
 
             GetButton = function ():(button) { return button },
             GetProp = function ():(ent) { return ent },
-            SetDelay = function (delay):(button) { button.GetScriptScope()["button_delay"] <- delay },
-            SetTimer = function (enabled):(button) { button.GetScriptScope()["button_timer"] <- enabled },
-            SetPermanent = function (enabled):(button) { button.GetScriptScope()["button_permanent"] <- enabled },
+            SetDelay = function (delay):(properties) { properties.delay = delay },
+            SetTimer = function (enabled):(properties) { properties.timer = enabled },
+            SetPermanent = function (enabled):(properties) { properties.permanent = enabled },
             OnPressed = function (scr):(button) { ppmod.addscript(button, "OnPressed", scr) },
 
           });
 
         });
 
-      } else { // Handle floor buttons
+      // Handle floor buttons
+      } else {
 
         // This moves the phys_bone_followers into place
         EntFireByHandle(ent, "SetAnimation", "BindPose", 0.0, null, null);
 
+        // Adjust trigger size based on button type
         local trigger;
         if (type == "prop_under_floor_button") {
           trigger = ppmod.trigger(pos + Vector(0, 0, 8.5), Vector(30, 30, 8.5), "trigger_multiple", ang);
@@ -2647,8 +2664,8 @@ ppmod.onauto(function () {
         // Activated by players and physics props
         trigger.__KeyValueFromInt("SpawnFlags", 9);
 
-        trigger.ValidateScriptScope();
-        trigger.GetScriptScope()["count"] <- 0;
+        // Button properties are stored in a shared table
+        local properties = { count = 0 };
 
         // Used for attaching output scripts to press and unpress events
         local pressrl = Entities.CreateByClassname("logic_relay");
@@ -2656,36 +2673,44 @@ ppmod.onauto(function () {
         local unpressrl = Entities.CreateByClassname("logic_relay");
         unpressrl.__KeyValueFromInt("SpawnFlags", 2);
 
-        local press = function ():(type, trigger, ent, pressrl) {
-          if (++trigger.GetScriptScope()["count"] == 1) {
+        // Handles something entering the trigger volume
+        local press = function ():(type, ent, properties, pressrl) {
 
-            EntFireByHandle(pressrl, "Trigger", "", 0.0, null, null);
+          // Increment the counter and check if this is the first press
+          if (++properties.count != 1) return;
 
-            if (type == "prop_under_floor_button") {
-              EntFireByHandle(ent, "SetAnimation", "press", 0.0, null, null);
-              ent.EmitSound("Portal.OGButtonDepress");
-            } else {
-              EntFireByHandle(ent, "SetAnimation", "down", 0.0, null, null);
-              ent.EmitSound("Portal.ButtonDepress");
-            }
+          // Trigger the button press relay
+          EntFireByHandle(pressrl, "Trigger", "", 0.0, null, null);
 
+          // Play the corresponding animations and sounds
+          if (type == "prop_under_floor_button") {
+            EntFireByHandle(ent, "SetAnimation", "press", 0.0, null, null);
+            ent.EmitSound("Portal.OGButtonDepress");
+          } else {
+            EntFireByHandle(ent, "SetAnimation", "down", 0.0, null, null);
+            ent.EmitSound("Portal.ButtonDepress");
           }
+
         };
 
-        local unpress = function ():(type, trigger, ent, unpressrl) {
-          if (--trigger.GetScriptScope()["count"] == 0) {
+        // Handles something leaving the trigger volume
+        local unpress = function ():(type, ent, properties, unpressrl) {
 
-            EntFireByHandle(unpressrl, "Trigger", "", 0.0, null, null);
+          // Decrement the counter and check if the trigger is empty
+          if (--properties.count != 0) return;
 
-            if (type == "prop_under_floor_button") {
-              EntFireByHandle(ent, "SetAnimation", "release", 0.0, null, null);
-              ent.EmitSound("Portal.OGButtonRelease");
-            } else {
-              EntFireByHandle(ent, "SetAnimation", "up", 0.0, null, null);
-              ent.EmitSound("Portal.ButtonRelease");
-            }
+          // Trigger the button press relay
+          EntFireByHandle(unpressrl, "Trigger", "", 0.0, null, null);
 
+          // Play the corresponding animations and sounds
+          if (type == "prop_under_floor_button") {
+            EntFireByHandle(ent, "SetAnimation", "release", 0.0, null, null);
+            ent.EmitSound("Portal.OGButtonRelease");
+          } else {
+            EntFireByHandle(ent, "SetAnimation", "up", 0.0, null, null);
+            ent.EmitSound("Portal.ButtonRelease");
           }
+
         };
 
         // Checks classnames and model names to filter the entities activating the button
@@ -2700,15 +2725,15 @@ ppmod.onauto(function () {
           strpress = "if (self.GetClassname() == \"prop_weighted_cube\" && self.GetModelName() != \"models/props_gameplay/mp_ball.mdl\") ppmod.scrq_get(" + ppmod.scrq_add(press) + ")()";
           strunpress = "if (self.GetClassname() == \"prop_weighted_cube\" && self.GetModelName() != \"models/props_gameplay/mp_ball.mdl\") ppmod.scrq_get(" + ppmod.scrq_add(unpress) + ")()";
         }
-
         ppmod.addoutput(trigger, "OnStartTouch", "!activator", "RunScriptCode", strpress);
         ppmod.addoutput(trigger, "OnEndTouch", "!activator", "RunScriptCode", strunpress);
 
+        // Resolve the promise with a table of interface methods
         resolve({
 
           GetTrigger = function ():(trigger) { return trigger },
           GetProp = function ():(ent) { return ent },
-          GetCount = function ():(trigger) { return trigger.GetScriptScope()["count"] },
+          GetCount = function ():(properties) { return properties.count },
           OnPressed = function (scr):(pressrl) { ppmod.addscript(pressrl, "OnTrigger", scr) },
           OnUnpressed = function (scr):(unpressrl) { ppmod.addscript(unpressrl, "OnTrigger", scr) },
 
