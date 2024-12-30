@@ -46,6 +46,7 @@ This script will spawn a red cube in front of the player's head, and make it pri
     cube.OnFizzled(function () {
       printl("The red cube has been fizzled!");
     });
+    // For other inputs/outputs, refer to: https://developer.valvesoftware.com/wiki/prop_weighted_cube
 
   }));
 ```
