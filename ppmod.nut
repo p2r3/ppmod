@@ -953,9 +953,12 @@ for (local i = 0; i < entclasses.len(); i ++) {
       }
       return val;
     }
-    // Allows for firing inputs as if they were object methods
+    // Allows for firing inputs/connecting outputs as if they were methods
     entclasses[i]._get <- function (key) {
       return function (value = "", delay = 0.0, activator = null, caller = null):(key) {
+        // If a function was provided, treat `key` as an output
+        if (typeof value == "function") return ::ppmod.addscript(this, key, value, delay, activator);
+        // Otherwise, treat `key` as an input
         return ::EntFireByHandle(this, key, value.tostring(), delay, activator, caller);
       }
     }
