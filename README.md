@@ -564,7 +564,9 @@ Works around script timeouts by catching the exception they throw.
 ```
 In Portal 2's implementation of Squirrel, scripts (queries) are given a limited time to run, so that a simple `while (true)` loop doesn't hang the game. For compute-intensive operations, this can mean that the script is aborted before calculations are finished. When this happens, the VM throws a `Script terminated by SQQuerySuspend` exception. This function catches that exception, and calls the given function again, passing it the arguments from the previous run. If a different exception is caught, ppmod traces it back to the line on which `ppmod.detach` was called. Note that some of the trace data is unfortunately lost this way.
 
-The `script` argument expects a function which is passed one argument - a table. The `args` argument is this table, which is passed back to the function every time it is called. Here is an example of using this function to call a for loop which increments an integer until it overflows:
+The `script` argument expects a function which is passed one argument - a table. The `args` argument is this table, which is passed back to the function every time it is called. The return value of `script` is also the return value of the `ppmod.detach` call.
+
+Here is an example of using this function to call a for loop which increments an integer until it overflows:
 ```squirrel
   ppmod.detach(function (args) {
 

@@ -1281,7 +1281,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
   if (stack == null) stack = getstackinfos(2);
 
   // Run the input function in a try/catch block
-  try { scr(args) }
+  try { return scr(args) }
   catch (e) {
 
     // If the exception is caused by SQQuerySuspend, recurse
