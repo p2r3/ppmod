@@ -1043,7 +1043,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
       local scope = this.DoGetScriptScope();
       if (scope == null) return this.DoDestroy();
       // Call the script hook for the Kill input to activate destructors
-      scope.InputKill();
+      if ("InputKill" in scope) scope.InputKill();
       // Proceed with destroying the entity
       return this.DoDestroy();
     }
