@@ -870,6 +870,23 @@ try {
 
 }
 
+// Iterates over the children of an entity
+::ppmod.getchild <- function (_parent, ent = null) {
+
+  // Validate input arguments
+  if (!ppmod.validate(_parent)) throw "getchild: Invalid parent entity";
+  if (ent != null && !ppmod.validate(ent)) throw "getchild: Invalid iterator entity";
+
+  // Iterate over all world entities, looking for those with a common parent
+  while (ent = Entities.Next(ent)) {
+    if (!ent.IsValid()) continue;
+    if (ent.GetMoveParent() != _parent) continue;
+    return ent;
+  }
+  return ent;
+
+}
+
 // Hooks an entity input, running a test function each time it's fired
 ::ppmod.hook <- function (ent, input, scr, max = -1) {
 
@@ -978,6 +995,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
     }
     entclasses[i].SetMoveParent <- function (_parent) {
       return ::ppmod.setparent(this, _parent);
+    }
+    entclasses[i].NextMoveChild <- function (child = null) {
+      return ::ppmod.getchild(this, child);
     }
     entclasses[i].SetHook <- function (input, scr, max = -1) {
       return ::ppmod.hook(this, input, scr, max);

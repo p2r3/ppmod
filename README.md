@@ -391,7 +391,16 @@ Sets the parent of the given child entity to a parent entity, joining their move
 ```squirrel
   ppmod.setparent(child, parent)
 ```
-Both the parent and the child can be provided as either a string, entity handle, or an (array of) argument(s) passed to `ppmod.get`. Setting the parent to a falsy value like `null` will remove any parent from the child. This acts as a cleaner alternative to the `SetParent` and `ClearParent` entity inputs.
+The parent argument must be an entity handle, while the child can be provided as either a string, entity handle, or an (array of) argument(s) passed to `ppmod.get`. Setting the parent to a falsy value like `null` will remove any parent from the child. This acts as a cleaner alternative to the `SetParent` and `ClearParent` entity inputs.
+
+### ppmod.getchild
+Iterates over all of the children of an entity. This is contrary to `CBaseEntity::FirstMoveChild`, which returns just the first child in the hierarchy.
+```squirrel
+  ppmod.getchild(parent, child)
+```
+The parent argument expects an entity handle for the parent whose children are to be iterated over. The child argument may be omitted or `null` for the start of an iteration, or the handle of a child if continuing an iteration. The return value is `null` if no more children are found, or a handle to the next child in the iteration.
+
+Note: **Iteration does not start from the entity returned by FirstMoveChild.** Therefore, to start an exhaustive iteration, pass `null` to get the first ordered child.
 
 ### ppmod.hook
 Sets an entity's [input hook](https://developer.valvesoftware.com/wiki/VScript_Fundamentals#Input_Hooks).
@@ -448,6 +457,15 @@ Entities can be parented via the `SetMoveParent` method. Behavior is the same as
   ent.SetMoveParent(parent)
 ```
 Note that the method `GetMoveParent` exists in Portal 2 by default, and can be used to retrieve the parent entity handle.
+
+### Retrieving children
+Similar (but not complimentary, see note below) to the built-in `FirstMoveChild` method, ppmod implements `NextMoveChild` for iterating over more than one child. Behavior is the same as with `ppmod.getchild`.
+```squirrel
+  ent.NextMoveChild(child)
+```
+Where `child` is either unset or null for the start of an iteration, or an entity handle for a child of the parent if continuing an iteration.
+
+Note: **Iteration does not start from the entity returned by FirstMoveChild.** Therefore, to start an exhaustive iteration, pass `null` to get the first ordered child.
 
 ### Hooking inputs
 Hook functions can be added to inputs via the `SetHook` method. Arguments remain the same as with `ppmod.hook`.
