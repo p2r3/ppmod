@@ -626,8 +626,9 @@ try {
     }
 
     case "instance": {
-      // If provided an entity, echo it back
-      if (arg1 instanceof CBaseEntity) return arg1;
+      // If provided an entity, validate it and echo it back
+      if (ppmod.validate(arg1)) return arg1;
+      else return null;
     }
 
     default:
