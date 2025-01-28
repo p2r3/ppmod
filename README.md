@@ -250,7 +250,7 @@ There are some important things to note here. Firstly, for context, here `ppmod.
 Due to a bug in how Portal 2 handles restoring the script scope from save files, saving before an `async` function has finished running can lead to game freezes or crashes. It is therefore not recommended to use `async` functions in tick loops, and instead reserve them for one-time events like map loads or entity outputs.
 
 ## Entity management
-These functions help with the Source entity input/output system. They mostly consist of streamlined versions of existing essential functions.
+These functions help with the Source entity input/output system. They mostly consist of streamlined versions of existing essential functions. If you've included ppmod within `mapspawn.nut`, you have access to the [much more comfortable shorthands](#shorthands-for-entity-management) of these functions.
 
 ### ppmod.get
 Searches for an entity by various criteria and returns its handle. Searches can be done by:
