@@ -2511,7 +2511,7 @@ ppmod.onauto(function () {
   local fvec = (dest - start).Normalize();
 
   // Check if the destination is within the field of view
-  if (eyes.GetForwardVector().Dot(fvec) < cos(fov * PI / 360)) return false;
+  if (eyes.GetForwardVector().Dot(fvec) < cos(fov * PI / 360.0)) return false;
 
   // Casts a ray which passes through thin walls (glass, grates, etc.)
   local frac, point;
