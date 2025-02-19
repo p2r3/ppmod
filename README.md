@@ -923,6 +923,13 @@ As mentioned before, multiple similar calls to `ppmod.ray` can be optimized usin
   local ray = [len, div];
 ```
 
+### ppmod.intersect
+Checks whether the oriented bounding boxes of two entities intersect.
+```squirrel
+  ppmod.intersect(ent1, ent2)
+```
+This function expects two arguments - the entity handles of the two intersecting entities. It returns a boolean - `true` if the OBBs intersect, `false` if they don't.
+
 ### ppmod.inbounds
 Checks whether a point is inbounds.
 ```squirrel
