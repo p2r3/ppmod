@@ -2129,7 +2129,7 @@ local onportalfunc = [];
   }
 
   // Make the trigger non-solid
-  type.__KeyValueFromInt("CollisionGroup", 10);
+  type.__KeyValueFromInt("CollisionGroup", 21);
   // Turn on activation by clients by default
   type.__KeyValueFromInt("SpawnFlags", 1);
   // Enable the trigger
