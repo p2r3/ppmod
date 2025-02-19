@@ -1390,7 +1390,7 @@ for (local i = 0; i < entclasses.len(); i ++) {
     // Create a logic_measure_movement for getting player eye angles
     this.eyes = Entities.CreateByClassname("logic_measure_movement");
     // Generate a unique name for the entity
-    local eyename = "pplayer_eyes_" + Time();
+    local eyename = "pplayer_eyes_" + Time() + UniqueString();
     // Set MeasureType to measure eye position
     this.eyes.__KeyValueFromInt("MeasureType", 1);
     // Point the entity back at itself
