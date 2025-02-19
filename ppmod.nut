@@ -2500,6 +2500,88 @@ ppmod.onauto(function () {
 
 }
 
+// Returns true if the OBBs of two entities intersect, false otherwise
+::ppmod.intersect <- function (ent1, ent2) {
+
+  // Validate input arguments
+  if (!ppmod.validate(ent1)) throw "intersect: Invalid first entity handle";
+  if (!ppmod.validate(ent2)) throw "intersect: Invalid second entity handle";
+
+  // Get local axes for each entity
+  // The forward, left, and up vectors represent the X, Y, and Z axes respectively
+  local vec1 = [ ent1.GetForwardVector(), ent1.GetLeftVector(), ent1.GetUpVector() ];
+  local vec2 = [ ent2.GetForwardVector(), ent2.GetLeftVector(), ent2.GetUpVector() ];
+
+  // Calculate center and half-widths for first entity
+  local mins1 = ent1.GetBoundingMins();
+  local maxs1 = ent1.GetBoundingMaxs();
+  local center1 = ent1.GetOrigin() + (mins1 + maxs1) * 0.5;
+  local size1 = [
+    (maxs1.x - mins1.x) * 0.5,
+    (maxs1.y - mins1.y) * 0.5,
+    (maxs1.z - mins1.z) * 0.5
+  ];
+
+  // Calculate center and half-widths for second entity
+  local mins2 = ent2.GetBoundingMins();
+  local maxs2 = ent2.GetBoundingMaxs();
+  local center2 = ent2.GetOrigin() + (mins2 + maxs2) * 0.5;
+  local size2 = [
+    (maxs2.x - mins2.x) * 0.5,
+    (maxs2.y - mins2.y) * 0.5,
+    (maxs2.z - mins2.z) * 0.5
+  ];
+
+  // Calculate rotation matrix between entity relative rotations
+  local R = array(3);
+  for (local i = 0; i < 3; i++) {
+    R[i] = array(3);
+    for (local j = 0; j < 3; j++) {
+      R[i][j] = vec1[i].Dot(vec2[j]);
+    }
+  }
+
+  // Calculate translation vector between centers in first entity's coordinate frame
+  local t = center2 - center1;
+  local tA = [ t.Dot(vec1[0]), t.Dot(vec1[1]), t.Dot(vec1[2]) ];
+
+  local ra, rb, tval;
+
+  // Test face normals of first entity
+  for (local i = 0; i < 3; i++) {
+    ra = size1[i];
+    rb = size2[0] * fabs(R[i][0]) + size2[1] * fabs(R[i][1]) + size2[2] * fabs(R[i][2]);
+    if (fabs(tA[i]) > ra + rb) return false;
+  }
+  // Test face normals of second entity
+  for (local j = 0; j < 3; j++) {
+    ra = size1[0] * fabs(R[0][j]) + size1[1] * fabs(R[1][j]) + size1[2] * fabs(R[2][j]);
+    rb = size2[j];
+    local tB = t.Dot(vec2[j]);
+    if (fabs(tB) > ra + rb) return false;
+  }
+
+  // Test the cross-product axes
+  for (local i = 0; i < 3; i++) {
+    for (local j = 0; j < 3; j++) {
+      // Determine indices for the remaining axes
+      local i1 = (i + 1) % 3;
+      local i2 = (i + 2) % 3;
+      local j1 = (j + 1) % 3;
+      local j2 = (j + 2) % 3;
+
+      ra = size1[i1] * fabs(R[i2][j]) + size1[i2] * fabs(R[i1][j]);
+      rb = size2[j1] * fabs(R[i][j2]) + size2[j2] * fabs(R[i][j1]);
+      tval = fabs(tA[i2] * R[i1][j] - tA[i1] * R[i2][j]);
+      if (tval > ra + rb) return false;
+    }
+  }
+
+  // If no separating axis is found, the boxes intersect
+  return true;
+
+}
+
 // Returns true if the given point is inbounds, false otherwise
 ::ppmod.inbounds <- function (point) {
 
