@@ -1200,9 +1200,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
     // Set up an interval to wait for blue (the host) to spawn
     ref.interval = ppmod.interval(function ():(scr, ref) {
 
-      // Find the host player, typically the first entity named "blue"
-      local blue = Entities.FindByName(null, "blue");
-      // Fall back to the first player handle if "blue" wasn't found
+      // Find the host player using their special keyword
+      local blue = Entities.FindByName(null, "!player_blue");
+      // Fall back to the first player handle if blue wasn't found
       if (!blue || !blue.IsValid() || blue.GetClassname() != "player") {
         blue = Entities.FindByClassname(null, "player");
       }
@@ -1238,9 +1238,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
       // Set up an interval to wait for orange (the second player) to spawn
       ref.interval = ppmod.interval(function ():(blue, lowest, scr, ref) {
 
-        // Find the second player, typically the first entity named "red"
-        local red = Entities.FindByClassname(null, "red");
-        // Fall back to the player handle after the host's if "red" wasn't found
+        // Find the second player using their special keyword
+        local red = Entities.FindByClassname(null, "!player_orange");
+        // Fall back to the player handle after the host's if orange wasn't found
         if (!red || !red.IsValid() || red.GetClassname() != "player") {
           red = Entities.FindByClassname(blue, "player");
         }
