@@ -1378,9 +1378,8 @@ for (local i = 0; i < entclasses.len(); i ++) {
 
     // Create a game_ui for listening to player movement inputs
     this.gameui = Entities.CreateByClassname("game_ui");
-    // Set up and activate the game_ui entity
+    // Set up and (but don't yet activate) the game_ui entity
     this.gameui.__KeyValueFromInt("FieldOfView", -1);
-    EntFireByHandle(this.gameui, "Activate", "", 0.0, player, null);
 
     // One logic_playerproxy is required for registering jumping and ducking
     // This breaks if more than one is created, so we use an existing one if available
@@ -1565,6 +1564,9 @@ for (local i = 0; i < entclasses.len(); i ++) {
     if (str[0] == '+') str = "pressed" + str.slice(1);
     else str = "unpressed" + str.slice(1);
     ppmod.addscript(this.gameui, str, scr);
+    // Activate the entity only once an output has been added
+    // This prevents prediction from being unnecessarily turned off in co-op
+    EntFireByHandle(this.gameui, "Activate", "", 0.0, this.ent, null);
   };
 
   // Sets the player's gravity scale to the given value
