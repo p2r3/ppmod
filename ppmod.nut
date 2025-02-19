@@ -893,6 +893,8 @@ try {
   // Validate arguments
   if (typeof input != "string") throw "hook: Invalid input argument";
   if (typeof max != "integer") throw "hook: Invalid max argument";
+  if (typeof scr == "string") scr = compilestring(scr);
+  if (scr != null && typeof scr != "function") throw "hook: Invalid script argument";
   // If a valid entity handle was not provided, find handles with ppmod.forent
   if (!ppmod.validate(ent)) {
     return ppmod.forent(ent, function (curr):(input, scr, max) {
@@ -906,7 +908,7 @@ try {
   // If the new script is null, clear the hook
   if (scr == null) delete ent.GetScriptScope()["Input"+input];
   // Otherwise, assign a new hook function
-  else ent.GetScriptScope()["Input"+input] <- ppmod.scrq_get(ppmod.scrq_add(scr, max));
+  else ent.GetScriptScope()["Input"+input] <- scr;
 
 }
 
