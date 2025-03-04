@@ -1351,8 +1351,8 @@ for (local i = 0; i < entclasses.len(); i ++) {
   static target_eyes = function () {
 
     // Store the current player name and generate a unique temporary name
-    local oldname = this.ent.GetName()
-    local newname = "this_ent_" + Time();
+    local oldname = this.ent.GetName();
+    local newname = "this_ent_" + Time() + UniqueString();
 
     /**
      * Push these inputs to the entity I/O queue back to back, one by one.
